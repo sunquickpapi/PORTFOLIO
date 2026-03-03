@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPASRTUHUB Website | Case Study</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="project-detail-body">
+    <!-- Back Button -->
+    <button onclick="window.location.href='index.html#projects'" class="btn-back-detail">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 19l-7-7 7-7"></path>
+        </svg>
+        Back
+    </button>
+
+    <!-- Project Hero Section (Image Banner Only) -->
+    <section class="project-detail-hero">
+        <div class="project-hero-overlay"></div>
+        <img src="assets/ppasweb1.jpeg" alt="PPASRTUHUB Website Header" class="project-hero-bg">
+    </section>
+
+    <!-- Description Section -->
+    <section class="project-description">
+        <div class="container-narrow">
+            <!-- Project Identification -->
+            <div class="project-hero-content" style="margin-bottom: 5rem;">
+                <h1>PPASRTUHUB Website</h1>
+                <p class="project-subtitle">A comprehensive web platform dedicated for staff to manage facility
+                    bookings, resource allocation, and administrative workflows with integrated analytics.</p>
+                <div class="project-meta">
+                    <span class="meta-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        My Role: Web Developer
+                    </span>
+                </div>
+            </div>
+
+            <div class="desc-content">
+                <h3>The Challenge</h3>
+                <p>Managing the diverse resources of the Perbadanan Perpustakaan Awam Selangor (PPAS)—from high-tech
+                    recording studios and auditoriums to basic inventory like tables and chairs—was operationally
+                    complex. The lack of a centralized digital system likely meant staff had to rely on manual tracking
+                    or disparate systems to handle facility bookings, event approvals, and news dissemination, leading
+                    to potential double-bookings and inefficient resource allocation across branches like PPAS Raja Tun
+                    Uda.</p>
+
+                <h3>The Solution</h3>
+                <p>Developed the PPAS Portal, a comprehensive web-based administration system designed to centralize
+                    library operations. The system features a <strong>Facility & Studio Management</strong> engine that
+                    efficiently handles specific venue types, such as "Bilik Kaca" and "Production Studios," with
+                    tiered pricing for students and the public alongside integrated capacity management. For physical
+                    assets, the <strong>Inventory Tracking</strong> module allows staff to precisely manage the stock
+                    and rental prices of movable items like extra chairs and tables required for large-scale events.</p>
+
+                <p>To keep the public informed, a built-in <strong>Content Management</strong> module enables staff to
+                    draft and publish real-time updates for major events like the Selangor International Book Fair
+                    directly to the site. All of these administrative functions are overseen via a centralized
+                    <strong>Analytics Dashboard</strong>, a visual command center featuring real-time charts for room
+                    booking frequency and facility trends that provide management with the data needed for informed
+                    decision-making.
+                </p>
+            </div>
+
+            <div class="desc-impact-boxes vertical-flow">
+                <div class="impact-box">
+                    <div class="impact-icon">🏆</div>
+                    <div class="impact-text">
+                        <h4>Results & Impact</h4>
+                        <p>The portal successfully digitized the library's administrative workflow. By centralizing
+                            "Pending Approvals" and booking requests into a single dashboard, we significantly reduced
+                            administrative overhead and improved <strong>Operational Efficiency</strong>. Clear
+                            visibility into studio packages and facility usage ensured <strong>Revenue
+                                Optimization</strong> through better monetization of library assets, while the
+                            integration of automated analytics provided management with immediate insights for
+                            <strong>Data-Driven Resource Planning</strong>.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="impact-box">
+                    <div class="impact-icon">💡</div>
+                    <div class="impact-text">
+                        <h4>Key Learnings</h4>
+                        <p>This project highlighted the importance of relational database design in facility
+                            management—specifically, how to link "Parent" assets (like a Hall) with "Child" inventory
+                            (like Chairs) to prevent resource conflicts. It also demonstrated the value of User Role
+                            Management (Staff vs. Admin) and the implementation of dynamic CRUD (Create, Read, Update,
+                            Delete) systems for diverse content types ranging from simple news text to complex studio
+                            booking slots.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Web Preview Section (Row) -->
+            <div class="project-preview-section">
+                <h3>Web Preview</h3>
+                <div class="web-preview-row">
+                    <div class="preview-item">
+                        <span class="preview-label">Analytics Dashboard</span>
+                        <img src="assets/ppasweb1.jpeg" alt="Analytics Dashboard" class="web-preview-img">
+                    </div>
+                    <div class="preview-item">
+                        <span class="preview-label">Content Management</span>
+                        <img src="assets/ppasweb2.jpeg" alt="Content Management" class="web-preview-img">
+                    </div>
+                    <div class="preview-item">
+                        <span class="preview-label">Studio Management</span>
+                        <img src="assets/ppasweb3.jpeg" alt="Studio Management" class="web-preview-img">
+                    </div>
+                    <div class="preview-item">
+                        <span class="preview-label">Item Management</span>
+                        <img src="assets/ppasweb4.jpeg" alt="Item Management" class="web-preview-img">
+                    </div>
+                    <div class="preview-item">
+                        <span class="preview-label">Facilities Management</span>
+                        <img src="assets/ppasweb5.jpeg" alt="Facilities Management" class="web-preview-img">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tech Stack Section (Below) -->
+            <div class="tech-stack-full-width">
+                <h3>Tech Stack</h3>
+                <div class="project-detail-tags">
+                    <span class="tag-detail">Web Dev</span>
+                    <span class="tag-detail">SQL</span>
+                    <span class="tag-detail">Dashboard</span>
+                    <span class="tag-detail">HTML/CSS</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="project-footer">
+        <div class="container text-center">
+            <p>© 2026 Muhammad Naufal. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+
+</html>

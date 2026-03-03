@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sport Shop Management System | Case Study</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="project-detail-body">
+    <!-- Back Button -->
+    <button onclick="window.location.href='index.html#projects'" class="btn-back-detail">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 19l-7-7 7-7"></path>
+        </svg>
+        Back
+    </button>
+
+    <!-- Project Hero Section -->
+    <section class="project-detail-hero">
+        <div class="project-hero-overlay"></div>
+        <img src="assets/lvnastudio%20header.png" alt="Sport Shop Management System Detail" class="project-hero-bg">
+    </section>
+
+    <!-- Description Section -->
+    <section class="project-description">
+        <div class="container-narrow">
+            <!-- Project Identification -->
+            <div class="project-hero-content" style="margin-bottom: 5rem;">
+                <h1>Collaborative E-Commerce </h1>
+                <p class="project-subtitle">A multi-role web platform designed to streamline the production of
+                    bespoke jerseys. Unlike standard retail systems, it integrates a specialized workflow
+                    connecting Customers, Agents, and Designers. Features include a real-time negotiation chat,
+                    a design draft approval system, and role-specific dashboards to manage the lifecycle of a
+                    custom order from concept to final production.</p>
+                <div class="project-meta">
+                    <span class="meta-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        My Role: Lead Full-Stack Developer
+                    </span>
+                </div>
+            </div>
+
+            <div class="desc-content">
+                <h3>The Challenge</h3>
+                <p>The primary difficulty lay in facilitating custom apparel orders that required complex coordination
+                    between four distinct parties: Customers, Agents, Designers, and Admins. Relying on fragmented tools
+                    for communication and manual tracking created a disconnected workflow where critical design feedback
+                    was often lost between stakeholders. This lack of a centralized system made it nearly impossible to
+                    track sales analytics efficiently or manage individual designer queues without errors, highlighting
+                    a
+                    critical need for a unified digital solution to handle the iterative nature of bespoke jersey
+                    production.</p>
+
+                <h3>The Solution</h3>
+                <p>To address this, LVNASTUDIO was engineered using VS Code as the development environment,
+                    utilizing XAMPP for local server management and SQL to handle the intricate database relationships
+                    required for a multi-role ecosystem. The platform features specialized dashboards for each user
+                    type, including a "Custom Your Own" module for customers and a collaborative chat interface where
+                    Agents can mediate design changes between Customers and Designers. This architecture ensures that
+                    every design iteration and approval is securely recorded in the database, seamlessly connecting the
+                    front-end customization tools with the back-end order management system.</p>
+            </div>
+
+            <div class="desc-impact-boxes vertical-flow">
+                <div class="impact-box">
+                    <div class="impact-icon">🏆</div>
+                    <div class="impact-text">
+                        <h4>Results & Impact</h4>
+                        <p>The implementation of this centralized platform successfully streamlined the entire
+                            production
+                            workflow, significantly reducing miscommunication and errors in custom orders. By
+                            integrating
+                            real-time analytics for Admins and task management tools for Designers, the system improved
+                            operational visibility and efficiency. The shift from manual processes to this digital
+                            ecosystem
+                            ensured that sales data, design drafts, and customer feedback were synchronized, leading to
+                            higher order accuracy and a faster turnaround time for custom jersey deliverables.</p>
+                    </div>
+                </div>
+
+                <div class="impact-box">
+                    <div class="impact-icon">💡</div>
+                    <div class="impact-text">
+                        <h4>Key Learnings</h4>
+                        <p>This project provided deep insights into the importance of structuring SQL databases to
+                            support
+                            effective Role-Based Access Control (RBAC), ensuring that Admins, Agents, and Designers only
+                            access data relevant to their specific workflows. Developing with VS Code and XAMPP
+                            highlighted
+                            the technical value of integrating communication tools directly into the transaction flow
+                            rather than relying on external apps. It demonstrated that a well-architected database is
+                            essential for maintaining data integrity across a complex, multi-user environment where
+                            real-time
+                            collaboration is the core feature.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Web Preview Section (Row) -->
+            <div class="project-preview-section">
+                <h3>Web Preview</h3>
+                <div class="web-preview-row">
+                    <div class="preview-item">
+                        <span class="preview-label">Admin Dashboard</span>
+                        <img src="assets/luna2.png" alt="Admin Dashboard Preview" class="web-preview-img">
+                    </div>
+                    <div class="preview-item">
+                        <span class="preview-label">Agent Dashboard</span>
+                        <img src="assets/luna3.png" alt="Agent Dashboard Preview" class="web-preview-img">
+                    </div>
+                    <div class="preview-item">
+                        <span class="preview-label">Designer Dashboard</span>
+                        <img src="assets/luna1.png" alt="Designer Dashboard Preview" class="web-preview-img">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tech Stack Section (Below) -->
+            <div class="tech-stack-full-width">
+                <h3>Tech Stack</h3>
+                <div class="project-detail-tags">
+                    <span class="tag-detail">Tableau</span>
+                    <span class="tag-detail">Power BI</span>
+                    <span class="tag-detail">SQL</span>
+                    <span class="tag-detail">Java</span>
+                    <span class="tag-detail">Spring Boot</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="project-footer">
+        <div class="container text-center">
+            <p>© 2026 Muhammad Naufal. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+
+</html>

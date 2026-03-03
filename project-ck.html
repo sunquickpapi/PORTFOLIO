@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CookKing | Case Study</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="project-detail-body">
+    <!-- Back Button -->
+    <button onclick="window.location.href='index.html#projects'" class="btn-back-detail">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 19l-7-7 7-7"></path>
+        </svg>
+        Back
+    </button>
+
+    <!-- Project Hero Section -->
+    <section class="project-detail-hero">
+        <div class="project-hero-overlay"></div>
+        <img src="assets/ckdetailheader.jpg" alt="CookKing Header" class="project-hero-bg">
+    </section>
+
+    <!-- Description Section -->
+    <section class="project-description">
+        <div class="container-narrow">
+            <!-- Project Identification -->
+            <div class="project-hero-content" style="margin-bottom: 5rem;">
+                <h1>CookKing Application</h1>
+                <p class="project-subtitle">A specialized mobile application designed to simplify healthy cooking and
+                    recipe management for home cooks.</p>
+                <div class="project-meta">
+                    <span class="meta-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        My Role: Mobile App Developer
+                    </span>
+                </div>
+            </div>
+
+            <div class="desc-content">
+                <h3>The Challenge</h3>
+                <p>Home cooks often struggle with two main issues: deciding "what to eat" from a variety of cuisines
+                    (Malay, Western, Thai) and executing complex recipes without errors. Following static text recipes
+                    can lead to timing mistakes or incorrect portion sizes, especially for intricate local dishes like
+                    Penang Laksa. There was a need for an interactive digital assistant that not only lists ingredients
+                    but actively guides the user through the cooking process.</p>
+
+                <h3>The Solution</h3>
+                <p>Developed Cook King (CK), a native iOS application built using SwiftUI that serves as an interactive
+                    kitchen companion. The application provides <strong>Smart Cooking Assistance</strong> through an
+                    integrated "Smart Timer" that allows users to track cooking durations for specific steps directly
+                    within the workflow. To ensure perfect results, I implemented <strong>Dynamic Portion
+                        Control</strong> with a "Choose Your Pax" selector that automatically calculates and adjusts
+                    ingredient quantities based on the number of people eating.</p>
+
+                <p>Beyond basic guidance, the app emphasizes <strong>Personalization</strong> by allowing users to jot
+                    down recipe tweaks via a "Write Your Notes" feature and set "Cook Later" reminders. Navigating the
+                    recipe database is effortless thanks to a robust <strong>Discovery Engine</strong>, featuring a
+                    categorized search system across Healthy, Western, Malay, and Thai cuisines to help users quickly
+                    find the perfect dish for any preference.</p>
+            </div>
+
+            <div class="desc-impact-boxes vertical-flow">
+                <div class="impact-box">
+                    <div class="impact-icon">🏆</div>
+                    <div class="impact-text">
+                        <h4>Results & Impact</h4>
+                        <p>The app successfully bridged the gap between recipe discovery and execution. The built-in
+                            countdown timer significantly <strong>Reduced Cooking Errors</strong> by lowering the risk
+                            of overcooking time-sensitive steps, while the interactive "Step-by-Step" guide maintained
+                            high levels of <strong>User Engagement</strong> compared to static blogs. Additionally, the
+                            "Cook Later" feature provided immense <strong>Convenience</strong>, helping users plan their
+                            meals and grocery runs well in advance.</p>
+                    </div>
+                </div>
+
+                <div class="impact-box">
+                    <div class="impact-icon">💡</div>
+                    <div class="impact-text">
+                        <h4>Key Learnings</h4>
+                        <p>This project was a deep dive into SwiftUI state management. I learned how to use @State and
+                            @Binding to pass data between views—such as passing a selected dish to the detail view—and
+                            how to manage precise timer logic using Timer.publish. It also highlighted the importance of
+                            a clean UX/UI, utilizing intuitive icons and card layouts to make the app feel friendly,
+                            accessible, and ready for the kitchen environment.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tech Stack Section -->
+            <div class="tech-stack-section">
+                <h3>Tech Stack</h3>
+                <div class="project-detail-tags">
+                    <span class="tag-detail">SwiftUI</span>
+                    <span class="tag-detail">XCode</span>
+                    <span class="tag-detail">iOS</span>
+                    <span class="tag-detail">Firebase</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="project-footer">
+        <div class="container text-center">
+            <p>© 2026 Muhammad Naufal. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+
+</html>
