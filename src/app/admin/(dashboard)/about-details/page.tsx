@@ -190,7 +190,7 @@ export default function AboutDetailsPage() {
                 <section className="glass-section main-info-section">
                     <div className="section-header">
                         <div className="section-title-box">
-                            <User size={24} color="#1B4F72" />
+                            <User size={22} color="#1B4F72" />
                             <h2 className="section-title">General Info & Bio</h2>
                         </div>
                         <Link href="/admin/profile"
@@ -248,7 +248,7 @@ export default function AboutDetailsPage() {
                     <section className="glass-section table-section">
                         <div className="section-header">
                             <div className="section-title-box">
-                                <Briefcase size={24} color="#3A99C9" />
+                                <Briefcase size={22} color="#3A99C9" />
                                 <h2 className="section-title">Work Experience</h2>
                             </div>
                             <Link href="/admin/experience/new"
@@ -301,7 +301,7 @@ export default function AboutDetailsPage() {
                     <section className="glass-section table-section">
                         <div className="section-header">
                             <div className="section-title-box">
-                                <GraduationCap size={24} color="#75C2E6" />
+                                <GraduationCap size={22} color="#75C2E6" />
                                 <h2 className="section-title">Education</h2>
                             </div>
                             <Link href="/admin/education/new"
@@ -356,7 +356,7 @@ export default function AboutDetailsPage() {
                     <section className="glass-section list-section col-span-2">
                         <div className="section-header">
                             <div className="section-title-box">
-                                <Award size={24} color="#f59e0b" />
+                                <Award size={22} color="#f59e0b" />
                                 <h2 className="section-title">Certifications</h2>
                             </div>
                             <Link href="/admin/certifications/new"
@@ -395,7 +395,7 @@ export default function AboutDetailsPage() {
                     <section className="glass-section list-section col-span-2">
                         <div className="section-header">
                             <div className="section-title-box">
-                                <Heart size={24} color="#ec4899" />
+                                <Heart size={22} color="#ec4899" />
                                 <h2 className="section-title">Hobbies</h2>
                             </div>
                             <Link href="/admin/hobbies/new"
@@ -779,15 +779,15 @@ export default function AboutDetailsPage() {
                 }
 
                 .icon-btn {
-                    width: 38px;
-                    height: 38px;
+                    width: 40px;
+                    height: 40px;
                     display: inline-flex;
                     align-items: center;
                     justify-content: center;
-                    background: white;
-                    border-radius: 0.85rem;
-                    border: 1px solid #e2e8f0;
-                    color: #64748b;
+                    border-radius: 0.75rem;
+                    border: 1px solid #dbeafe;
+                    background: #eff6ff;
+                    color: #3b82f6;
                     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
                     text-decoration: none;
                     cursor: pointer;
@@ -795,22 +795,22 @@ export default function AboutDetailsPage() {
                 }
 
                 .icon-btn:hover {
-                    color: #3A99C9;
-                    border-color: #3A99C9;
+                    background: #dbeafe;
+                    border-color: #3b82f6;
                     transform: translateY(-3px);
-                    box-shadow: 0 6px 15px rgba(58, 153, 201, 0.15);
+                    box-shadow: 0 6px 15px rgba(59, 130, 246, 0.2);
                 }
 
-                .icon-btn.edit:hover {
-                    background: rgba(58, 153, 201, 0.05);
-                }
-
-                .icon-btn.delete { color: #ef4444; }
-                .icon-btn.delete:hover { 
+                .icon-btn.delete {
+                    background: #fef2f2;
+                    border-color: #fecaca;
                     color: #ef4444;
+                }
+
+                .icon-btn.delete:hover {
+                    background: #fee2e2;
                     border-color: #ef4444;
-                    background: rgba(239, 68, 68, 0.05);
-                    box-shadow: 0 6px 15px rgba(239, 68, 68, 0.15);
+                    box-shadow: 0 6px 15px rgba(239, 68, 68, 0.2);
                 }
 
                 /* List & Items Grid */
@@ -887,7 +887,7 @@ export default function AboutDetailsPage() {
                 }
 
                 .cert-card .card-actions .edit {
-                    color: #3A99C9;
+                    color: #3b82f6;
                     background: transparent;
                     border: none;
                     box-shadow: none;
@@ -961,15 +961,15 @@ export default function AboutDetailsPage() {
                 }
 
                 .mini-btn {
-                    width: 34px;
-                    height: 34px;
+                    width: 36px;
+                    height: 36px;
                     display: inline-flex;
                     align-items: center;
                     justify-content: center;
-                    background: white;
+                    background: #eff6ff;
                     border-radius: 0.75rem;
-                    border: 1px solid #e2e8f0;
-                    color: #3A99C9;
+                    border: 1px solid #dbeafe;
+                    color: #3b82f6;
                     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
                     text-decoration: none;
                     cursor: pointer;
@@ -978,15 +978,20 @@ export default function AboutDetailsPage() {
 
                 .mini-btn:hover {
                     transform: translateY(-2px);
-                    border-color: #3A99C9;
-                    box-shadow: 0 5px 12px rgba(58, 153, 201, 0.12);
+                    background: #dbeafe;
+                    border-color: #3b82f6;
+                    box-shadow: 0 5px 12px rgba(59, 130, 246, 0.15);
                 }
 
-                .mini-btn.delete { color: #ef4444; }
+                .mini-btn.delete {
+                    background: #fef2f2;
+                    border-color: #fecaca;
+                    color: #ef4444;
+                }
                 .mini-btn.delete:hover {
                     border-color: #ef4444;
-                    background: rgba(239, 68, 68, 0.05);
-                    box-shadow: 0 5px 12px rgba(239, 68, 68, 0.12);
+                    background: #fee2e2;
+                    box-shadow: 0 5px 12px rgba(239, 68, 68, 0.15);
                 }
 
                 .empty-text {

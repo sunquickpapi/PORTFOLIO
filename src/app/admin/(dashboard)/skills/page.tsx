@@ -79,7 +79,7 @@ export default function SkillsPage() {
                         <section key={cat} className="glass-section category-section">
                             <div className="section-header">
                                 <div className="section-title-box">
-                                    <Cpu size={24} color="#1B4F72" />
+                                    <Cpu size={22} color="#1B4F72" />
                                     <h2 className="section-title">{cat}</h2>
                                 </div>
                                 <span className="item-count">
@@ -324,29 +324,37 @@ export default function SkillsPage() {
                 }
 
                 .icon-btn {
-                    width: 34px;
-                    height: 34px;
+                    width: 40px;
+                    height: 40px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    background: white;
                     border-radius: 0.75rem;
-                    border: 1px solid #e2e8f0;
-                    color: #64748b;
+                    border: 1px solid #dbeafe;
+                    background: #eff6ff;
+                    color: #3b82f6;
                     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                    cursor: pointer;
+                    text-decoration: none;
                 }
 
                 .icon-btn:hover {
-                    color: #3A99C9;
-                    background: rgba(58, 153, 201, 0.05);
-                    border-color: #3A99C9;
-                    transform: scale(1.1);
+                    background: #dbeafe;
+                    border-color: #3b82f6;
+                    transform: translateY(-3px);
+                    box-shadow: 0 6px 15px rgba(59, 130, 246, 0.2);
+                }
+
+                .icon-btn.delete {
+                    background: #fef2f2;
+                    border-color: #fecaca;
+                    color: #ef4444;
                 }
 
                 .icon-btn.delete:hover {
-                    color: #ef4444;
-                    background: rgba(239, 68, 68, 0.05);
+                    background: #fee2e2;
                     border-color: #ef4444;
+                    box-shadow: 0 6px 15px rgba(239, 68, 68, 0.2);
                 }
 
                 :global(.btn-premium-add) {

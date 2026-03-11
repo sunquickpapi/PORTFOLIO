@@ -149,7 +149,7 @@ export default function ProfilePage() {
                         <div className="form-column">
                             <section className="form-section">
                                 <div className="section-header">
-                                    <Info size={16} color="#1B4F72" />
+                                    <Info size={22} color="#1B4F72" />
                                     <h2 className="section-title">Identity & Bio</h2>
                                 </div>
 
@@ -204,7 +204,7 @@ export default function ProfilePage() {
 
                             <section className="form-section">
                                 <div className="section-header">
-                                    <Info size={16} color="#3A99C9" />
+                                    <Info size={22} color="#3A99C9" />
                                     <h2 className="section-title">Contact & Location</h2>
                                 </div>
                                 <div className="grid-layout">
@@ -247,7 +247,7 @@ export default function ProfilePage() {
                         <div className="form-column">
                             <section className="form-section">
                                 <div className="section-header">
-                                    <Camera size={16} color="#75C2E6" />
+                                    <Camera size={22} color="#75C2E6" />
                                     <h2 className="section-title">Media & Socials</h2>
                                 </div>
 
@@ -309,7 +309,7 @@ export default function ProfilePage() {
 
                             <section className="form-section">
                                 <div className="section-header">
-                                    <BarChart3 size={16} color="#1B4F72" />
+                                    <BarChart3 size={22} color="#1B4F72" />
                                     <h2 className="section-title">Performance Metrics</h2>
                                 </div>
 

@@ -64,7 +64,7 @@ export default function ExperiencePage() {
                 <section className="glass-section table-section">
                     <div className="section-header">
                         <div className="section-title-box">
-                            <Briefcase size={24} color="#1B4F72" />
+                            <Briefcase size={22} color="#1B4F72" />
                             <h2 className="section-title">Professional History</h2>
                         </div>
                         <Link
@@ -108,10 +108,10 @@ export default function ExperiencePage() {
                                             <td>
                                                 <div className="action-btns">
                                                     <Link href={`/admin/experience/${e.id}`} className="icon-btn edit">
-                                                        <Edit size={20} />
+                                                        <Edit size={18} />
                                                     </Link>
                                                     <button onClick={() => deleteExperience(e.id)} className="icon-btn delete">
-                                                        <Trash2 size={20} />
+                                                        <Trash2 size={18} />
                                                     </button>
                                                 </div>
                                             </td>
@@ -321,32 +321,38 @@ export default function ExperiencePage() {
                 }
 
                 .icon-btn {
-                    width: 38px;
-                    height: 38px;
+                    width: 40px;
+                    height: 40px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    background: white;
-                    border-radius: 0.85rem;
-                    border: 1px solid #e2e8f0;
-                    color: #64748b;
+                    border-radius: 0.75rem;
+                    border: 1px solid #dbeafe;
+                    background: #eff6ff;
+                    color: #3b82f6;
                     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
                     box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+                    cursor: pointer;
+                    text-decoration: none;
                 }
 
                 .icon-btn:hover {
-                    color: #3A99C9;
-                    background: rgba(58, 153, 201, 0.05);
-                    border-color: #3A99C9;
+                    background: #dbeafe;
+                    border-color: #3b82f6;
                     transform: translateY(-3px);
-                    box-shadow: 0 6px 15px rgba(58, 153, 201, 0.15);
+                    box-shadow: 0 6px 15px rgba(59, 130, 246, 0.2);
+                }
+
+                .icon-btn.delete {
+                    background: #fef2f2;
+                    border-color: #fecaca;
+                    color: #ef4444;
                 }
 
                 .icon-btn.delete:hover {
-                    color: #ef4444;
-                    background: rgba(239, 68, 68, 0.05);
+                    background: #fee2e2;
                     border-color: #ef4444;
-                    box-shadow: 0 6px 15px rgba(239, 68, 68, 0.15);
+                    box-shadow: 0 6px 15px rgba(239, 68, 68, 0.2);
                 }
 
                 :global(.btn-premium-add) {
