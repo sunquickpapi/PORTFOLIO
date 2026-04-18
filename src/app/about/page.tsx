@@ -361,37 +361,43 @@ export default function AboutPage() {
                                         key={cert.id}
                                         className="cert-card group"
                                         onMouseMove={(e) => setMousePosition({ x: e.clientX, y: e.clientY })}
-                                        onMouseEnter={() => cert.image_url && setHoveredCertImage(cert.image_url)}
-                                        onMouseLeave={() => setHoveredCertImage(null)}
-                                    >
-                                        <div className="cert-content">
-                                            <div className="cert-meta">
-                                                <h4 className="cert-title font-bold text-lg mb-2 text-[var(--color-text-primary)]">{cert.title}</h4>
-                                                <span className="cert-date text-xs text-[var(--color-text-secondary)] uppercase tracking-widest">{cert.date}</span>
-                                            </div>
-                                            <div className="cert-footer mt-6 flex justify-between items-center">
-                                                <p className="cert-issuer text-sm font-bold uppercase text-[var(--color-accent-blue)]">{cert.issuer}</p>
-                                                <a href={cert.credential_url} target="_blank" className="cert-btn flex items-center gap-2 text-xs font-bold px-4 py-2 bg-[var(--card-bg)] text-[var(--color-text-primary)] border border-[var(--card-border)] rounded-xl hover:bg-[var(--color-text-primary)] hover:text-[var(--portfolio-bg)] transition-all">
-                                                    <ExternalLink size={14} /> Credentials
-                                                </a>
-                                            </div>
+                                    onMouseEnter={() => cert.image_url && setHoveredCertImage(cert.image_url.trim())}
+                                    onMouseLeave={() => setHoveredCertImage(null)}
+                                >
+                                    <div className="cert-content">
+                                        <div className="cert-meta">
+                                            <h4 className="cert-title font-bold text-lg mb-2 text-[var(--color-text-primary)]">{cert.title}</h4>
+                                            <span className="cert-date text-xs text-[var(--color-text-secondary)] uppercase tracking-widest">{cert.date}</span>
+                                        </div>
+                                        <div className="cert-footer mt-6 flex justify-between items-center">
+                                            <p className="cert-issuer text-sm font-bold uppercase text-[var(--color-accent-blue)]">{cert.issuer}</p>
+                                            <a href={cert.credential_url} target="_blank" className="cert-btn flex items-center gap-2 text-xs font-bold px-4 py-2 bg-[var(--card-bg)] text-[var(--color-text-primary)] border border-[var(--card-border)] rounded-xl hover:bg-[var(--color-text-primary)] hover:text-[var(--portfolio-bg)] transition-all">
+                                                <ExternalLink size={14} /> Credentials
+                                            </a>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-
-                            {/* Floating Preview */}
-                            {hoveredCertImage && (
-                                <div
-                                    className="cert-floating-preview"
-                                    style={{
-                                        left: mousePosition.x + 20,
-                                        top: mousePosition.y + 20,
-                                    }}
-                                >
-                                    <img src={hoveredCertImage} alt="Certificate Preview" />
                                 </div>
-                            )}
+                            ))}
+                        </div>
+
+                        {/* Floating Preview */}
+                        {hoveredCertImage && (
+                            <div
+                                className="cert-floating-preview"
+                                style={{
+                                    left: mousePosition.x + 20,
+                                    top: mousePosition.y + 20,
+                                }}
+                            >
+                                <img 
+                                    src={hoveredCertImage} 
+                                    alt="Certificate Preview" 
+                                    onError={(e) => {
+                                        console.error("Failed to load cert image:", hoveredCertImage);
+                                    }}
+                                />
+                            </div>
+                        )}
                         </div>
                     </div>
                 </section>
