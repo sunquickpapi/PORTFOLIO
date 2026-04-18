@@ -54,13 +54,19 @@ export default function CertificationForm({ certId }: CertificationFormProps) {
         e.preventDefault();
         setLoading(true);
 
+        // Trim all string data
+        const sanitizedData = Object.entries(formData).reduce((acc, [key, value]) => {
+            acc[key] = typeof value === "string" ? value.trim() : value;
+            return acc;
+        }, {} as any);
+
         try {
             const res = await fetch(
                 certId ? `/api/certifications/${certId}` : "/api/certifications",
                 {
                     method: certId ? "PUT" : "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(formData),
+                    body: JSON.stringify(sanitizedData),
                 }
             );
 
