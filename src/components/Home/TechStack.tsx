@@ -15,9 +15,17 @@ export default function TechStack() {
 
     useEffect(() => {
         fetch("/api/skills")
-            .then((res) => res.json())
+            .then((res) => {
+                if (!res.ok) throw new Error(`API error: ${res.status}`);
+                return res.json();
+            })
             .then((data) => {
+                if (!Array.isArray(data)) throw new Error("Invalid response");
                 setSkills(data);
+                setLoading(false);
+            })
+            .catch((err) => {
+                console.error("Error fetching skills:", err);
                 setLoading(false);
             });
     }, []);

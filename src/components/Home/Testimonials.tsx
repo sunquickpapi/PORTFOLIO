@@ -19,7 +19,9 @@ export default function Testimonials() {
         const fetchTestimonials = async () => {
             try {
                 const res = await fetch("/api/testimonials");
+                if (!res.ok) throw new Error(`API error: ${res.status}`);
                 const data = await res.json();
+                if (!Array.isArray(data)) throw new Error("Invalid response");
                 setTestimonials(data);
             } catch (error) {
                 console.error("Error fetching testimonials:", error);

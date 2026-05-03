@@ -17,9 +17,17 @@ export default function Projects() {
 
     useEffect(() => {
         fetch("/api/projects")
-            .then((res) => res.json())
+            .then((res) => {
+                if (!res.ok) throw new Error(`API error: ${res.status}`);
+                return res.json();
+            })
             .then((data) => {
+                if (!Array.isArray(data)) throw new Error("Invalid response");
                 setProjects(data.slice(0, 3)); // Only show latest 3 on home page
+                setLoading(false);
+            })
+            .catch((err) => {
+                console.error("Error fetching projects:", err);
                 setLoading(false);
             });
     }, []);

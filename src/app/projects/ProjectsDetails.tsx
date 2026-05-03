@@ -50,15 +50,15 @@ export default function ProjectsDetails() {
                     fetch("/api/profile")
                 ]);
 
-                const projData = await projRes.json();
-                const setData = await setRes.json();
-                const profData = await profRes.json();
+                const projData = projRes.ok ? await projRes.json() : null;
+                const setData = setRes.ok ? await setRes.json() : null;
+                const profData = profRes.ok ? await profRes.json() : null;
 
-                setProjects(projData);
+                if (Array.isArray(projData)) setProjects(projData);
                 if (setData && setData.hero_title) {
                     setSettings(setData);
                 }
-                setProfile(profData);
+                if (profData && !profData.error) setProfile(profData);
             } catch (error) {
                 console.error("Error fetching data:", error);
             } finally {

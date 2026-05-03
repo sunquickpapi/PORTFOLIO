@@ -52,19 +52,29 @@ export default function AboutPage() {
     }, []);
 
     useEffect(() => {
-        // Fetch all dynamic data
+        const safeFetch = async (url: string) => {
+            try {
+                const res = await fetch(url);
+                if (!res.ok) return null;
+                const data = await res.json();
+                return data?.error ? null : data;
+            } catch {
+                return null;
+            }
+        };
+
         Promise.all([
-            fetch("/api/profile").then(res => res.json()),
-            fetch("/api/education").then(res => res.json()),
-            fetch("/api/experience").then(res => res.json()),
-            fetch("/api/certifications").then(res => res.json()),
-            fetch("/api/hobbies").then(res => res.json()),
+            safeFetch("/api/profile"),
+            safeFetch("/api/education"),
+            safeFetch("/api/experience"),
+            safeFetch("/api/certifications"),
+            safeFetch("/api/hobbies"),
         ]).then(([profileData, eduData, expData, certsData, hobbiesData]) => {
-            setProfile(profileData);
-            setEducation(eduData || []);
-            setExperience(expData || []);
-            setCertifications(certsData || []);
-            setHobbies(hobbiesData || []);
+            if (profileData) setProfile(profileData);
+            setEducation(Array.isArray(eduData) ? eduData : []);
+            setExperience(Array.isArray(expData) ? expData : []);
+            setCertifications(Array.isArray(certsData) ? certsData : []);
+            setHobbies(Array.isArray(hobbiesData) ? hobbiesData : []);
         });
     }, []);
 

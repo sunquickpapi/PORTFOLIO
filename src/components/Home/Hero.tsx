@@ -8,8 +8,14 @@ export default function Hero() {
 
     useEffect(() => {
         fetch("/api/profile")
-            .then((res) => res.json())
-            .then((data) => setProfile(data));
+            .then((res) => {
+                if (!res.ok) throw new Error(`API error: ${res.status}`);
+                return res.json();
+            })
+            .then((data) => {
+                if (data && !data.error) setProfile(data);
+            })
+            .catch((err) => console.error("Error fetching profile:", err));
     }, []);
 
     return (
