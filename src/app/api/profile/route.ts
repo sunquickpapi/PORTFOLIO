@@ -4,17 +4,34 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 export async function GET() {
-    const { data, error } = await supabase
-        .from("profile")
-        .select("*")
-        .limit(1)
-        .single();
-
-    if (error && error.code !== "PGRST116") {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    // Debug: check if env vars are available
+    const hasUrl = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const hasKey = !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (!hasUrl || !hasKey) {
+        return NextResponse.json({ 
+            error: "Missing environment variables",
+            hasUrl,
+            hasKey,
+            urlPrefix: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 20) || "NOT SET"
+        }, { status: 500 });
     }
 
-    return NextResponse.json(data || {});
+    try {
+        const { data, error } = await supabase
+            .from("profile")
+            .select("*")
+            .limit(1)
+            .single();
+
+        if (error && error.code !== "PGRST116") {
+            return NextResponse.json({ error: error.message, code: error.code, details: error.details }, { status: 500 });
+        }
+
+        return NextResponse.json(data || {});
+    } catch (err: any) {
+        return NextResponse.json({ error: err.message, stack: err.stack?.substring(0, 200) }, { status: 500 });
+    }
 }
 
 export async function PUT(req: Request) {
