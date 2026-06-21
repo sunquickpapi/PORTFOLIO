@@ -1209,12 +1209,15 @@ export default function SnippetsGalleryDetails() {
                     transform: translate(-50%, -50%) rotateY(calc(var(--angle) * 1deg)) translateZ(calc(var(--radius) * -1px)) translateY(calc(var(--yOffset) * 1px)) rotateZ(calc(var(--rotZ) * 1deg)) rotateY(calc(var(--rotY) * 1deg));
                     cursor: pointer;
                     z-index: 10;
-                    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+                    /* Apply 1.2s delay before card pops down when mouse leaves */
+                    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1) 1.2s, z-index 0.4s ease 1.2s;
                 }
 
                 .gallery-card-wrapper:hover {
                     transform: translate(-50%, -50%) rotateY(calc(var(--angle) * 1deg)) translateZ(calc((var(--radius) - 100) * -1px)) translateY(calc(var(--yOffset) * 1px)) rotateZ(0deg) rotateY(0deg) scale(1.08);
                     z-index: 50;
+                    /* Instant pop up transition with no delay when mouse enters */
+                    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1) 0s, z-index 0s ease 0s;
                 }
 
                 .gallery-card-inner {
@@ -1280,7 +1283,8 @@ export default function SnippetsGalleryDetails() {
                     gap: 12px;
                     opacity: 0;
                     pointer-events: none;
-                    transition: opacity 0.3s ease, left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), right 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+                    /* Apply 1.2s delay before buttons fade/slide back when mouse leaves */
+                    transition: opacity 0.3s ease 1.2s, left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s, right 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s;
                     z-index: 1;
                     transform-style: preserve-3d;
                 }
@@ -1297,6 +1301,8 @@ export default function SnippetsGalleryDetails() {
                     margin-right: 16px;
                     transform: translate(0, -50%) scale(1) translateZ(-8px);
                     pointer-events: auto;
+                    /* Instant pop out with no delay when card is hovered */
+                    transition: opacity 0.3s ease 0s, left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0s, right 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0s;
                 }
 
                 .card-popout-actions.side-right {
@@ -1311,6 +1317,8 @@ export default function SnippetsGalleryDetails() {
                     margin-left: 16px;
                     transform: translate(0, -50%) scale(1) translateZ(-8px);
                     pointer-events: auto;
+                    /* Instant pop out with no delay when card is hovered */
+                    transition: opacity 0.3s ease 0s, left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0s, right 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0s;
                 }
 
                 .action-btn {
