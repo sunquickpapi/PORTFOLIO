@@ -1283,10 +1283,28 @@ export default function SnippetsGalleryDetails() {
                     gap: 12px;
                     opacity: 0;
                     pointer-events: none;
-                    /* Apply 1.2s delay before buttons fade/slide back when mouse leaves */
-                    transition: opacity 0.3s ease 1.2s, left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s, right 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s;
+                    /* Apply 1.2s delay before buttons fade/slide back and lose pointer events */
+                    transition: opacity 0.3s ease 1.2s, left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s, right 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s, pointer-events 0s ease 1.2s;
                     z-index: 1;
                     transform-style: preserve-3d;
+                }
+
+                /* Invisible bridge to prevent mouse-leave events in the 16px gap between card and buttons */
+                .card-popout-actions::before {
+                    content: "";
+                    position: absolute;
+                    top: 0;
+                    bottom: 0;
+                    width: 24px;
+                    z-index: -1;
+                }
+
+                .card-popout-actions.side-left::before {
+                    left: 100%;
+                }
+
+                .card-popout-actions.side-right::before {
+                    right: 100%;
                 }
 
                 .card-popout-actions.side-left {
@@ -1302,7 +1320,7 @@ export default function SnippetsGalleryDetails() {
                     transform: translate(0, -50%) scale(1) translateZ(-8px);
                     pointer-events: auto;
                     /* Instant pop out with no delay when card is hovered */
-                    transition: opacity 0.3s ease 0s, left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0s, right 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0s;
+                    transition: opacity 0.3s ease 0s, left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0s, right 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0s, pointer-events 0s ease 0s;
                 }
 
                 .card-popout-actions.side-right {
@@ -1318,7 +1336,7 @@ export default function SnippetsGalleryDetails() {
                     transform: translate(0, -50%) scale(1) translateZ(-8px);
                     pointer-events: auto;
                     /* Instant pop out with no delay when card is hovered */
-                    transition: opacity 0.3s ease 0s, left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0s, right 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0s;
+                    transition: opacity 0.3s ease 0s, left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0s, right 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0s, pointer-events 0s ease 0s;
                 }
 
                 .action-btn {
