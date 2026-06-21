@@ -1315,8 +1315,7 @@ export default function SnippetsGalleryDetails() {
 
                 .gallery-card-wrapper:hover .card-popout-actions.side-left {
                     opacity: 1;
-                    right: 100%;
-                    margin-right: 16px;
+                    right: calc(100% + 16px);
                     transform: translate(0, -50%) scale(1) translateZ(-8px);
                     pointer-events: auto;
                     /* Instant pop out with no delay when card is hovered */
@@ -1331,8 +1330,7 @@ export default function SnippetsGalleryDetails() {
 
                 .gallery-card-wrapper:hover .card-popout-actions.side-right {
                     opacity: 1;
-                    left: 100%;
-                    margin-left: 16px;
+                    left: calc(100% + 16px);
                     transform: translate(0, -50%) scale(1) translateZ(-8px);
                     pointer-events: auto;
                     /* Instant pop out with no delay when card is hovered */
@@ -1378,7 +1376,7 @@ export default function SnippetsGalleryDetails() {
                     font-weight: 700;
                     text-transform: uppercase;
                     letter-spacing: 0.05em;
-                    transition: opacity 0.2s ease, width 0.2s ease;
+                    transition: opacity 0.2s ease, width 0.2s ease, margin-left 0.2s ease, margin-right 0.2s ease;
                     white-space: nowrap;
                     overflow: hidden;
                 }
