@@ -1353,6 +1353,7 @@ export default function SnippetsGalleryDetails() {
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
                     transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), padding 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
                     text-decoration: none;
+                    position: relative;
                 }
 
                 :global(.admin-dark-mode) .action-btn {
@@ -1391,20 +1392,25 @@ export default function SnippetsGalleryDetails() {
                 }
 
                 .action-btn .btn-label {
-                    display: inline-block; /* Enable width: 0 and min-width: 0 on span element */
+                    position: absolute;
+                    top: 50%;
+                    transform: translateY(-50%);
                     opacity: 0;
-                    width: 0;
-                    min-width: 0; /* Force label to collapse completely in flex layouts */
+                    visibility: hidden;
                     font-size: 0.75rem;
                     font-weight: 700;
                     text-transform: uppercase;
                     letter-spacing: 0.05em;
-                    transition: opacity 0.2s ease, width 0.2s ease, margin-left 0.2s ease, margin-right 0.2s ease;
                     white-space: nowrap;
                     overflow: hidden;
+                    transition: opacity 0.2s ease, visibility 0.2s ease, left 0.2s ease, right 0.2s ease;
                 }
 
                 /* Directional layouts for popping out left vs right */
+                .side-right .btn-label {
+                    left: 42px;
+                    right: auto;
+                }
                 .side-right .action-btn {
                     flex-direction: row;
                 }
@@ -1414,25 +1420,22 @@ export default function SnippetsGalleryDetails() {
                     padding-left: 14px;
                     padding-right: 0;
                 }
-                .side-right .btn-codes:hover .btn-label {
-                    opacity: 1;
-                    width: auto;
-                    margin-left: 8px;
-                    margin-right: 0;
-                }
                 .side-right .btn-playground:hover {
-                    width: 135px;
+                    width: 148px;
                     justify-content: flex-start;
                     padding-left: 14px;
                     padding-right: 0;
                 }
-                .side-right .btn-playground:hover .btn-label {
+                .side-right .action-btn:hover .btn-label {
                     opacity: 1;
-                    width: auto;
-                    margin-left: 8px;
-                    margin-right: 0;
+                    visibility: visible;
+                    left: 38px;
                 }
 
+                .side-left .btn-label {
+                    right: 42px;
+                    left: auto;
+                }
                 .side-left .action-btn {
                     flex-direction: row-reverse;
                 }
@@ -1442,23 +1445,16 @@ export default function SnippetsGalleryDetails() {
                     padding-right: 14px;
                     padding-left: 0;
                 }
-                .side-left .btn-codes:hover .btn-label {
-                    opacity: 1;
-                    width: auto;
-                    margin-right: 8px;
-                    margin-left: 0;
-                }
                 .side-left .btn-playground:hover {
-                    width: 135px;
+                    width: 148px;
                     justify-content: flex-start;
                     padding-right: 14px;
                     padding-left: 0;
                 }
-                .side-left .btn-playground:hover .btn-label {
+                .side-left .action-btn:hover .btn-label {
                     opacity: 1;
-                    width: auto;
-                    margin-right: 8px;
-                    margin-left: 0;
+                    visibility: visible;
+                    right: 38px;
                 }
 
                 .default-preview-icon {
@@ -1491,9 +1487,9 @@ export default function SnippetsGalleryDetails() {
                     margin: 0 0 0.25rem 0;
                     color: #111;
                     line-height: 1.3;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
+                    white-space: normal;
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
                 }
 
                 .view-link {
