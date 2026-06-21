@@ -1369,6 +1369,26 @@ export default function SnippetsGalleryDetails() {
                     box-shadow: 0 6px 16px rgba(58, 153, 201, 0.3);
                 }
 
+                /* Explicit SVG styling to fix browser 3D rendering and color inheritance quirks */
+                .action-btn :global(svg) {
+                    color: #1a202c !important;
+                    stroke: #1a202c !important;
+                    display: block;
+                    flex-shrink: 0;
+                    position: relative;
+                    z-index: 5;
+                }
+
+                .action-btn:hover :global(svg) {
+                    color: #ffffff !important;
+                    stroke: #ffffff !important;
+                }
+
+                :global(.admin-dark-mode) .action-btn :global(svg) {
+                    color: #f1f5f9 !important;
+                    stroke: #f1f5f9 !important;
+                }
+
                 .action-btn .btn-label {
                     opacity: 0;
                     width: 0;
