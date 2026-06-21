@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200, initial-scale=1.0">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1200px;
+    height: 630px;
+    background: #0B0F19;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    color: #f0f0f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bg-glow {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.15;
+  }
+  .glow-1 { background: #3A99C9; top: -150px; left: -100px; }
+  .glow-2 { background: #7c3aed; bottom: -200px; right: -100px; }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 3rem;
+    align-items: center;
+    padding: 0 4rem;
+    width: 100%;
+  }
+
+  .left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(58, 153, 201, 0.12);
+    color: #3A99C9;
+    padding: 0.4rem 1rem;
+    border-radius: 99px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    width: fit-content;
+  }
+
+  .left h1 {
+    font-size: 2.75rem;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+
+  .left h1 span { color: #3A99C9; }
+
+  .left p {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.6;
+    max-width: 420px;
+  }
+
+  .tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.5);
+  }
+
+  .right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .panel {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+  }
+
+  .panel-title {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 0.75rem;
+  }
+
+  .input-mock {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 0.85rem;
+    font-family: 'SF Mono', monospace;
+  }
+
+  .stats-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.75rem;
+  }
+
+  .stat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.3rem 0.7rem;
+    border-radius: 99px;
+  }
+
+  .stat-pill.red {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+  }
+
+  .stat-pill.green {
+    background: rgba(34, 197, 94, 0.12);
+    color: #22c55e;
+  }
+
+  .log-line {
+    font-family: 'SF Mono', monospace;
+    font-size: 0.7rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    color: rgba(255,255,255,0.4);
+  }
+
+  .log-line .t { color: #3A99C9; }
+  .log-line .v { color: rgba(255,255,255,0.8); }
+
+  .vs-badge {
+    align-self: center;
+    font-size: 0.65rem;
+    font-weight: 900;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .arrow-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .arrow-line {
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(to right, #ef4444, #22c55e);
+    border-radius: 2px;
+  }
+
+  .arrow-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #22c55e;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+  <div class="bg-glow glow-1"></div>
+  <div class="bg-glow glow-2"></div>
+
+  <div class="container">
+    <div class="left">
+      <div class="badge">⚡ Utility</div>
+      <h1>Smart <span>Debounce</span><br>with Cancel & Flush</h1>
+      <p>Advanced debounce utility with .cancel() and .flush() methods. Supports leading and trailing edge execution.</p>
+      <div class="tags">
+        <span class="tag">#debounce</span>
+        <span class="tag">#performance</span>
+        <span class="tag">#search</span>
+        <span class="tag">#api</span>
+        <span class="tag">#throttle</span>
+      </div>
+      <div class="arrow-indicator">
+        <span style="font-size:0.65rem;font-weight:800;color:#ef4444;">47 calls</span>
+        <div class="arrow-line"></div>
+        <span class="arrow-label">3 calls</span>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="panel">
+        <div class="panel-title">Raw Input — No Debounce</div>
+        <div class="input-mock">searching for react hooks_</div>
+        <div class="stats-row">
+          <span class="stat-pill red">● 47 API Calls</span>
+        </div>
+        <div style="margin-top:0.5rem">
+          <div class="log-line"><span class="t">12:04:01</span> → <span class="v">"searching for react hook"</span></div>
+          <div class="log-line"><span class="t">12:04:01</span> → <span class="v">"searching for react hoo"</span></div>
+          <div class="log-line"><span class="t">12:04:00</span> → <span class="v">"searching for react ho"</span></div>
+        </div>
+      </div>
+
+      <div class="vs-badge">— VS —</div>
+
+      <div class="panel" style="border-color: rgba(34, 197, 94, 0.15);">
+        <div class="panel-title" style="color: #22c55e;">Debounced Input — 500ms</div>
+        <div class="input-mock">searching for react hooks_</div>
+        <div class="stats-row">
+          <span class="stat-pill green">● 3 API Calls</span>
+        </div>
+        <div style="margin-top:0.5rem">
+          <div class="log-line"><span class="t">12:04:02</span> → <span class="v">"searching for react hooks"</span></div>
+          <div class="log-line"><span class="t">12:03:58</span> → <span class="v">"searching for"</span></div>
+          <div class="log-line"><span class="t">12:03:55</span> → <span class="v">"searching"</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

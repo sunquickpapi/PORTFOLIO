@@ -56,3 +56,7 @@ Thumbs.db
 Icon
 Icon?
 Icon*
+
+# playground dependencies
+**/node_modules/
+

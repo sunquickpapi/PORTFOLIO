@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Code, Camera, Image as ImageIcon, Phone, Mail, MapPin, Send, Linkedin, Github, Instagram, X, Copy, Check, MousePointer, ExternalLink, RotateCcw } from "lucide-react";
+import { ArrowLeft, Code, Camera, Image as ImageIcon, Phone, Mail, MapPin, Send, Linkedin, Github, Instagram, X, Copy, Check, MousePointer, ExternalLink, RotateCcw, Play } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import Footer from "@/components/Home/Footer";
@@ -489,6 +489,74 @@ export default function SnippetsGalleryDetails() {
         );
     };
 
+    const getPlaygroundUrl = (title: string) => {
+        const t = title.toLowerCase();
+        if (t.includes("clipboard") || t.includes("copy")) {
+            return "/snippet-playground/preview-clipboard.html";
+        }
+        if (t.includes("debounce") || t.includes("cancel")) {
+            return "/snippet-playground/preview-debounce.html";
+        }
+        if (t.includes("glass") || t.includes("morphism")) {
+            return "/snippet-playground/preview-glass.html";
+        }
+        return "/snippet-playground/index.html"; // Default fallback
+    };
+
+    const handleOpenCodes = (e: React.MouseEvent, snippet: Snippet) => {
+        e.stopPropagation();
+        if (isDragging || hasDragged) return; // Prevent selection if dragging canvas
+
+        const cardEl = e.currentTarget.closest(".gallery-card");
+        if (!cardEl) return;
+
+        const rect = cardEl.getBoundingClientRect();
+        const galleryEl = galleryRef.current;
+        if (galleryEl) {
+            const galleryRect = galleryEl.getBoundingClientRect();
+            const cardTopInGallery = rect.top - galleryRect.top;
+            const cardLeftInGallery = rect.left - galleryRect.left;
+
+            let left = cardLeftInGallery + rect.width + 20;
+            let top = cardTopInGallery;
+
+            const popupWidth = 480;
+            const estimatedHeight = 650;
+            const gap = 20;
+
+            const spaceOnRight = galleryRect.width - (cardLeftInGallery + rect.width);
+            const spaceOnLeft = cardLeftInGallery;
+
+            if (spaceOnRight >= popupWidth + gap) {
+                left = cardLeftInGallery + rect.width + gap;
+            } else if (spaceOnLeft >= popupWidth + gap) {
+                left = cardLeftInGallery - popupWidth - gap;
+            } else {
+                left = (galleryRect.width - popupWidth) / 2;
+            }
+
+            left = Math.max(gap, Math.min(galleryRect.width - popupWidth - gap, left));
+
+            if (typeof window !== "undefined") {
+                if (window.innerWidth < 600) {
+                    left = Math.max(gap, (galleryRect.width - popupWidth) / 2);
+                }
+            }
+
+            const cardCenterY = cardTopInGallery + rect.height / 2;
+            top = cardCenterY - estimatedHeight / 2;
+
+            top = Math.max(gap, Math.min(galleryRect.height - estimatedHeight - gap, top));
+
+            setPopupStyle({
+                left: `${left}px`,
+                top: `${top}px`
+            });
+        }
+
+        setSelectedSnippet(snippet);
+    };
+
     return (
         <div className="min-h-screen relative overflow-x-hidden bg-black text-white">
             {/* Hero Section */}
@@ -643,7 +711,7 @@ export default function SnippetsGalleryDetails() {
                             return (
                                 <div
                                     key={snippet.id}
-                                    className="gallery-card-wrapper"
+                                    className="gallery-card-wrapper gallery-card"
                                     style={{
                                         width: `${preset.width}px`,
                                         "--angle": angle,
@@ -652,70 +720,6 @@ export default function SnippetsGalleryDetails() {
                                         "--rotZ": preset.rotateZ,
                                         "--rotY": preset.rotateY
                                     } as React.CSSProperties}
-                                    onClick={(e) => {
-                                        if (hasDragged) {
-                                            e.preventDefault();
-                                            return;
-                                        }
-
-                                        const galleryEl = galleryRef.current;
-                                        if (!galleryEl) return;
-
-                                        // Compute positioning coordinates for floating popup card relative to the gallery container
-                                        const rect = e.currentTarget.getBoundingClientRect();
-                                        const galleryRect = galleryEl.getBoundingClientRect();
-
-                                        const cardLeftInGallery = rect.left - galleryRect.left;
-                                        const cardTopInGallery = rect.top - galleryRect.top;
-
-                                        const popupWidth = 480;
-                                        const gap = 20;
-                                        
-                                        // Estimate height of popup (80% of gallery container height max, approx 580px)
-                                        const estimatedHeight = Math.min(580, galleryRect.height * 0.8);
-
-                                        let left = 0;
-                                        let top = 0;
-
-                                        if (galleryRect.width < 600) {
-                                            // Mobile layout: centered modal card inside gallery bounds
-                                            left = Math.max(16, (galleryRect.width - Math.min(popupWidth, galleryRect.width - 32)) / 2);
-                                            top = Math.max(16, (galleryRect.height - estimatedHeight) / 2);
-                                        } else {
-                                            // Desktop layout: position beside card
-                                            let side = Math.random() < 0.5 ? "left" : "right";
-                                            left = side === "left" ? cardLeftInGallery - popupWidth - gap : cardLeftInGallery + rect.width + gap;
-
-                                            // Boundary check left/right relative to gallery container width
-                                            if (side === "left" && left < gap) {
-                                                left = cardLeftInGallery + rect.width + gap;
-                                                side = "right";
-                                                if (left + popupWidth > galleryRect.width - gap) {
-                                                    left = Math.max(gap, (galleryRect.width - popupWidth) / 2);
-                                                }
-                                            } else if (side === "right" && left + popupWidth > galleryRect.width - gap) {
-                                                left = cardLeftInGallery - popupWidth - gap;
-                                                side = "left";
-                                                if (left < gap) {
-                                                    left = Math.max(gap, (galleryRect.width - popupWidth) / 2);
-                                                }
-                                            }
-
-                                            // Center vertically relative to card
-                                            const cardCenterY = cardTopInGallery + rect.height / 2;
-                                            top = cardCenterY - estimatedHeight / 2;
-
-                                            // Keep within vertical gallery bounds
-                                            top = Math.max(gap, Math.min(galleryRect.height - estimatedHeight - gap, top));
-                                        }
-
-                                        setPopupStyle({
-                                            left: `${left}px`,
-                                            top: `${top}px`
-                                        });
-
-                                        setSelectedSnippet(snippet);
-                                    }}
                                 >
                                     <div className="gallery-card-inner">
                                         <div className="gallery-card-header">
@@ -747,11 +751,33 @@ export default function SnippetsGalleryDetails() {
                                                     <Code size={32} className="opacity-70 stroke-[1.8]" />
                                                 </div>
                                             )}
+
+                                            {/* Hover Actions Overlay */}
+                                            <div className="card-hover-actions">
+                                                <button
+                                                    className="action-btn btn-codes"
+                                                    onClick={(e) => handleOpenCodes(e, snippet)}
+                                                    title="View Codes"
+                                                >
+                                                    <Code size={16} />
+                                                    <span className="btn-label">Codes</span>
+                                                </button>
+                                                <a
+                                                    href={getPlaygroundUrl(snippet.title)}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="action-btn btn-playground"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    title="Open Playground"
+                                                >
+                                                    <Play size={16} />
+                                                    <span className="btn-label">Playground</span>
+                                                </a>
+                                            </div>
                                         </div>
 
                                         <div className="gallery-card-info">
                                             <h3>{snippet.title}</h3>
-                                            <span className="view-link">View Codes →</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1233,8 +1259,104 @@ export default function SnippetsGalleryDetails() {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    pointer-events: none;
                     position: relative;
+                }
+
+                .gallery-card-thumbnail img,
+                .gallery-card-thumbnail video,
+                .gallery-card-thumbnail .default-preview-icon {
+                    pointer-events: none;
+                }
+
+                .card-hover-actions {
+                    position: absolute;
+                    inset: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 12px;
+                    background: rgba(255, 255, 255, 0.15);
+                    backdrop-filter: blur(4px);
+                    -webkit-backdrop-filter: blur(4px);
+                    opacity: 0;
+                    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                    pointer-events: none;
+                    z-index: 5;
+                }
+                
+                :global(.admin-dark-mode) .card-hover-actions {
+                    background: rgba(0, 0, 0, 0.4);
+                }
+
+                .gallery-card:hover .card-hover-actions {
+                    opacity: 1;
+                    pointer-events: auto;
+                }
+
+                .action-btn {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 42px;
+                    height: 42px;
+                    border-radius: 21px;
+                    background: #ffffff;
+                    border: 1px solid rgba(0, 0, 0, 0.08);
+                    color: #1a202c;
+                    cursor: pointer;
+                    overflow: hidden;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+                    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+                    text-decoration: none;
+                }
+
+                :global(.admin-dark-mode) .action-btn {
+                    background: #0f172a;
+                    border-color: rgba(255, 255, 255, 0.08);
+                    color: #f1f5f9;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                }
+
+                .action-btn:hover {
+                    background: #3A99C9;
+                    border-color: #3A99C9;
+                    color: #ffffff;
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 16px rgba(58, 153, 201, 0.3);
+                }
+
+                .action-btn .btn-label {
+                    opacity: 0;
+                    width: 0;
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    transition: opacity 0.2s ease, width 0.2s ease;
+                    white-space: nowrap;
+                    overflow: hidden;
+                }
+
+                .btn-codes:hover {
+                    width: 100px;
+                    justify-content: flex-start;
+                    padding-left: 14px;
+                }
+                .btn-codes:hover .btn-label {
+                    opacity: 1;
+                    width: auto;
+                    margin-left: 8px;
+                }
+
+                .btn-playground:hover {
+                    width: 135px;
+                    justify-content: flex-start;
+                    padding-left: 14px;
+                }
+                .btn-playground:hover .btn-label {
+                    opacity: 1;
+                    width: auto;
+                    margin-left: 8px;
                 }
 
                 .default-preview-icon {

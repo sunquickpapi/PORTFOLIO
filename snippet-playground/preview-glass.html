@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200, initial-scale=1.0">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1200px;
+    height: 630px;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    color: #f0f0f5;
+    overflow: hidden;
+    position: relative;
+    background: #0a0a12;
+  }
+
+  .bg-mesh {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(58, 153, 201, 0.2) 0%, transparent 55%),
+      radial-gradient(ellipse at 80% 30%, rgba(124, 58, 237, 0.18) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 90%, rgba(249, 115, 22, 0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 70%, rgba(236, 72, 153, 0.1) 0%, transparent 45%);
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 4rem;
+    gap: 3rem;
+  }
+
+  .left {
+    flex: 0 0 340px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(249, 115, 22, 0.1);
+    color: #f97316;
+    padding: 0.4rem 1rem;
+    border-radius: 99px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    width: fit-content;
+  }
+
+  .left h1 {
+    font-size: 2.75rem;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+
+  .left h1 span {
+    background: linear-gradient(135deg, #3A99C9, #a855f7, #f97316);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .left p {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.6;
+  }
+
+  .tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.5);
+  }
+
+  .props-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+  }
+
+  .prop {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .prop-key {
+    font-family: 'SF Mono', monospace;
+    color: #a855f7;
+    font-weight: 700;
+    min-width: 110px;
+  }
+
+  .prop-val {
+    color: rgba(255,255,255,0.45);
+  }
+
+  .right {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 1.25rem;
+    height: 460px;
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1.5rem;
+    padding: 1.75rem;
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-card.featured {
+    grid-row: span 2;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow:
+      0 16px 48px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  .card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-icon.blue { background: rgba(58, 153, 201, 0.15); }
+  .card-icon.purple { background: rgba(124, 58, 237, 0.15); }
+  .card-icon.orange { background: rgba(249, 115, 22, 0.15); }
+  .card-icon.pink { background: rgba(236, 72, 153, 0.12); }
+
+  .glass-card h3 {
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+  }
+
+  .glass-card .desc {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.5;
+    flex: 1;
+  }
+
+  .card-tag {
+    display: inline-block;
+    margin-top: 0.75rem;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.2rem 0.55rem;
+    border-radius: 5px;
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.4);
+    width: fit-content;
+  }
+
+  .code-line {
+    font-family: 'SF Mono', monospace;
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.3);
+    background: rgba(0,0,0,0.2);
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    margin-top: 0.75rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .code-line .kw { color: #a855f7; }
+  .code-line .val { color: #22c55e; }
+  .code-line .fn { color: #3A99C9; }
+</style>
+</head>
+<body>
+  <div class="bg-mesh"></div>
+
+  <div class="container">
+    <div class="left">
+      <div class="badge">🎨 Styling</div>
+      <h1>Glass<br><span>Morphism</span><br>Card Component</h1>
+      <p>Production-ready glassmorphism with CSS custom properties for theming. Auto light/dark mode adaptation.</p>
+      <div class="tags">
+        <span class="tag">#glassmorphism</span>
+        <span class="tag">#card</span>
+        <span class="tag">#dark-mode</span>
+        <span class="tag">#css-variables</span>
+        <span class="tag">#blur</span>
+      </div>
+      <div class="props-list">
+        <div class="prop">
+          <span class="prop-key">--glass-bg</span>
+          <span class="prop-val">rgba(255,255,255,0.08)</span>
+        </div>
+        <div class="prop">
+          <span class="prop-key">--glass-blur</span>
+          <span class="prop-val">20px</span>
+        </div>
+        <div class="prop">
+          <span class="prop-key">--glass-border</span>
+          <span class="prop-val">rgba(255,255,255,0.12)</span>
+        </div>
+        <div class="prop">
+          <span class="prop-key">--glass-shadow</span>
+          <span class="prop-val">rgba(0,0,0,0.25)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="glass-card featured">
+        <div>
+          <div class="card-icon blue">🔮</div>
+          <h3>Backdrop Blur</h3>
+          <p class="desc">Native GPU-accelerated frosted glass via CSS backdrop-filter. Smooth 60fps compositing on modern browsers.</p>
+          <div class="code-line"><span class="fn">backdrop-filter</span>: <span class="fn">blur</span>(<span class="val">var(--glass-blur)</span>);</div>
+        </div>
+        <span class="card-tag">CSS Filter</span>
+      </div>
+
+      <div class="glass-card">
+        <div>
+          <div class="card-icon purple">🎨</div>
+          <h3>CSS Variables</h3>
+          <p class="desc">Swap themes with one class toggle via custom properties.</p>
+        </div>
+        <span class="card-tag">Theming</span>
+      </div>
+
+      <div class="glass-card">
+        <div>
+          <div class="card-icon orange">✨</div>
+          <h3>Inner Glow</h3>
+          <p class="desc">Inset box-shadow with white overlay creates premium depth.</p>
+        </div>
+        <span class="card-tag">Box Shadow</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

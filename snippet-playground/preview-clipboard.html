@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200, initial-scale=1.0">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1200px;
+    height: 630px;
+    background: #0B0F19;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    color: #f0f0f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bg-glow {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.12;
+  }
+  .glow-1 { background: #22c55e; top: -200px; right: -100px; }
+  .glow-2 { background: #3A99C9; bottom: -200px; left: -100px; }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 3.5rem;
+    align-items: center;
+    padding: 0 4rem;
+    width: 100%;
+  }
+
+  .left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    padding: 0.4rem 1rem;
+    border-radius: 99px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    width: fit-content;
+  }
+
+  .left h1 {
+    font-size: 2.75rem;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+
+  .left h1 span { color: #22c55e; }
+
+  .left p {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.6;
+    max-width: 400px;
+  }
+
+  .tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.5);
+  }
+
+  .feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+  }
+
+  .feature {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.6);
+  }
+
+  .feature .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #22c55e;
+    flex-shrink: 0;
+  }
+
+  .right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .copy-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 0.9rem 1.25rem;
+    transition: all 0.3s;
+  }
+
+  .copy-row.active {
+    border-color: rgba(34, 197, 94, 0.3);
+    background: rgba(34, 197, 94, 0.04);
+  }
+
+  .copy-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  .copy-icon.npm { background: rgba(203, 56, 55, 0.12); }
+  .copy-icon.git { background: rgba(240, 80, 50, 0.12); }
+  .copy-icon.code { background: rgba(58, 153, 201, 0.12); }
+  .copy-icon.key { background: rgba(124, 58, 237, 0.12); }
+  .copy-icon.cmd { background: rgba(255, 255, 255, 0.06); }
+
+  .copy-text {
+    flex: 1;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.6);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .copy-btn {
+    padding: 0.4rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+
+  .copy-btn.default {
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .copy-btn.copied {
+    background: #22c55e;
+    color: #fff;
+    border: 1px solid #22c55e;
+  }
+
+  .toast-mock {
+    align-self: center;
+    margin-top: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #22c55e;
+    color: #fff;
+    padding: 0.5rem 1.5rem;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    box-shadow: 0 8px 30px rgba(34, 197, 94, 0.3);
+  }
+</style>
+</head>
+<body>
+  <div class="bg-glow glow-1"></div>
+  <div class="bg-glow glow-2"></div>
+
+  <div class="container">
+    <div class="left">
+      <div class="badge">📋 Utility</div>
+      <h1>Copy to<br><span>Clipboard</span><br>with Fallback</h1>
+      <p>Robust clipboard utility using modern Clipboard API with automatic document.execCommand fallback for older browsers.</p>
+      <div class="tags">
+        <span class="tag">#clipboard</span>
+        <span class="tag">#copy</span>
+        <span class="tag">#fallback</span>
+        <span class="tag">#browser-compat</span>
+        <span class="tag">#ux</span>
+      </div>
+      <div class="feature-list">
+        <div class="feature"><div class="dot"></div> Modern Clipboard API (async)</div>
+        <div class="feature"><div class="dot"></div> execCommand fallback for legacy</div>
+        <div class="feature"><div class="dot"></div> Works on HTTP & HTTPS</div>
+        <div class="feature"><div class="dot"></div> Returns Promise&lt;boolean&gt;</div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="copy-row">
+        <div class="copy-icon npm">📦</div>
+        <span class="copy-text">npm install @supabase/supabase-js</span>
+        <span class="copy-btn default">Copy</span>
+      </div>
+      <div class="copy-row">
+        <div class="copy-icon cmd">⚡</div>
+        <span class="copy-text">npx create-next-app@latest my-portfolio</span>
+        <span class="copy-btn default">Copy</span>
+      </div>
+      <div class="copy-row active">
+        <div class="copy-icon git">🔀</div>
+        <span class="copy-text">git push -u origin main</span>
+        <span class="copy-btn copied">✓ Copied</span>
+      </div>
+      <div class="copy-row">
+        <div class="copy-icon code">⚛</div>
+        <span class="copy-text">const [state, setState] = useState&lt;T&gt;(init);</span>
+        <span class="copy-btn default">Copy</span>
+      </div>
+      <div class="copy-row">
+        <div class="copy-icon key">🔑</div>
+        <span class="copy-text">ssh-keygen -t ed25519 -C "naufal@dev"</span>
+        <span class="copy-btn default">Copy</span>
+      </div>
+      <div class="toast-mock">✓ Copied to clipboard!</div>
+    </div>
+  </div>
+</body>
+</html>
