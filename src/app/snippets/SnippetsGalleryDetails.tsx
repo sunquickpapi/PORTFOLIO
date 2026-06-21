@@ -1392,6 +1392,7 @@ export default function SnippetsGalleryDetails() {
                 .action-btn .btn-label {
                     opacity: 0;
                     width: 0;
+                    min-width: 0; /* Force label to collapse completely in flex layouts */
                     font-size: 0.75rem;
                     font-weight: 700;
                     text-transform: uppercase;
