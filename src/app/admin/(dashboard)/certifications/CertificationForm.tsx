@@ -12,7 +12,8 @@ import {
     Link as LinkIcon,
     Image as ImageIcon,
     ExternalLink,
-    ShieldCheck
+    ShieldCheck,
+    Upload
 } from "lucide-react";
 import Link from "next/link";
 
@@ -23,6 +24,7 @@ interface CertificationFormProps {
 export default function CertificationForm({ certId }: CertificationFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [uploadingField, setUploadingField] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         title: "",
         issuer: "",
@@ -30,6 +32,43 @@ export default function CertificationForm({ certId }: CertificationFormProps) {
         credential_url: "",
         image_url: "",
     });
+
+    const handleFileUpload = async (
+        e: React.ChangeEvent<HTMLInputElement>,
+        fieldName: "credential_url" | "image_url"
+    ) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploadingField(fieldName);
+
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", file);
+
+        try {
+            const res = await fetch("/api/upload", {
+                method: "POST",
+                body: uploadFormData,
+            });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || "Upload failed");
+            }
+
+            const data = await res.json();
+            setFormData((prev) => ({ ...prev, [fieldName]: data.url }));
+        } catch (error: any) {
+            console.error("Error uploading file:", error);
+            alert(error.message || "Failed to upload file");
+        } finally {
+            setUploadingField(null);
+        }
+    };
+
+    const handleRemoveUpload = (fieldName: "credential_url" | "image_url") => {
+        setFormData((prev) => ({ ...prev, [fieldName]: "" }));
+    };
 
     useEffect(() => {
         if (certId) {
@@ -197,6 +236,39 @@ export default function CertificationForm({ certId }: CertificationFormProps) {
                                     </a>
                                 )}
                             </div>
+                            <div className="file-upload-wrapper">
+                                <label className="file-upload-btn-label">
+                                    <input
+                                        type="file"
+                                        accept="application/pdf,image/*"
+                                        onChange={(e) => handleFileUpload(e, "credential_url")}
+                                        style={{ display: "none" }}
+                                        disabled={uploadingField === "credential_url"}
+                                    />
+                                    <span className="file-upload-btn-text">
+                                        {uploadingField === "credential_url" ? (
+                                            <>
+                                                <div className="inline-spinner"></div>
+                                                Uploading file...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Upload size={13} style={{ marginRight: '4px' }} />
+                                                Add from file
+                                            </>
+                                        )}
+                                    </span>
+                                </label>
+                                {formData.credential_url && formData.credential_url.startsWith("/uploads/") && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveUpload("credential_url")}
+                                        className="remove-upload-btn"
+                                    >
+                                        Remove File
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         <div className="input-group">
@@ -211,6 +283,39 @@ export default function CertificationForm({ certId }: CertificationFormProps) {
                                 value={formData.image_url || ""}
                                 onChange={handleChange}
                             />
+                            <div className="file-upload-wrapper">
+                                <label className="file-upload-btn-label">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => handleFileUpload(e, "image_url")}
+                                        style={{ display: "none" }}
+                                        disabled={uploadingField === "image_url"}
+                                    />
+                                    <span className="file-upload-btn-text">
+                                        {uploadingField === "image_url" ? (
+                                            <>
+                                                <div className="inline-spinner"></div>
+                                                Uploading image...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Upload size={13} style={{ marginRight: '4px' }} />
+                                                Add from file
+                                            </>
+                                        )}
+                                    </span>
+                                </label>
+                                {formData.image_url && formData.image_url.startsWith("/uploads/") && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveUpload("image_url")}
+                                        className="remove-upload-btn"
+                                    >
+                                        Remove File
+                                    </button>
+                                )}
+                            </div>
                             <p className="helper-text">
                                 <ShieldCheck size={10} style={{ marginRight: '4px' }} />
                                 Used for the hover effect in your About page
@@ -420,6 +525,75 @@ export default function CertificationForm({ certId }: CertificationFormProps) {
                 @keyframes spin { to { transform: rotate(360deg); } }
 
                 .relative { position: relative; }
+
+                .file-upload-wrapper {
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                    margin-top: 0.25rem;
+                }
+
+                .file-upload-btn-label {
+                    display: inline-flex;
+                    cursor: pointer;
+                }
+
+                .file-upload-btn-text {
+                    display: inline-flex;
+                    align-items: center;
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                    color: #1B4F72;
+                    background: rgba(27, 79, 114, 0.06);
+                    padding: 0.4rem 0.85rem;
+                    border-radius: 8px;
+                    border: 1px solid rgba(27, 79, 114, 0.1);
+                    transition: all 0.2s ease;
+                }
+
+                .file-upload-btn-text:hover {
+                    background: rgba(27, 79, 114, 0.12);
+                    border-color: rgba(27, 79, 114, 0.25);
+                }
+
+                :global(.admin-dark-mode) .file-upload-btn-text {
+                    color: #38bdf8;
+                    background: rgba(56, 189, 248, 0.06);
+                    border-color: rgba(56, 189, 248, 0.1);
+                }
+
+                :global(.admin-dark-mode) .file-upload-btn-text:hover {
+                    background: rgba(56, 189, 248, 0.12);
+                    border-color: rgba(56, 189, 248, 0.25);
+                }
+
+                .remove-upload-btn {
+                    font-size: 0.72rem;
+                    font-weight: 700;
+                    color: #ef4444;
+                    background: rgba(239, 68, 68, 0.06);
+                    border: 1px solid rgba(239, 68, 68, 0.1);
+                    padding: 0.4rem 0.85rem;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                }
+
+                .remove-upload-btn:hover {
+                    background: rgba(239, 68, 68, 0.12);
+                    border-color: rgba(239, 68, 68, 0.25);
+                }
+
+                .inline-spinner {
+                    width: 12px;
+                    height: 12px;
+                    border: 2px solid rgba(27, 79, 114, 0.2);
+                    border-top-color: currentColor;
+                    border-radius: 50%;
+                    animation: spin 0.8s linear infinite;
+                    margin-right: 6px;
+                    display: inline-block;
+                }
             `}</style>
         </div>
     );

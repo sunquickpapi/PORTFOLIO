@@ -11,7 +11,8 @@ import {
     FileText,
     MessageSquare,
     BookOpen,
-    Sparkles
+    Sparkles,
+    Code
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -97,6 +98,13 @@ export default function AdminDashboard() {
                     link="/admin/blogs"
                     icon={BookOpen}
                     color="#75C2E6"
+                />
+                <DashboardCard
+                    title="Snippets"
+                    description="Manage code snippets."
+                    link="/admin/snippets"
+                    icon={Code}
+                    color="#1B4F72"
                 />
             </div>
 

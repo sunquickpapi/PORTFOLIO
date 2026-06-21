@@ -19,7 +19,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Sun,
-    Moon
+    Moon,
+    Code
 } from "lucide-react";
 
 const navItems = [
@@ -33,6 +34,7 @@ const navItems = [
     { name: "Skills", href: "/admin/skills", icon: Briefcase },
     { name: "Testimonials", href: "/admin/testimonials", icon: MessageSquare },
     { name: "Blog", href: "/admin/blogs", icon: BookOpen },
+    { name: "Snippets", href: "/admin/snippets", icon: Code },
 ];
 
 export default function AdminSidebar() {

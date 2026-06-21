@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, User, Code, Layout, MessageSquare, BookOpen, Mail, Github, Linkedin, FileText, Sun, Moon, Menu, X, ChevronUp } from "lucide-react";
+import { Home, User, Code, Layout, MessageSquare, BookOpen, Mail, Github, Linkedin, FileText, Sun, Moon, Menu, X, ChevronUp, FileCode } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -35,7 +35,7 @@ export default function Navigation() {
         const observer = new IntersectionObserver(observerCallback, observerOptions);
 
         // Sections to observe
-        const sections = ["home", "about", "tech-stack", "projects", "testimonials", "blog-latest", "contact"];
+        const sections = ["home", "about", "tech-stack", "projects", "snippets", "testimonials", "blog-latest", "contact"];
         sections.forEach((id) => {
             const el = document.getElementById(id);
             if (el) observer.observe(el);
@@ -67,6 +67,7 @@ export default function Navigation() {
         { id: "about", label: "About Me", icon: User },
         { id: "tech-stack", label: "TechStack", icon: Code },
         { id: "projects", label: "Project", icon: Layout },
+        { id: "snippets", label: "Snippets", icon: FileCode },
         { id: "testimonials", label: "Testimonials", icon: MessageSquare },
         { id: "blog-latest", label: "Blog", icon: BookOpen },
         { id: "contact", label: "Contacts", icon: Mail },

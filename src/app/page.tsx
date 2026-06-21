@@ -4,6 +4,7 @@ import About from "@/components/Home/About";
 import Services from "@/components/Home/Services";
 import TechStack from "@/components/Home/TechStack";
 import Projects from "@/components/Home/Projects";
+import Snippets from "@/components/Home/Snippets";
 
 import Testimonials from "@/components/Home/Testimonials";
 import Blog from "@/components/Home/Blog";
@@ -19,6 +20,7 @@ export default function Home() {
       <Services />
       <TechStack />
       <Projects />
+      <Snippets />
       <Testimonials />
       <Blog />
 
