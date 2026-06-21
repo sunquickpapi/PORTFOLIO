@@ -507,8 +507,9 @@ export default function SnippetsGalleryDetails() {
         e.stopPropagation();
         if (isDragging || hasDragged) return; // Prevent selection if dragging canvas
 
-        const cardEl = e.currentTarget.closest(".gallery-card");
-        if (!cardEl) return;
+        const cardWrapper = e.currentTarget.closest(".gallery-card");
+        if (!cardWrapper) return;
+        const cardEl = cardWrapper.querySelector(".gallery-card-inner") || cardWrapper;
 
         const rect = cardEl.getBoundingClientRect();
         const galleryEl = galleryRef.current;
@@ -751,34 +752,34 @@ export default function SnippetsGalleryDetails() {
                                                     <Code size={32} className="opacity-70 stroke-[1.8]" />
                                                 </div>
                                             )}
-
-                                            {/* Hover Actions Overlay */}
-                                            <div className="card-hover-actions">
-                                                <button
-                                                    className="action-btn btn-codes"
-                                                    onClick={(e) => handleOpenCodes(e, snippet)}
-                                                    title="View Codes"
-                                                >
-                                                    <Code size={16} />
-                                                    <span className="btn-label">Codes</span>
-                                                </button>
-                                                <a
-                                                    href={getPlaygroundUrl(snippet.title)}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="action-btn btn-playground"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    title="Open Playground"
-                                                >
-                                                    <Play size={16} />
-                                                    <span className="btn-label">Playground</span>
-                                                </a>
-                                            </div>
                                         </div>
 
                                         <div className="gallery-card-info">
                                             <h3>{snippet.title}</h3>
                                         </div>
+                                    </div>
+
+                                    {/* Hover Actions Popout Wrapper (beside card, behind card) */}
+                                    <div className={`card-popout-actions side-${(snippet.title.charCodeAt(0) + idx) % 2 === 0 ? "left" : "right"}`}>
+                                        <button
+                                            className="action-btn btn-codes"
+                                            onClick={(e) => handleOpenCodes(e, snippet)}
+                                            title="View Codes"
+                                        >
+                                            <Code size={16} />
+                                            <span className="btn-label">Codes</span>
+                                        </button>
+                                        <a
+                                            href={getPlaygroundUrl(snippet.title)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="action-btn btn-playground"
+                                            onClick={(e) => e.stopPropagation()}
+                                            title="Open Playground"
+                                        >
+                                            <Play size={16} />
+                                            <span className="btn-label">Playground</span>
+                                        </a>
                                     </div>
                                 </div>
                             );
@@ -1224,6 +1225,8 @@ export default function SnippetsGalleryDetails() {
                     display: flex;
                     flex-direction: column;
                     gap: 0.75rem;
+                    position: relative;
+                    z-index: 2;
                 }
 
                 .gallery-card-header {
@@ -1268,28 +1271,45 @@ export default function SnippetsGalleryDetails() {
                     pointer-events: none;
                 }
 
-                .card-hover-actions {
+                /* Popout actions positioned beside the card, appearing from behind */
+                .card-popout-actions {
                     position: absolute;
-                    inset: 0;
+                    top: 50%;
                     display: flex;
-                    align-items: center;
-                    justify-content: center;
+                    flex-direction: column;
                     gap: 12px;
-                    background: rgba(255, 255, 255, 0.15);
-                    backdrop-filter: blur(4px);
-                    -webkit-backdrop-filter: blur(4px);
                     opacity: 0;
-                    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
                     pointer-events: none;
-                    z-index: 5;
-                }
-                
-                :global(.admin-dark-mode) .card-hover-actions {
-                    background: rgba(0, 0, 0, 0.4);
+                    transition: opacity 0.3s ease, left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), right 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+                    z-index: 1;
+                    transform-style: preserve-3d;
                 }
 
-                .gallery-card:hover .card-hover-actions {
+                .card-popout-actions.side-left {
+                    right: 40%;
+                    transform: translate(50%, -50%) scale(0.6) translateZ(-8px);
+                    align-items: flex-end;
+                }
+
+                .gallery-card-wrapper:hover .card-popout-actions.side-left {
                     opacity: 1;
+                    right: 100%;
+                    margin-right: 16px;
+                    transform: translate(0, -50%) scale(1) translateZ(-8px);
+                    pointer-events: auto;
+                }
+
+                .card-popout-actions.side-right {
+                    left: 40%;
+                    transform: translate(-50%, -50%) scale(0.6) translateZ(-8px);
+                    align-items: flex-start;
+                }
+
+                .gallery-card-wrapper:hover .card-popout-actions.side-right {
+                    opacity: 1;
+                    left: 100%;
+                    margin-left: 16px;
+                    transform: translate(0, -50%) scale(1) translateZ(-8px);
                     pointer-events: auto;
                 }
 
@@ -1337,26 +1357,61 @@ export default function SnippetsGalleryDetails() {
                     overflow: hidden;
                 }
 
-                .btn-codes:hover {
+                /* Directional layouts for popping out left vs right */
+                .side-right .action-btn {
+                    flex-direction: row;
+                }
+                .side-right .btn-codes:hover {
                     width: 100px;
                     justify-content: flex-start;
                     padding-left: 14px;
+                    padding-right: 0;
                 }
-                .btn-codes:hover .btn-label {
+                .side-right .btn-codes:hover .btn-label {
                     opacity: 1;
                     width: auto;
                     margin-left: 8px;
+                    margin-right: 0;
                 }
-
-                .btn-playground:hover {
+                .side-right .btn-playground:hover {
                     width: 135px;
                     justify-content: flex-start;
                     padding-left: 14px;
+                    padding-right: 0;
                 }
-                .btn-playground:hover .btn-label {
+                .side-right .btn-playground:hover .btn-label {
                     opacity: 1;
                     width: auto;
                     margin-left: 8px;
+                    margin-right: 0;
+                }
+
+                .side-left .action-btn {
+                    flex-direction: row-reverse;
+                }
+                .side-left .btn-codes:hover {
+                    width: 100px;
+                    justify-content: flex-start;
+                    padding-right: 14px;
+                    padding-left: 0;
+                }
+                .side-left .btn-codes:hover .btn-label {
+                    opacity: 1;
+                    width: auto;
+                    margin-right: 8px;
+                    margin-left: 0;
+                }
+                .side-left .btn-playground:hover {
+                    width: 135px;
+                    justify-content: flex-start;
+                    padding-right: 14px;
+                    padding-left: 0;
+                }
+                .side-left .btn-playground:hover .btn-label {
+                    opacity: 1;
+                    width: auto;
+                    margin-right: 8px;
+                    margin-left: 0;
                 }
 
                 .default-preview-icon {
