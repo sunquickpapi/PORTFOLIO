@@ -1349,8 +1349,9 @@ export default function SnippetsGalleryDetails() {
                     color: #1a202c;
                     cursor: pointer;
                     overflow: hidden;
+                    padding: 0; /* Override any global button padding */
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-                    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+                    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), padding 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
                     text-decoration: none;
                 }
 
@@ -1390,6 +1391,7 @@ export default function SnippetsGalleryDetails() {
                 }
 
                 .action-btn .btn-label {
+                    display: inline-block; /* Enable width: 0 and min-width: 0 on span element */
                     opacity: 0;
                     width: 0;
                     min-width: 0; /* Force label to collapse completely in flex layouts */
