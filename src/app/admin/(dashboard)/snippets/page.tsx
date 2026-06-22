@@ -823,6 +823,23 @@ export default function SnippetsPage() {
                     transition: all 0.3s ease;
                 }
 
+                .category-section {
+                    border-radius: 1.5rem;
+                }
+
+                .category-section .section-header {
+                    padding: 1.25rem 2rem;
+                }
+
+                .category-section .section-title {
+                    font-size: 1.2rem;
+                    font-weight: 800;
+                }
+
+                .category-section .snippets-grid {
+                    padding: 1.5rem 2rem;
+                }
+
                 .section-header {
                     padding: 2rem 2.5rem;
                     display: flex;
@@ -1296,6 +1313,8 @@ export default function SnippetsPage() {
                     .snippets-hub-wrapper { padding: 1.5rem; }
                     .glass-section { border-radius: 1.5rem; }
                     .section-header { padding: 1.5rem; }
+                    .category-section .section-header { padding: 1rem 1.25rem; }
+                    .category-section .snippets-grid { padding: 1.25rem; }
                     .snippets-grid { padding: 1.5rem; grid-template-columns: 1fr; }
                     .btn-premium-add { width: 100%; justify-content: center; }
                     .form-group-row { flex-direction: column; gap: 1.25rem; }
