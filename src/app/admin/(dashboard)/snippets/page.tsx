@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, Code, Sparkles, X, Save, Layout, Image as ImageIcon } from "lucide-react";
+import { Plus, Edit, Trash2, Code, Sparkles, X, Save, Layout, Image as ImageIcon, ChevronDown, ChevronRight } from "lucide-react";
 
 interface Snippet {
     id: string;
@@ -16,6 +16,7 @@ interface Snippet {
 
 export default function SnippetsPage() {
     const [snippets, setSnippets] = useState<Snippet[]>([]);
+    const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
     const [settings, setSettings] = useState({
         hero_title: "",
         hero_subtitle: "",
@@ -237,6 +238,13 @@ export default function SnippetsPage() {
         }
     };
 
+    const toggleCategory = (cat: string) => {
+        setExpandedCategories((prev) => ({
+            ...prev,
+            [cat]: !prev[cat],
+        }));
+    };
+
     const categories = Array.from(new Set(snippets.map((s) => s.category || "utility")));
 
     if (loading) return (
@@ -449,11 +457,16 @@ export default function SnippetsPage() {
                                 <div className="categories-stack">
                                     {categories.map((cat) => {
                                         const filteredSnippets = snippets.filter((s) => (s.category || "utility") === cat);
+                                        const isExpanded = !!expandedCategories[cat];
                                         return (
                                             <div key={cat} className="glass-section category-section mb-8">
-                                                <div className="section-header">
+                                                <div 
+                                                    className="section-header cursor-pointer select-none hover:bg-slate-50/50 transition-colors duration-150"
+                                                    onClick={() => toggleCategory(cat)}
+                                                    style={{ cursor: "pointer", borderBottom: isExpanded ? "1px solid rgba(0,0,0,0.03)" : "none" }}
+                                                >
                                                     <div className="section-title-box">
-                                                        <Code size={22} color="#1B4F72" />
+                                                        {isExpanded ? <ChevronDown size={22} color="#1B4F72" /> : <ChevronRight size={22} color="#1B4F72" />}
                                                         <h2 className="section-title" style={{ textTransform: 'capitalize' }}>{cat}</h2>
                                                     </div>
                                                     <span className="item-count">
@@ -461,34 +474,36 @@ export default function SnippetsPage() {
                                                     </span>
                                                 </div>
 
-                                                <div className="snippets-grid">
-                                                    {filteredSnippets.map((snippet) => (
-                                                        <div key={snippet.id} className="snippet-card">
-                                                            <div className="card-info">
-                                                                <div className="title-group">
-                                                                    <span className="lang-tag">{snippet.language}</span>
-                                                                    <h3 className="snippet-title">{snippet.title}</h3>
-                                                                </div>
-                                                                <p className="snippet-desc">{snippet.description}</p>
-                                                                {snippet.tags && (
-                                                                    <div className="tags-container">
-                                                                        {snippet.tags.split(",").map((tag) => (
-                                                                            <span key={tag} className="tag">#{tag.trim()}</span>
-                                                                        ))}
+                                                {isExpanded && (
+                                                    <div className="snippets-grid">
+                                                        {filteredSnippets.map((snippet) => (
+                                                            <div key={snippet.id} className="snippet-card">
+                                                                <div className="card-info">
+                                                                    <div className="title-group">
+                                                                        <span className="lang-tag">{snippet.language}</span>
+                                                                        <h3 className="snippet-title">{snippet.title}</h3>
                                                                     </div>
-                                                                )}
+                                                                    <p className="snippet-desc">{snippet.description}</p>
+                                                                    {snippet.tags && (
+                                                                        <div className="tags-container">
+                                                                            {snippet.tags.split(",").map((tag) => (
+                                                                                <span key={tag} className="tag">#{tag.trim()}</span>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="card-actions">
+                                                                    <button onClick={() => handleOpenEditModal(snippet)} className="icon-btn edit" title="Edit Snippet">
+                                                                        <Edit size={18} />
+                                                                    </button>
+                                                                    <button onClick={() => handleDelete(snippet.id)} className="icon-btn delete" title="Delete Snippet">
+                                                                        <Trash2 size={18} />
+                                                                    </button>
+                                                                </div>
                                                             </div>
-                                                            <div className="card-actions">
-                                                                <button onClick={() => handleOpenEditModal(snippet)} className="icon-btn edit" title="Edit Snippet">
-                                                                    <Edit size={18} />
-                                                                </button>
-                                                                <button onClick={() => handleDelete(snippet.id)} className="icon-btn delete" title="Delete Snippet">
-                                                                    <Trash2 size={18} />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
                                         );
                                     })}
