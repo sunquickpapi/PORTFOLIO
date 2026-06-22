@@ -459,14 +459,14 @@ export default function SnippetsPage() {
                                         const filteredSnippets = snippets.filter((s) => (s.category || "utility") === cat);
                                         const isExpanded = !!expandedCategories[cat];
                                         return (
-                                            <div key={cat} className="glass-section category-section mb-4">
+                                            <div key={cat} className="glass-section category-section mb-2">
                                                 <div 
                                                     className="section-header cursor-pointer select-none hover:bg-slate-50/50 transition-colors duration-150"
                                                     onClick={() => toggleCategory(cat)}
                                                     style={{ cursor: "pointer", borderBottom: isExpanded ? "1px solid rgba(0,0,0,0.03)" : "none" }}
                                                 >
                                                     <div className="section-title-box">
-                                                        {isExpanded ? <ChevronDown size={18} color="#1B4F72" /> : <ChevronRight size={18} color="#1B4F72" />}
+                                                        {isExpanded ? <ChevronDown size={16} color="#1B4F72" /> : <ChevronRight size={16} color="#1B4F72" />}
                                                         <h2 className="section-title" style={{ textTransform: 'capitalize' }}>{cat}</h2>
                                                     </div>
                                                     <span className="item-count">
@@ -824,25 +824,29 @@ export default function SnippetsPage() {
                 }
 
                 .category-section {
-                    border-radius: 1rem;
+                    border-radius: 0.75rem;
                 }
 
                 .category-section .section-header {
-                    padding: 0.75rem 1.5rem;
+                    padding: 0.45rem 1.25rem;
                 }
 
                 .category-section .section-title {
-                    font-size: 1.05rem;
+                    font-size: 0.95rem;
                     font-weight: 750;
                 }
 
+                .category-section .section-title-box {
+                    gap: 0.5rem;
+                }
+
                 .category-section .snippets-grid {
-                    padding: 1.25rem 1.5rem;
+                    padding: 1rem 1.25rem;
                 }
 
                 .category-section .item-count {
-                    font-size: 0.75rem;
-                    padding: 0.2rem 0.5rem;
+                    font-size: 0.7rem;
+                    padding: 0.15rem 0.45rem;
                 }
 
                 .section-header {
@@ -1318,8 +1322,8 @@ export default function SnippetsPage() {
                     .snippets-hub-wrapper { padding: 1.5rem; }
                     .glass-section { border-radius: 1.5rem; }
                     .section-header { padding: 1.5rem; }
-                    .category-section .section-header { padding: 0.75rem 1rem; }
-                    .category-section .snippets-grid { padding: 1rem; }
+                    .category-section .section-header { padding: 0.45rem 0.85rem; }
+                    .category-section .snippets-grid { padding: 0.85rem; }
                     .snippets-grid { padding: 1.5rem; grid-template-columns: 1fr; }
                     .btn-premium-add { width: 100%; justify-content: center; }
                     .form-group-row { flex-direction: column; gap: 1.25rem; }
