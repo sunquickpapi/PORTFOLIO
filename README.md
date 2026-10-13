@@ -4,7 +4,8 @@ My personal portfolio site with its own admin dashboard. Every section of the si
 
 **Live:** [fvlnzm.my](https://fvlnzm.my)
 
-![Uploading image.png…]()
+<img width="1708" height="977" alt="image" src="https://github.com/user-attachments/assets/a708f554-c941-40dd-afaa-40e2d11573d7" />
+
 
 ## Features
 
