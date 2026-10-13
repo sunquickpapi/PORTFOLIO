@@ -4,7 +4,7 @@ My personal portfolio site with its own admin dashboard. Every section of the si
 
 **Live:** [fvlnzm.my](https://fvlnzm.my)
 
-<!-- Add a screenshot: drag an image into this file on GitHub and replace this comment -->
+![Uploading image.png…]()
 
 ## Features
 
