@@ -259,6 +259,7 @@ export default function SkillsPage() {
                     justify-content: space-between;
                     align-items: center;
                     border-bottom: 1px solid rgba(0,0,0,0.03);
+                    margin: 0;
                 }
 
                 .section-title-box {

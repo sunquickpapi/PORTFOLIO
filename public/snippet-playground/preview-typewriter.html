@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200, initial-scale=1.0">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1200px;
+    height: 630px;
+    background: #F8FAFC;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    color: #0F172A;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bg-glow {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.05;
+  }
+  .glow-1 { background: #f97316; top: -200px; left: 200px; }
+  .glow-2 { background: #3A99C9; bottom: -200px; right: 200px; }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 3.5rem;
+    align-items: center;
+    padding: 0 4rem;
+    width: 100%;
+  }
+
+  .left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(249, 115, 22, 0.1);
+    color: #ea580c;
+    padding: 0.4rem 1rem;
+    border-radius: 99px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    width: fit-content;
+  }
+
+  h1 {
+    font-size: 2.75rem;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+  h1 span { color: #ea580c; }
+
+  .desc {
+    font-size: 1rem;
+    color: #475569;
+    line-height: 1.6;
+    max-width: 400px;
+  }
+
+  .tags { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .tag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.03);
+    border: 1px solid rgba(0,0,0,0.06);
+    color: #64748b;
+  }
+
+  .right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2.5rem;
+  }
+
+  .demo-block {
+    width: 100%;
+    background: rgba(255,255,255,0.8);
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+  }
+
+  .demo-label {
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #94a3b8;
+    margin-bottom: 0.75rem;
+  }
+
+  .typewriter {
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 3px solid #3A99C9;
+    font-family: 'SF Mono', 'Geist Mono', monospace;
+    font-weight: 700;
+    width: 0;
+  }
+
+  .tw-1 {
+    font-size: 1.5rem;
+    color: #0f172a;
+    animation: typing1 2.5s steps(22, end) forwards, blink 0.75s step-end infinite;
+  }
+
+  .tw-2 {
+    font-size: 1rem;
+    color: #3A99C9;
+    animation: typing2 2s steps(28, end) 2.8s forwards, blink 0.75s step-end infinite;
+    border-right-color: #ea580c;
+  }
+
+  .tw-3 {
+    font-size: 0.85rem;
+    color: #64748b;
+    animation: typing3 1.5s steps(20, end) 5.2s forwards, blink 0.75s step-end infinite;
+    border-right-color: #22c55e;
+  }
+
+  @keyframes typing1 { from { width: 0; } to { width: 22ch; } }
+  @keyframes typing2 { from { width: 0; } to { width: 28ch; } }
+  @keyframes typing3 { from { width: 0; } to { width: 20ch; } }
+  @keyframes blink { 50% { border-color: transparent; } }
+
+  .speed-pills {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  .speed-pill {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 0.3rem 0.75rem;
+    border-radius: 99px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .speed-pill.slow { background: rgba(58, 153, 201, 0.08); color: #3A99C9; }
+  .speed-pill.normal { background: rgba(249, 115, 22, 0.08); color: #ea580c; }
+  .speed-pill.fast { background: rgba(34, 197, 94, 0.08); color: #16a34a; }
+</style>
+</head>
+<body>
+  <div class="bg-glow glow-1"></div>
+  <div class="bg-glow glow-2"></div>
+  <div class="container">
+    <div class="left">
+      <div class="badge">⌨️ Animation</div>
+      <h1>Typewriter<br><span>Text Effect</span></h1>
+      <p class="desc">Pure CSS typewriter animation with blinking cursor. Types character by character with customizable speed variants.</p>
+      <div class="tags">
+        <span class="tag">#typewriter</span>
+        <span class="tag">#text</span>
+        <span class="tag">#typing</span>
+        <span class="tag">#cursor</span>
+        <span class="tag">#css-only</span>
+      </div>
+    </div>
+    <div class="right">
+      <div class="demo-block">
+        <div class="demo-label">Normal Speed — 2.5s</div>
+        <span class="typewriter tw-1">Hello, I'm a developer.</span>
+      </div>
+      <div class="demo-block">
+        <div class="demo-label">Medium Speed — 2s (delayed start)</div>
+        <span class="typewriter tw-2">Building things that matter.</span>
+      </div>
+      <div class="demo-block">
+        <div class="demo-label">Fast Speed — 1.5s (delayed start)</div>
+        <span class="typewriter tw-3">Let's create magic.</span>
+      </div>
+      <div class="speed-pills">
+        <span class="speed-pill slow">2.5s Slow</span>
+        <span class="speed-pill normal">2.0s Normal</span>
+        <span class="speed-pill fast">1.5s Fast</span>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

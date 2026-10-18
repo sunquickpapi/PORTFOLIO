@@ -8,9 +8,9 @@
   body {
     width: 1200px;
     height: 630px;
-    background: #0B0F19;
+    background: #F8FAFC;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-    color: #f0f0f5;
+    color: #0F172A;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -24,7 +24,7 @@
     height: 500px;
     border-radius: 50%;
     filter: blur(120px);
-    opacity: 0.12;
+    opacity: 0.06;
   }
   .glow-1 { background: #22c55e; top: -200px; right: -100px; }
   .glow-2 { background: #3A99C9; bottom: -200px; left: -100px; }
@@ -51,7 +51,7 @@
     align-items: center;
     gap: 0.4rem;
     background: rgba(34, 197, 94, 0.1);
-    color: #22c55e;
+    color: #16a34a;
     padding: 0.4rem 1rem;
     border-radius: 99px;
     font-size: 0.7rem;
@@ -68,11 +68,11 @@
     line-height: 1.15;
   }
 
-  .left h1 span { color: #22c55e; }
+  .left h1 span { color: #16a34a; }
 
   .left p {
     font-size: 1rem;
-    color: rgba(255,255,255,0.5);
+    color: #475569;
     line-height: 1.6;
     max-width: 400px;
   }
@@ -88,32 +88,51 @@
     font-weight: 700;
     padding: 0.3rem 0.7rem;
     border-radius: 6px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.08);
-    color: rgba(255,255,255,0.5);
+    background: rgba(0,0,0,0.03);
+    border: 1px solid rgba(0,0,0,0.06);
+    color: #64748b;
   }
 
-  .feature-list {
+  .props-list {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: 1rem;
     margin-top: 0.5rem;
   }
 
-  .feature {
+  .prop-control {
     display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    font-size: 0.8rem;
-    color: rgba(255,255,255,0.6);
+    flex-direction: column;
+    gap: 0.35rem;
   }
 
-  .feature .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #22c55e;
-    flex-shrink: 0;
+  .prop-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+  }
+
+  .prop-key {
+    font-family: 'SF Mono', monospace;
+    color: #16a34a;
+    font-weight: 700;
+  }
+
+  .text-input {
+    width: 100%;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.8rem;
+    color: #334155;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .text-input:focus {
+    border-color: #16a34a;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
   }
 
   .right {
@@ -127,16 +146,22 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.07);
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 14px;
     padding: 0.9rem 1.25rem;
     transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+  }
+
+  .copy-row:hover {
+    border-color: rgba(0, 0, 0, 0.12);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
   }
 
   .copy-row.active {
-    border-color: rgba(34, 197, 94, 0.3);
-    background: rgba(34, 197, 94, 0.04);
+    border-color: rgba(34, 197, 94, 0.35);
+    background: rgba(34, 197, 94, 0.03);
   }
 
   .copy-icon {
@@ -150,17 +175,17 @@
     flex-shrink: 0;
   }
 
-  .copy-icon.npm { background: rgba(203, 56, 55, 0.12); }
-  .copy-icon.git { background: rgba(240, 80, 50, 0.12); }
-  .copy-icon.code { background: rgba(58, 153, 201, 0.12); }
-  .copy-icon.key { background: rgba(124, 58, 237, 0.12); }
-  .copy-icon.cmd { background: rgba(255, 255, 255, 0.06); }
+  .copy-icon.npm { background: rgba(203, 56, 55, 0.08); }
+  .copy-icon.git { background: rgba(240, 80, 50, 0.08); }
+  .copy-icon.code { background: rgba(58, 153, 201, 0.08); }
+  .copy-icon.key { background: rgba(124, 58, 237, 0.08); }
+  .copy-icon.cmd { background: rgba(0, 0, 0, 0.04); }
 
   .copy-text {
     flex: 1;
     font-family: 'SF Mono', 'Fira Code', monospace;
     font-size: 0.78rem;
-    color: rgba(255,255,255,0.6);
+    color: #334155;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -174,12 +199,21 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     flex-shrink: 0;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s;
   }
 
   .copy-btn.default {
-    background: rgba(255,255,255,0.06);
-    color: rgba(255,255,255,0.5);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.03);
+    color: #475569;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+
+  .copy-btn.default:hover {
+    background: rgba(0,0,0,0.06);
+    color: #0f172a;
+    border-color: rgba(0,0,0,0.15);
   }
 
   .copy-btn.copied {
@@ -200,7 +234,10 @@
     border-radius: 99px;
     font-size: 0.8rem;
     font-weight: 700;
-    box-shadow: 0 8px 30px rgba(34, 197, 94, 0.3);
+    box-shadow: 0 8px 30px rgba(34, 197, 94, 0.2);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 </style>
 </head>
@@ -220,11 +257,13 @@
         <span class="tag">#browser-compat</span>
         <span class="tag">#ux</span>
       </div>
-      <div class="feature-list">
-        <div class="feature"><div class="dot"></div> Modern Clipboard API (async)</div>
-        <div class="feature"><div class="dot"></div> execCommand fallback for legacy</div>
-        <div class="feature"><div class="dot"></div> Works on HTTP & HTTPS</div>
-        <div class="feature"><div class="dot"></div> Returns Promise&lt;boolean&gt;</div>
+      <div class="props-list">
+        <div class="prop-control">
+          <div class="prop-label">
+            <span class="prop-key">defaultCopyText</span>
+          </div>
+          <input type="text" class="text-input" id="input-custom-text" value="ssh-keygen -t ed25519 -C &quot;naufal@dev&quot;" placeholder="Enter custom copy command..." />
+        </div>
       </div>
     </div>
 
@@ -239,10 +278,10 @@
         <span class="copy-text">npx create-next-app@latest my-portfolio</span>
         <span class="copy-btn default">Copy</span>
       </div>
-      <div class="copy-row active">
+      <div class="copy-row">
         <div class="copy-icon git">🔀</div>
         <span class="copy-text">git push -u origin main</span>
-        <span class="copy-btn copied">✓ Copied</span>
+        <span class="copy-btn default">Copy</span>
       </div>
       <div class="copy-row">
         <div class="copy-icon code">⚛</div>
@@ -257,5 +296,91 @@
       <div class="toast-mock">✓ Copied to clipboard!</div>
     </div>
   </div>
+
+  <script>
+    async function copyToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch {
+          return fallbackCopy(text);
+        }
+      }
+      return fallbackCopy(text);
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.cssText = "position:fixed;left:-9999px;top:-9999px;opacity:0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand("copy"); } catch {}
+      document.body.removeChild(ta);
+      return ok;
+    }
+
+    const toast = document.querySelector(".toast-mock");
+    const inputCustomText = document.getElementById("input-custom-text");
+    const customRowText = document.querySelector(".copy-row:nth-child(5) .copy-text");
+    let toastTimeout;
+
+    function updateCustomRow() {
+      const newText = inputCustomText.value || 'ssh-keygen -t ed25519 -C "naufal@dev"';
+      customRowText.textContent = newText;
+      
+      // Notify parent window
+      window.parent.postMessage({
+        type: "playground-config",
+        params: {
+          defaultCopyText: newText
+        }
+      }, "*");
+    }
+
+    inputCustomText.addEventListener("input", updateCustomRow);
+
+    document.querySelectorAll(".copy-row").forEach((row) => {
+      const btn = row.querySelector(".copy-btn");
+
+      btn.addEventListener("click", async () => {
+        const text = row.querySelector(".copy-text").textContent;
+        const ok = await copyToClipboard(text);
+        if (ok) {
+          // Clear active classes from other rows
+          document.querySelectorAll(".copy-row").forEach(r => {
+            r.classList.remove("active");
+            const b = r.querySelector(".copy-btn");
+            b.textContent = "Copy";
+            b.className = "copy-btn default";
+          });
+
+          // Set active for this row
+          row.classList.add("active");
+          btn.textContent = "✓ Copied";
+          btn.className = "copy-btn copied";
+
+          // Show toast
+          toast.style.opacity = "1";
+          toast.style.transform = "translateY(0)";
+
+          clearTimeout(toastTimeout);
+          toastTimeout = setTimeout(() => {
+            toast.style.opacity = "0";
+            toast.style.transform = "translateY(10px)";
+            row.classList.remove("active");
+            btn.textContent = "Copy";
+            btn.className = "copy-btn default";
+          }, 2000);
+        }
+      });
+    });
+
+    // Initial setup
+    updateCustomRow();
+  </script>
 </body>
 </html>

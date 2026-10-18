@@ -8,9 +8,9 @@
   body {
     width: 1200px;
     height: 630px;
-    background: #0B0F19;
+    background: #F8FAFC;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-    color: #f0f0f5;
+    color: #0F172A;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -24,7 +24,7 @@
     height: 500px;
     border-radius: 50%;
     filter: blur(120px);
-    opacity: 0.15;
+    opacity: 0.06;
   }
   .glow-1 { background: #3A99C9; top: -150px; left: -100px; }
   .glow-2 { background: #7c3aed; bottom: -200px; right: -100px; }
@@ -72,7 +72,7 @@
 
   .left p {
     font-size: 1rem;
-    color: rgba(255,255,255,0.5);
+    color: #475569;
     line-height: 1.6;
     max-width: 420px;
   }
@@ -88,9 +88,89 @@
     font-weight: 700;
     padding: 0.3rem 0.7rem;
     border-radius: 6px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.08);
-    color: rgba(255,255,255,0.5);
+    background: rgba(0,0,0,0.03);
+    border: 1px solid rgba(0,0,0,0.06);
+    color: #64748b;
+  }
+
+  .props-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .prop-control {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .prop-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+  }
+
+  .prop-key {
+    font-family: 'SF Mono', monospace;
+    color: #10b981;
+    font-weight: 700;
+  }
+
+  .prop-val {
+    color: #64748b;
+    font-family: monospace;
+    font-size: 0.7rem;
+  }
+
+  .prop-slider {
+    width: 100%;
+    -webkit-appearance: none;
+    background: rgba(0,0,0,0.05);
+    height: 6px;
+    border-radius: 3px;
+    outline: none;
+  }
+
+  .prop-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #10b981;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    transition: transform 0.1s;
+  }
+
+  .prop-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
+
+  .prop-row {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-top: 0.25rem;
+  }
+
+  .checkbox-control {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    user-select: none;
+  }
+
+  .checkbox-control input {
+    cursor: pointer;
+    accent-color: #10b981;
+    width: 14px;
+    height: 14px;
   }
 
   .right {
@@ -101,10 +181,11 @@
   }
 
   .panel {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 1.25rem;
     padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.02);
   }
 
   .panel-title {
@@ -112,19 +193,27 @@
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: rgba(255,255,255,0.35);
+    color: #64748b;
     margin-bottom: 0.75rem;
   }
 
   .input-mock {
     width: 100%;
     padding: 0.7rem 1rem;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 10px;
-    color: #fff;
+    color: #0f172a;
     font-size: 0.85rem;
     font-family: 'SF Mono', monospace;
+    outline: none;
+    transition: all 0.2s;
+  }
+
+  .input-mock:focus {
+    border-color: #3A99C9;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(58, 153, 201, 0.1);
   }
 
   .stats-row {
@@ -145,31 +234,39 @@
   }
 
   .stat-pill.red {
-    background: rgba(239, 68, 68, 0.12);
+    background: rgba(239, 68, 68, 0.1);
     color: #ef4444;
   }
 
   .stat-pill.green {
-    background: rgba(34, 197, 94, 0.12);
-    color: #22c55e;
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+  }
+
+  .log-container {
+    max-height: 85px;
+    overflow-y: auto;
+    margin-top: 0.5rem;
   }
 
   .log-line {
     font-family: 'SF Mono', monospace;
     font-size: 0.7rem;
     padding: 0.3rem 0;
-    border-bottom: 1px solid rgba(255,255,255,0.03);
-    color: rgba(255,255,255,0.4);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    color: #64748b;
+    display: flex;
+    justify-content: space-between;
   }
 
   .log-line .t { color: #3A99C9; }
-  .log-line .v { color: rgba(255,255,255,0.8); }
+  .log-line .v { color: #0f172a; font-weight: bold; }
 
   .vs-badge {
     align-self: center;
     font-size: 0.65rem;
     font-weight: 900;
-    color: rgba(255,255,255,0.2);
+    color: #94a3b8;
     letter-spacing: 0.15em;
     text-transform: uppercase;
   }
@@ -184,14 +281,14 @@
   .arrow-line {
     flex: 1;
     height: 2px;
-    background: linear-gradient(to right, #ef4444, #22c55e);
+    background: linear-gradient(to right, #ef4444, #16a34a);
     border-radius: 2px;
   }
 
   .arrow-label {
     font-size: 0.65rem;
     font-weight: 800;
-    color: #22c55e;
+    color: #16a34a;
     letter-spacing: 0.05em;
   }
 </style>
@@ -212,42 +309,181 @@
         <span class="tag">#api</span>
         <span class="tag">#throttle</span>
       </div>
+      <div class="props-list" style="margin-top: 1.25rem; margin-bottom: 1rem;">
+        <div class="prop-control">
+          <div class="prop-label">
+            <span class="prop-key">delay</span>
+            <span class="prop-val" id="val-delay">500ms</span>
+          </div>
+          <input type="range" class="prop-slider" id="slide-delay" min="100" max="2000" step="100" value="500" />
+        </div>
+        <div class="prop-row">
+          <label class="checkbox-control">
+            <input type="checkbox" id="check-leading" />
+            <span class="prop-key">leading</span>
+          </label>
+          <label class="checkbox-control">
+            <input type="checkbox" id="check-trailing" checked />
+            <span class="prop-key">trailing</span>
+          </label>
+        </div>
+      </div>
       <div class="arrow-indicator">
-        <span style="font-size:0.65rem;font-weight:800;color:#ef4444;">47 calls</span>
+        <span id="arrow-raw-label" style="font-size:0.65rem;font-weight:800;color:#ef4444;">0 calls</span>
         <div class="arrow-line"></div>
-        <span class="arrow-label">3 calls</span>
+        <span id="arrow-debounced-label" class="arrow-label">0 calls</span>
       </div>
     </div>
 
     <div class="right">
       <div class="panel">
         <div class="panel-title">Raw Input — No Debounce</div>
-        <div class="input-mock">searching for react hooks_</div>
+        <input type="text" class="input-mock" id="raw-input" placeholder="Type here to trigger raw API calls..." value="" />
         <div class="stats-row">
-          <span class="stat-pill red">● 47 API Calls</span>
+          <span class="stat-pill red" id="raw-badge">● 0 API Calls</span>
         </div>
-        <div style="margin-top:0.5rem">
-          <div class="log-line"><span class="t">12:04:01</span> → <span class="v">"searching for react hook"</span></div>
-          <div class="log-line"><span class="t">12:04:01</span> → <span class="v">"searching for react hoo"</span></div>
-          <div class="log-line"><span class="t">12:04:00</span> → <span class="v">"searching for react ho"</span></div>
+        <div class="log-container" id="raw-logs">
+          <div class="log-line" style="color: rgba(0,0,0,0.3); font-style: italic; justify-content: center;">Logs will appear as you type</div>
         </div>
       </div>
 
       <div class="vs-badge">— VS —</div>
 
-      <div class="panel" style="border-color: rgba(34, 197, 94, 0.15);">
-        <div class="panel-title" style="color: #22c55e;">Debounced Input — 500ms</div>
-        <div class="input-mock">searching for react hooks_</div>
+      <div class="panel" style="border-color: rgba(34, 197, 94, 0.2);">
+        <div class="panel-title" style="color: #16a34a;">Debounced Input — 500ms</div>
+        <input type="text" class="input-mock" id="debounced-input" placeholder="Type here to trigger debounced API calls..." value="" />
         <div class="stats-row">
-          <span class="stat-pill green">● 3 API Calls</span>
+          <span class="stat-pill green" id="debounced-badge">● 0 API Calls</span>
         </div>
-        <div style="margin-top:0.5rem">
-          <div class="log-line"><span class="t">12:04:02</span> → <span class="v">"searching for react hooks"</span></div>
-          <div class="log-line"><span class="t">12:03:58</span> → <span class="v">"searching for"</span></div>
-          <div class="log-line"><span class="t">12:03:55</span> → <span class="v">"searching"</span></div>
+        <div class="log-container" id="debounced-logs">
+          <div class="log-line" style="color: rgba(0,0,0,0.3); font-style: italic; justify-content: center;">Logs will appear 500ms after you stop typing</div>
         </div>
       </div>
     </div>
   </div>
+
+  <script>
+    function debounce(fn, delay, options = {}) {
+      const { leading = false, trailing = true } = options;
+      let timer = null;
+      let lastArgs = null;
+      let isLeadingInvoked = false;
+
+      return function(...args) {
+        lastArgs = args;
+
+        if (leading && !isLeadingInvoked) {
+          fn(...args);
+          isLeadingInvoked = true;
+        }
+
+        if (timer) clearTimeout(timer);
+
+        timer = setTimeout(() => {
+          if (trailing && lastArgs) {
+            fn(...lastArgs);
+          }
+          timer = null;
+          lastArgs = null;
+          isLeadingInvoked = false;
+        }, delay);
+      };
+    }
+
+    let rawCount = 0;
+    let debouncedCount = 0;
+
+    const rawInput = document.getElementById("raw-input");
+    const debouncedInput = document.getElementById("debounced-input");
+    const rawLogs = document.getElementById("raw-logs");
+    const debouncedLogs = document.getElementById("debounced-logs");
+    const rawBadge = document.getElementById("raw-badge");
+    const debouncedBadge = document.getElementById("debounced-badge");
+    const arrowRawLabel = document.getElementById("arrow-raw-label");
+    const arrowDebouncedLabel = document.getElementById("arrow-debounced-label");
+
+    const slideDelay = document.getElementById("slide-delay");
+    const checkLeading = document.getElementById("check-leading");
+    const checkTrailing = document.getElementById("check-trailing");
+    const valDelay = document.getElementById("val-delay");
+
+    let debouncedTrigger = null;
+
+    function initDebounce() {
+      const delay = parseInt(slideDelay.value);
+      const leading = checkLeading.checked;
+      const trailing = checkTrailing.checked;
+
+      valDelay.textContent = delay + "ms";
+      
+      // Update label in UI
+      const panelTitle = document.querySelector(".panel:nth-child(3) .panel-title");
+      if (panelTitle) {
+        panelTitle.textContent = `Debounced Input — ${delay}ms`;
+      }
+
+      // Recreate debounced function
+      debouncedTrigger = debounce((val) => {
+        debouncedCount++;
+        debouncedBadge.textContent = `● ${debouncedCount} API Calls`;
+        arrowDebouncedLabel.textContent = `${debouncedCount} calls`;
+        appendLog(debouncedLogs, val);
+      }, delay, { leading, trailing });
+
+      // Notify parent window
+      window.parent.postMessage({
+        type: "playground-config",
+        params: {
+          delay: delay,
+          leading: leading,
+          trailing: trailing
+        }
+      }, "*");
+    }
+
+    slideDelay.addEventListener("input", initDebounce);
+    checkLeading.addEventListener("change", initDebounce);
+    checkTrailing.addEventListener("change", initDebounce);
+
+    function getFormattedTime() {
+      const now = new Date();
+      return now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0').slice(0, 2);
+    }
+
+    function appendLog(container, text) {
+      // Clear placeholder
+      if (container.children.length === 1 && container.children[0].style.fontStyle === "italic") {
+        container.innerHTML = "";
+      }
+      
+      const line = document.createElement("div");
+      line.className = "log-line";
+      line.innerHTML = `<span class="t">${getFormattedTime()}</span><span class="v">"${text}"</span>`;
+      container.prepend(line);
+      
+      // Limit to 3 items
+      while (container.children.length > 3) {
+        container.lastChild.remove();
+      }
+    }
+
+    rawInput.addEventListener("input", (e) => {
+      const val = e.target.value;
+      if (!val) return;
+      rawCount++;
+      rawBadge.textContent = `● ${rawCount} API Calls`;
+      arrowRawLabel.textContent = `${rawCount} calls`;
+      appendLog(rawLogs, val);
+    });
+
+    debouncedInput.addEventListener("input", (e) => {
+      const val = e.target.value;
+      if (!val) return;
+      if (debouncedTrigger) debouncedTrigger(val);
+    });
+
+    // Initial setup
+    initDebounce();
+  </script>
 </body>
 </html>

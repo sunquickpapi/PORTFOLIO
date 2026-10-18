@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, Code, Sparkles, X, Save, Layout, Image as ImageIcon, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Edit, Trash2, Code, Sparkles, X, Save, Layout, Image as ImageIcon, ChevronDown, ChevronRight, StickyNote } from "lucide-react";
 
 interface Snippet {
     id: string;
@@ -12,7 +12,24 @@ interface Snippet {
     category: string;
     tags: string;
     preview_image_url?: string;
+    playground_url?: string;
+    integration_vanilla?: string;
+    integration_react?: string;
 }
+
+interface Note {
+    id: string;
+    title: string;
+    content: string;
+    type: string;
+    color: string;
+    pinned: boolean;
+    created_at?: string;
+}
+
+const NOTE_TYPES = ["general", "idea", "bug", "todo", "learning", "reminder"];
+const NOTE_COLORS = ["#3A99C9", "#22c55e", "#f97316", "#7c3aed", "#ef4444", "#eab308"];
+const NOTE_TYPE_ICONS: Record<string, string> = { idea: "💡", bug: "🐛", todo: "✅", learning: "📚", reminder: "🔔", general: "📝" };
 
 export default function SnippetsPage() {
     const [snippets, setSnippets] = useState<Snippet[]>([]);
@@ -23,8 +40,14 @@ export default function SnippetsPage() {
         hero_value_prop: "",
         hero_image_url: ""
     });
+    const [notes, setNotes] = useState<Note[]>([]);
+    const [showNoteModal, setShowNoteModal] = useState(false);
+    const [editingNote, setEditingNote] = useState<Note | null>(null);
+    const [noteFormLoading, setNoteFormLoading] = useState(false);
+    const [noteFormError, setNoteFormError] = useState<string | null>(null);
+    const [noteFormData, setNoteFormData] = useState({ title: "", content: "", type: "general", color: "#3A99C9", pinned: false });
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<"hero" | "list">("hero");
+    const [activeTab, setActiveTab] = useState<"hero" | "list" | "notes">("hero");
     const [savingSettings, setSavingSettings] = useState(false);
     const [isEditingSettings, setIsEditingSettings] = useState(false);
     const [uploadingHeroPic, setUploadingHeroPic] = useState(false);
@@ -42,6 +65,9 @@ export default function SnippetsPage() {
         category: "utility",
         tags: "",
         preview_image_url: "",
+        playground_url: "",
+        integration_vanilla: "",
+        integration_react: "",
     });
 
     useEffect(() => {
@@ -51,14 +77,17 @@ export default function SnippetsPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [snipRes, setRes] = await Promise.all([
+            const [snipRes, setRes, notesRes] = await Promise.all([
                 fetch("/api/snippets"),
-                fetch("/api/snippets-settings")
+                fetch("/api/snippets-settings"),
+                fetch("/api/notes")
             ]);
             const snipData = await snipRes.json();
             const setData = await setRes.json();
+            const notesData = await notesRes.json();
             setSnippets(snipData);
             setSettings(setData);
+            if (Array.isArray(notesData)) setNotes(notesData);
         } catch (error) {
             console.error("Error fetching data:", error);
         } finally {
@@ -142,6 +171,9 @@ export default function SnippetsPage() {
             category: "utility",
             tags: "",
             preview_image_url: "",
+            playground_url: "",
+            integration_vanilla: "",
+            integration_react: "",
         });
         setShowModal(true);
     };
@@ -157,6 +189,9 @@ export default function SnippetsPage() {
             category: snippet.category || "utility",
             tags: snippet.tags || "",
             preview_image_url: snippet.preview_image_url || "",
+            playground_url: snippet.playground_url || "",
+            integration_vanilla: snippet.integration_vanilla || "",
+            integration_react: snippet.integration_react || "",
         });
         setShowModal(true);
     };
@@ -315,6 +350,14 @@ export default function SnippetsPage() {
                             <span>Code Snippets</span>
                             {activeTab === "list" && <div className="tab-indicator" />}
                         </button>
+                        <button
+                            onClick={() => setActiveTab("notes")}
+                            className={`tab-item ${activeTab === "notes" ? "active" : ""}`}
+                        >
+                            <StickyNote size={24} />
+                            <span>Dev Notes</span>
+                            {activeTab === "notes" && <div className="tab-indicator" />}
+                        </button>
                     </div>
                 </div>
 
@@ -459,7 +502,7 @@ export default function SnippetsPage() {
                                         const filteredSnippets = snippets.filter((s) => (s.category || "utility") === cat);
                                         const isExpanded = !!expandedCategories[cat];
                                         return (
-                                            <div key={cat} className="glass-section category-section mb-2">
+                                            <div key={cat} className="glass-section category-section">
                                                 <div 
                                                     className="section-header cursor-pointer select-none hover:bg-slate-50/50 transition-colors duration-150"
                                                     onClick={() => toggleCategory(cat)}
@@ -512,9 +555,72 @@ export default function SnippetsPage() {
                         </div>
                     </>
                 )}
+
+                {/* Tab: Dev Notes */}
+                {activeTab === "notes" && (
+                    <>
+                        <div className="top-actions">
+                            <button onClick={() => { setEditingNote(null); setNoteFormError(null); setNoteFormData({ title: "", content: "", type: "general", color: "#3A99C9", pinned: false }); setShowNoteModal(true); }} className="btn-premium-add">
+                                <Plus size={22} />
+                                <span>Add New Note</span>
+                            </button>
+                        </div>
+
+                        <div className="glass-section mb-8">
+                            <div className="section-header">
+                                <div className="section-title-box">
+                                    <StickyNote size={22} color="#1B4F72" />
+                                    <h2 className="section-title">Dev Notes</h2>
+                                </div>
+                                <span className="item-count">{notes.length} Notes</span>
+                            </div>
+
+                            {notes.length === 0 ? (
+                                <div className="empty-state">
+                                    <StickyNote size={64} className="empty-icon" />
+                                    <p>No notes yet. Click the button above to add one!</p>
+                                </div>
+                            ) : (
+                                <div className="snippets-grid">
+                                    {notes.map((note) => (
+                                        <div key={note.id} className="snippet-card" style={{ borderLeft: `4px solid ${note.color || '#3A99C9'}` }}>
+                                            <div className="card-info">
+                                                <div className="title-group">
+                                                    <span className="lang-tag" style={{ background: `${note.color}20`, color: note.color }}>
+                                                        {NOTE_TYPE_ICONS[note.type] || "📝"} {note.type}
+                                                    </span>
+                                                    {note.pinned && <span className="lang-tag" style={{ background: 'rgba(234, 179, 8, 0.1)', color: '#eab308', marginLeft: '0.25rem' }}>📌 Pinned</span>}
+                                                </div>
+                                                <h3 className="snippet-title">{note.title}</h3>
+                                                {note.content && <p className="snippet-desc">{note.content}</p>}
+                                            </div>
+                                            <div className="card-actions">
+                                                <button onClick={() => {
+                                                    setEditingNote(note);
+                                                    setNoteFormError(null);
+                                                    setNoteFormData({ title: note.title, content: note.content || "", type: note.type, color: note.color || "#3A99C9", pinned: note.pinned });
+                                                    setShowNoteModal(true);
+                                                }} className="icon-btn edit" title="Edit Note">
+                                                    <Edit size={18} />
+                                                </button>
+                                                <button onClick={async () => {
+                                                    if (!confirm("Delete this note?")) return;
+                                                    const res = await fetch(`/api/notes/${note.id}`, { method: "DELETE" });
+                                                    if (res.ok) setNotes(notes.filter(n => n.id !== note.id));
+                                                }} className="icon-btn delete" title="Delete Note">
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )}
             </div>
 
-            {/* Form Modal */}
+            {/* Snippet Form Modal */}
             {showModal && (
                 <div className="modal-overlay">
                     <div className="modal-card glass-modal">
@@ -595,51 +701,66 @@ export default function SnippetsPage() {
                                     onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                                 />
                             </div>
+
                             <div className="form-group">
-                                <label className="input-label">Preview File (Image / Video)</label>
-                                <div className="file-uploader-container">
-                                    {formData.preview_image_url ? (
-                                        <div className="file-preview-box">
-                                            {formData.preview_image_url.match(/\.(mp4|webm|ogg|mov)$/i) ? (
-                                                <video
-                                                    src={formData.preview_image_url}
-                                                    className="uploaded-preview-media"
-                                                    controls
-                                                    muted
-                                                />
-                                            ) : (
-                                                <img
-                                                    src={formData.preview_image_url}
-                                                    alt="Preview"
-                                                    className="uploaded-preview-media"
-                                                />
-                                            )}
-                                            <div className="file-preview-info">
-                                                <span className="file-preview-path truncate">{formData.preview_image_url}</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={handleRemoveFile}
-                                                    className="btn-remove-file"
-                                                >
-                                                    Remove File
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <label className="file-upload-dropzone">
-                                            <input
-                                                type="file"
-                                                accept="image/*,video/*"
-                                                onChange={handleFileChange}
-                                                style={{ display: "none" }}
-                                                disabled={uploading}
-                                            />
-                                            <div className="dropzone-content">
-                                                <Plus size={20} className="dropzone-icon" />
-                                                <span>{uploading ? "Uploading file..." : "Click to select image or video"}</span>
-                                            </div>
+                                <label className="input-label">Playground File / URL</label>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                    <div style={{ display: "flex", gap: "8px" }}>
+                                        <select
+                                            className="premium-input"
+                                            style={{ flex: 1 }}
+                                            value={
+                                                formData.playground_url === "" ? "none" :
+                                                formData.playground_url === "/snippet-playground/preview-scroll.html" ? "scroll" :
+                                                formData.playground_url === "/snippet-playground/preview-magnetic.html" ? "magnetic" :
+                                                formData.playground_url === "/snippet-playground/preview-clipboard.html" ? "clipboard" :
+                                                formData.playground_url === "/snippet-playground/preview-debounce.html" ? "debounce" :
+                                                formData.playground_url === "/snippet-playground/preview-glass.html" ? "glass" : "custom"
+                                            }
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (val === "none") setFormData({ ...formData, playground_url: "" });
+                                                else if (val === "scroll") setFormData({ ...formData, playground_url: "/snippet-playground/preview-scroll.html" });
+                                                else if (val === "magnetic") setFormData({ ...formData, playground_url: "/snippet-playground/preview-magnetic.html" });
+                                                else if (val === "clipboard") setFormData({ ...formData, playground_url: "/snippet-playground/preview-clipboard.html" });
+                                                else if (val === "debounce") setFormData({ ...formData, playground_url: "/snippet-playground/preview-debounce.html" });
+                                                else if (val === "glass") setFormData({ ...formData, playground_url: "/snippet-playground/preview-glass.html" });
+                                            }}
+                                        >
+                                            <option value="none">None / Default Fallback</option>
+                                            <option value="scroll">Scroll Reveal</option>
+                                            <option value="magnetic">Magnetic Hover</option>
+                                            <option value="clipboard">Clipboard Copy</option>
+                                            <option value="debounce">Debounce Input</option>
+                                            <option value="glass">Glassmorphism Card</option>
+                                            <option value="custom">Custom Path / Upload...</option>
+                                        </select>
+                                        <label className="btn-premium-cancel" style={{ cursor: 'pointer', margin: 0, whiteSpace: 'nowrap' }}>
+                                            <Plus size={16} />
+                                            <span>Upload HTML</span>
+                                            <input type="file" accept=".html,.htm" style={{ display: 'none' }} onChange={async (e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                const fd = new FormData();
+                                                fd.append("file", file);
+                                                try {
+                                                    const res = await fetch("/api/upload", { method: "POST", body: fd });
+                                                    if (res.ok) {
+                                                        const data = await res.json();
+                                                        setFormData(prev => ({ ...prev, playground_url: data.url }));
+                                                    }
+                                                } catch (err) { console.error("Upload failed:", err); }
+                                            }} />
                                         </label>
-                                    )}
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="URL path (e.g., /snippet-playground/preview-glass.html)"
+                                        className="premium-input"
+                                        value={formData.playground_url}
+                                        onChange={(e) => setFormData({ ...formData, playground_url: e.target.value })}
+                                        style={{ fontFamily: "'Geist Mono', monospace", fontSize: "0.8rem" }}
+                                    />
                                 </div>
                             </div>
                             <div className="form-group code-group">
@@ -654,6 +775,28 @@ export default function SnippetsPage() {
                                     style={{ fontFamily: "monospace", tabSize: 2 }}
                                 />
                             </div>
+                            <div className="form-group code-group">
+                                <label className="input-label">Integration Code — HTML/CSS/JS (Vanilla)</label>
+                                <textarea
+                                    rows={6}
+                                    placeholder="Paste the HTML/CSS/JS integration example here... (optional)"
+                                    className="premium-input font-mono"
+                                    value={formData.integration_vanilla}
+                                    onChange={(e) => setFormData({ ...formData, integration_vanilla: e.target.value })}
+                                    style={{ fontFamily: "monospace", tabSize: 2, fontSize: "0.85rem" }}
+                                />
+                            </div>
+                            <div className="form-group code-group">
+                                <label className="input-label">Integration Code — React / TSX</label>
+                                <textarea
+                                    rows={6}
+                                    placeholder="Paste the React/TSX integration example here... (optional)"
+                                    className="premium-input font-mono"
+                                    value={formData.integration_react}
+                                    onChange={(e) => setFormData({ ...formData, integration_react: e.target.value })}
+                                    style={{ fontFamily: "monospace", tabSize: 2, fontSize: "0.85rem" }}
+                                />
+                            </div>
                             <div className="form-actions">
                                 <button type="button" onClick={() => setShowModal(false)} className="btn-premium-cancel">
                                     <X size={16} />
@@ -663,6 +806,103 @@ export default function SnippetsPage() {
                                     <Save size={16} />
                                     <span>{formLoading ? "Saving..." : "Save Snippet"}</span>
                                 </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Note Form Modal */}
+            {showNoteModal && (
+                <div className="modal-overlay">
+                    <div className="modal-card glass-modal">
+                        <div className="modal-header">
+                            <div className="header-title">
+                                <StickyNote size={20} />
+                                <h3>{editingNote ? "Edit Note" : "Add New Note"}</h3>
+                            </div>
+                            <button onClick={() => setShowNoteModal(false)} className="close-btn"><X size={20} /></button>
+                        </div>
+                        <form onSubmit={async (e) => {
+                            e.preventDefault();
+                            setNoteFormLoading(true);
+                            setNoteFormError(null);
+                            try {
+                                const res = await fetch(
+                                    editingNote ? `/api/notes/${editingNote.id}` : "/api/notes",
+                                    {
+                                        method: editingNote ? "PUT" : "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify(noteFormData),
+                                    }
+                                );
+                                if (res.ok) {
+                                    setShowNoteModal(false);
+                                    const updated = await fetch("/api/notes").then(r => r.json());
+                                    if (Array.isArray(updated)) setNotes(updated);
+                                } else {
+                                    const err = await res.json();
+                                    setNoteFormError(err.error || "Failed to save note.");
+                                }
+                            } catch (err: any) {
+                                setNoteFormError(err.message || "Network error.");
+                            } finally {
+                                setNoteFormLoading(false);
+                            }
+                        }} className="modal-form">
+                            {noteFormError && <div className="form-error-msg">⚠️ {noteFormError}</div>}
+                            <div className="form-group">
+                                <label className="input-label">Title</label>
+                                <input type="text" required placeholder="e.g., Refactor auth middleware" className="premium-input font-bold" value={noteFormData.title} onChange={(e) => setNoteFormData({ ...noteFormData, title: e.target.value })} />
+                            </div>
+                            <div className="form-group">
+                                <label className="input-label">Content</label>
+                                <textarea rows={3} placeholder="Note details..." className="premium-input" value={noteFormData.content} onChange={(e) => setNoteFormData({ ...noteFormData, content: e.target.value })} />
+                            </div>
+                            <div className="form-group-row">
+                                <div className="form-group half">
+                                    <label className="input-label">Type</label>
+                                    <input
+                                        type="text"
+                                        list="note-type-suggestions"
+                                        className="premium-input"
+                                        placeholder="e.g., idea, bug, todo..."
+                                        value={noteFormData.type}
+                                        onChange={(e) => setNoteFormData({ ...noteFormData, type: e.target.value.toLowerCase() })}
+                                    />
+                                    <datalist id="note-type-suggestions">
+                                        {Array.from(new Set([
+                                            ...NOTE_TYPES,
+                                            ...notes.map(n => n.type).filter(Boolean)
+                                        ])).map(t => (
+                                            <option key={t} value={t}>{NOTE_TYPE_ICONS[t] || "📝"} {t}</option>
+                                        ))}
+                                    </datalist>
+                                    <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+                                        Pick from suggestions or type your own
+                                    </span>
+                                </div>
+                                <div className="form-group half">
+                                    <label className="input-label">Color</label>
+                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                                        {NOTE_COLORS.map(c => (
+                                            <button key={c} type="button" onClick={() => setNoteFormData({ ...noteFormData, color: c })} style={{
+                                                width: 28, height: 28, borderRadius: 8, background: c, border: noteFormData.color === c ? '3px solid #1B4F72' : '2px solid transparent',
+                                                cursor: 'pointer', transition: 'all 0.2s', transform: noteFormData.color === c ? 'scale(1.15)' : 'scale(1)',
+                                            }} />
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                    <input type="checkbox" checked={noteFormData.pinned} onChange={(e) => setNoteFormData({ ...noteFormData, pinned: e.target.checked })} style={{ width: 18, height: 18, accentColor: '#1B4F72' }} />
+                                    <span className="input-label" style={{ margin: 0 }}>📌 Pin this note</span>
+                                </label>
+                            </div>
+                            <div className="form-actions">
+                                <button type="button" onClick={() => setShowNoteModal(false)} className="btn-premium-cancel"><X size={16} /><span>Cancel</span></button>
+                                <button type="submit" disabled={noteFormLoading} className="btn-premium-save"><Save size={16} /><span>{noteFormLoading ? "Saving..." : "Save Note"}</span></button>
                             </div>
                         </form>
                     </div>
@@ -823,6 +1063,12 @@ export default function SnippetsPage() {
                     transition: all 0.3s ease;
                 }
 
+                .categories-stack {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.75rem;
+                }
+
                 .category-section {
                     border-radius: 0.75rem;
                 }
@@ -855,6 +1101,7 @@ export default function SnippetsPage() {
                     justify-content: space-between;
                     align-items: center;
                     border-bottom: 1px solid rgba(0,0,0,0.03);
+                    margin: 0;
                 }
 
                 .section-title-box {

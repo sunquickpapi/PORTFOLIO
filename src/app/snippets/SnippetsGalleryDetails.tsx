@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Code, Camera, Image as ImageIcon, Phone, Mail, MapPin, Send, Linkedin, Github, Instagram, X, Copy, Check, MousePointer, ExternalLink, RotateCcw, Play } from "lucide-react";
+import { ArrowLeft, Code, Camera, Image as ImageIcon, Phone, Mail, MapPin, Send, Linkedin, Github, Instagram, X, Copy, Check, MousePointer, ExternalLink, RotateCcw, Play, Info } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import Footer from "@/components/Home/Footer";
@@ -18,8 +18,30 @@ interface Snippet {
     category: string;
     tags: string;
     preview_image_url?: string;
+    playground_url?: string;
+    integration_vanilla?: string;
+    integration_react?: string;
     created_at: string;
 }
+
+interface Note {
+    id: string;
+    title: string;
+    content: string;
+    type: string;
+    color: string;
+    pinned: boolean;
+    created_at: string;
+}
+
+const NOTE_TYPE_ICONS: Record<string, string> = {
+    idea: "💡",
+    bug: "🐛",
+    todo: "✅",
+    learning: "📚",
+    reminder: "🔔",
+    general: "📝",
+};
 
 const PRESETS = [
     { width: 280, yOffset: -220, rotateZ: -2, rotateY: 5 },
@@ -39,10 +61,93 @@ const PRESETS = [
     { width: 280, yOffset: -200, rotateZ: 2, rotateY: 5 }
 ];
 
+// Reusable component to render a responsive, non-interactive iframe preview of the live demo
+function ScaledPreviewIframe({
+    src,
+    title,
+    baseWidth = 1200,
+    baseHeight = 630,
+    containerWidth,
+}: {
+    src: string;
+    title: string;
+    baseWidth?: number;
+    baseHeight?: number;
+    /** Pass the known layout width (px) to avoid measuring — safe for 3D-rotated cards */
+    containerWidth?: number;
+}) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    // If containerWidth is known up front, compute scale immediately (no measurement needed)
+    const [scale, setScale] = useState(() =>
+        containerWidth && containerWidth > 0 ? containerWidth / baseWidth : 0
+    );
+
+    useEffect(() => {
+        // If caller already knows the width, no ResizeObserver needed
+        if (containerWidth && containerWidth > 0) {
+            setScale(containerWidth / baseWidth);
+            return;
+        }
+        if (!containerRef.current) return;
+        const el = containerRef.current;
+
+        const observer = new ResizeObserver((entries) => {
+            // entry.contentRect.width is the LAYOUT width — unaffected by CSS 3D transforms
+            // getBoundingClientRect().width would return the 2D projected width (≈0 for rotated cards)
+            const w = entries[0]?.contentRect.width;
+            if (w && w > 0) setScale(w / baseWidth);
+        });
+        observer.observe(el);
+
+        // Fallback immediate read: offsetWidth also gives layout width, not projected width
+        if (el.offsetWidth > 0) setScale(el.offsetWidth / baseWidth);
+
+        return () => observer.disconnect();
+    }, [baseWidth, containerWidth]);
+
+    return (
+        <div
+            ref={containerRef}
+            style={{
+                position: 'relative',
+                width: '100%',
+                aspectRatio: `${baseWidth} / ${baseHeight}`,
+                overflow: 'hidden',
+                background: '#f8fafc',
+            }}
+        >
+            {/* Always rendered — opacity hides it until scale is ready to avoid a size-flash */}
+            <iframe
+                src={src}
+                title={title}
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: `${baseWidth}px`,
+                    height: `${baseHeight}px`,
+                    transform: scale > 0 ? `scale(${scale})` : 'none',
+                    transformOrigin: 'top left',
+                    pointerEvents: 'none',
+                    border: 'none',
+                    opacity: scale > 0 ? 1 : 0,
+                    transition: 'opacity 0.2s ease',
+                }}
+            />
+        </div>
+    );
+}
+
 export default function SnippetsGalleryDetails() {
     const router = useRouter();
     const { theme } = useTheme();
     const [snippets, setSnippets] = useState<Snippet[]>([]);
+    const [notes, setNotes] = useState<Note[]>([]);
+    const [draggedNoteId, setDraggedNoteId] = useState<string | null>(null);
+    const [draggedNoteData, setDraggedNoteData] = useState<Note | null>(null);
+    const [noteFloatPos, setNoteFloatPos] = useState({ x: 0, y: 0 });
+    const [isNoteExpanded, setIsNoteExpanded] = useState(false);
+    const notesDimRef = useRef<HTMLDivElement>(null);
     const [settings, setSettings] = useState({
         hero_title: "Snippet Gallery",
         hero_subtitle: "Curated Reusable Code Gallery",
@@ -59,39 +164,87 @@ export default function SnippetsGalleryDetails() {
     const [currentTime, setCurrentTime] = useState("");
     const [isAvailable, setIsAvailable] = useState(false);
 
+    // Playground popup states
+    const [selectedPlaygroundSnippet, setSelectedPlaygroundSnippet] = useState<Snippet | null>(null);
+    const [containerWidth, setContainerWidth] = useState(1200);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+
+    const [activePlaygroundTab, setActivePlaygroundTab] = useState<"demo" | "code">("demo");
+    const [activeCodeType, setActiveCodeType] = useState<"raw" | "integrate">("integrate");
+    const [liveEditorCode, setLiveEditorCode] = useState("");
+    const [showEditor, setShowEditor] = useState(false);
+    const liveIframeRef = useRef<HTMLIFrameElement>(null);
+    const [activeIntegrationTab, setActiveIntegrationTab] = useState<"vanilla" | "react">("vanilla");
+    const [playgroundConfig, setPlaygroundConfig] = useState<Record<string, any>>({});
+    const [isCodeCopied, setIsCodeCopied] = useState(false);
+
+    // Draggable states for Playground
+    const [playgroundOffset, setPlaygroundOffset] = useState({ x: 0, y: 0 });
+    const [isPlaygroundDragging, setIsPlaygroundDragging] = useState(false);
+    const [playgroundDragStart, setPlaygroundDragStart] = useState({ x: 0, y: 0 });
+
+    // Listen for parameters updates from iframe playgrounds
+    useEffect(() => {
+        const handleMessage = (e: MessageEvent) => {
+            if (e.data && e.data.type === "playground-config") {
+                setPlaygroundConfig(e.data.params);
+            }
+        };
+        window.addEventListener("message", handleMessage);
+        return () => window.removeEventListener("message", handleMessage);
+    }, []);
+
+    const handleCopyConfiguredCode = async (codeText: string) => {
+        if (!navigator.clipboard) return;
+        try {
+            await navigator.clipboard.writeText(codeText);
+            setIsCodeCopied(true);
+            setTimeout(() => setIsCodeCopied(false), 2000);
+        } catch (err) {
+            console.error("Failed to copy code: ", err);
+        }
+    };
+
     // Canvas panning states
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLDivElement>(null);
     const galleryRef = useRef<HTMLElement>(null);
-    const [rotation, setRotation] = useState({ x: 0, y: 0 }); // x: rotateX (pitch), y: rotateY (yaw)
+    // Only rotation is React state — used for recenter button visibility + inertia readback
+    const [rotation, setRotation] = useState({ x: 0, y: 0 });
+    // isDragging React state only for cursor-grabbing CSS class
     const [isDragging, setIsDragging] = useState(false);
     const [isRecentering, setIsRecentering] = useState(false);
-    const [hasDragged, setHasDragged] = useState(false);
-    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-
+    // All drag tracking in refs — zero React re-renders during drag
+    const isDraggingRef = useRef(false);
+    const hasDraggedRef = useRef(false);
+    const dragStartRef = useRef({ x: 0, y: 0 });
+    const dragOffsetRef = useRef({ x: 0, y: 0 });
     const velRef = useRef({ x: 0, y: 0 });
     const posRef = useRef({ x: 0, y: 0 });
     const animFrameRef = useRef<number | null>(null);
+    const dynamicPerspectiveRef = useRef(1200);
 
     // Fetch data
     useEffect(() => {
         const fetchAllData = async () => {
             const startTime = Date.now();
             try {
-                const [snipRes, profRes, setRes] = await Promise.all([
+                const [snipRes, profRes, setRes, notesRes] = await Promise.all([
                     fetch("/api/snippets"),
                     fetch("/api/profile"),
-                    fetch("/api/snippets-settings")
+                    fetch("/api/snippets-settings"),
+                    fetch("/api/notes")
                 ]);
 
                 const snipData = snipRes.ok ? await snipRes.json() : [];
                 const profData = profRes.ok ? await profRes.json() : null;
                 const setData = setRes.ok ? await setRes.json() : null;
+                const notesData = notesRes.ok ? await notesRes.json() : [];
 
                 if (Array.isArray(snipData)) setSnippets(snipData);
                 if (profData && !profData.error) setProfile(profData);
                 if (setData && !setData.error) setSettings(setData);
+                if (Array.isArray(notesData)) setNotes(notesData);
 
                 // Enforce minimum 3 second loading delay for smooth transitions
                 const elapsed = Date.now() - startTime;
@@ -138,38 +291,65 @@ export default function SnippetsGalleryDetails() {
         posRef.current = { x: 0, y: 0 };
     }, []);
 
+    // Helper: apply transform directly to DOM — skips React reconciler entirely
+    const applyCanvasTransform = useCallback((x: number, y: number) => {
+        if (!canvasRef.current) return;
+        canvasRef.current.style.transform = `translateZ(${dynamicPerspectiveRef.current}px) rotateX(${x}deg) rotateY(${y}deg)`;
+    }, []);
+
+    // Track width of the playground container for dynamic scale adjustments
+    useEffect(() => {
+        if (!selectedPlaygroundSnippet || !wrapperRef.current) return;
+        const updateWidth = () => {
+            if (wrapperRef.current) {
+                setContainerWidth(wrapperRef.current.getBoundingClientRect().width);
+            }
+        };
+        
+        updateWidth();
+        
+        const observer = new ResizeObserver(updateWidth);
+        observer.observe(wrapperRef.current);
+        return () => observer.disconnect();
+    }, [selectedPlaygroundSnippet]);
+
+    const playgroundScale = containerWidth / 1200;
+
     // Handle Drag & Pan Events
-    const handleMouseDown = (e: React.MouseEvent) => {
+    // All handlers are stable refs — no stale-closure issues, no re-renders during drag
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
         if (e.button !== 0) return;
         const target = e.target as HTMLElement;
         if (target.closest('button') || target.closest('a') || target.closest('.copy-btn-panel') || target.closest('.copy-target')) return;
 
-        setIsDragging(true);
-        setHasDragged(false);
-        setIsRecentering(false);
-        setDragStart({ x: e.clientX, y: e.clientY });
-        setDragOffset({ x: rotation.x, y: rotation.y });
-
-        velRef.current = { x: 0, y: 0 };
         if (animFrameRef.current) {
             cancelAnimationFrame(animFrameRef.current);
             animFrameRef.current = null;
         }
-    };
+        isDraggingRef.current = true;
+        hasDraggedRef.current = false;
+        dragStartRef.current = { x: e.clientX, y: e.clientY };
+        dragOffsetRef.current = { x: posRef.current.x, y: posRef.current.y };
+        velRef.current = { x: 0, y: 0 };
+        setIsDragging(true);
+        setIsRecentering(false);
+        // Remove transition during drag
+        if (canvasRef.current) canvasRef.current.style.transition = 'none';
+    }, []);
 
-    const handleMouseMove = (e: MouseEvent) => {
-        if (!isDragging) return;
+    const handleMouseMove = useCallback((e: MouseEvent) => {
+        if (!isDraggingRef.current) return;
 
-        const dx = e.clientX - dragStart.x;
-        const dy = e.clientY - dragStart.y;
+        const dx = e.clientX - dragStartRef.current.x;
+        const dy = e.clientY - dragStartRef.current.y;
 
-        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-            setHasDragged(true);
+        if (!hasDraggedRef.current && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+            hasDraggedRef.current = true;
         }
 
         // Yaw (Y-rotation) from dx, Pitch (X-rotation) from dy
-        const nextRotY = dragOffset.y + dx * 0.15;
-        let nextRotX = dragOffset.x - dy * 0.15;
+        const nextRotY = dragOffsetRef.current.y + dx * 0.15;
+        let nextRotX = dragOffsetRef.current.x - dy * 0.15;
 
         // Clamp Pitch to prevent turning upside down
         nextRotX = Math.max(-30, Math.min(30, nextRotX));
@@ -178,39 +358,49 @@ export default function SnippetsGalleryDetails() {
             x: nextRotX - posRef.current.x,
             y: nextRotY - posRef.current.y
         };
-
         posRef.current = { x: nextRotX, y: nextRotY };
-        setRotation({ x: nextRotX, y: nextRotY });
-    };
 
-    const handleMouseUp = () => {
-        if (!isDragging) return;
+        // Apply directly to DOM — zero React re-renders
+        applyCanvasTransform(nextRotX, nextRotY);
+    }, [applyCanvasTransform]);
+
+    const handleMouseUp = useCallback(() => {
+        if (!isDraggingRef.current) return;
+        isDraggingRef.current = false;
         setIsDragging(false);
 
+        // Brief delay so click handlers can still read hasDraggedRef
+        setTimeout(() => { hasDraggedRef.current = false; }, 50);
+
+        // Restore smooth transition for inertia decay
+        if (canvasRef.current) {
+            canvasRef.current.style.transition = 'none';
+        }
+
         const decay = () => {
-            const friction = 0.95;
-            velRef.current.x *= friction;
-            velRef.current.y *= friction;
+            velRef.current.x *= 0.93;
+            velRef.current.y *= 0.93;
 
             let nextRotX = posRef.current.x + velRef.current.x;
             let nextRotY = posRef.current.y + velRef.current.y;
-
             nextRotX = Math.max(-30, Math.min(30, nextRotX));
 
             posRef.current = { x: nextRotX, y: nextRotY };
-            setRotation({ x: nextRotX, y: nextRotY });
+            applyCanvasTransform(nextRotX, nextRotY);
 
-            if (Math.abs(velRef.current.x) > 0.05 || Math.abs(velRef.current.y) > 0.05) {
+            if (Math.abs(velRef.current.x) > 0.02 || Math.abs(velRef.current.y) > 0.02) {
                 animFrameRef.current = requestAnimationFrame(decay);
             } else {
                 animFrameRef.current = null;
+                // Sync React state once at end of inertia
+                setRotation({ x: posRef.current.x, y: posRef.current.y });
             }
         };
 
         animFrameRef.current = requestAnimationFrame(decay);
-    };
+    }, [applyCanvasTransform]);
 
-    const handleRecenter = () => {
+    const handleRecenter = useCallback(() => {
         setIsRecentering(true);
         if (animFrameRef.current) {
             cancelAnimationFrame(animFrameRef.current);
@@ -219,73 +409,72 @@ export default function SnippetsGalleryDetails() {
         velRef.current = { x: 0, y: 0 };
         posRef.current = { x: 0, y: 0 };
         setRotation({ x: 0, y: 0 });
+        if (canvasRef.current) {
+            canvasRef.current.style.transition = 'transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)';
+            canvasRef.current.style.transform = `translateZ(${dynamicPerspectiveRef.current}px) rotateX(0deg) rotateY(0deg)`;
+        }
         setTimeout(() => {
             setIsRecentering(false);
-        }, 600);
-    };
+            if (canvasRef.current) canvasRef.current.style.transition = 'none';
+        }, 650);
+    }, []);
 
-    // Global Listeners for dragging mouse out of boundaries
+    // Register global drag listeners once on mount — stable, never re-added
     useEffect(() => {
-        if (isDragging) {
-            window.addEventListener("mousemove", handleMouseMove);
-            window.addEventListener("mouseup", handleMouseUp);
-        } else {
-            window.removeEventListener("mousemove", handleMouseMove);
-            window.removeEventListener("mouseup", handleMouseUp);
-        }
+        window.addEventListener('mousemove', handleMouseMove, { passive: true });
+        window.addEventListener('mouseup', handleMouseUp);
         return () => {
-            window.removeEventListener("mousemove", handleMouseMove);
-            window.removeEventListener("mouseup", handleMouseUp);
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [isDragging, dragStart, dragOffset]);
+    }, [handleMouseMove, handleMouseUp]);
 
     // Touch Support for Mobile Dragging
-    const handleTouchStart = (e: React.TouchEvent) => {
+    const handleTouchStart = useCallback((e: React.TouchEvent) => {
         const target = e.target as HTMLElement;
         if (target.closest('button') || target.closest('a') || target.closest('.copy-btn-panel') || target.closest('.copy-target')) return;
 
-        const touch = e.touches[0];
-        setIsDragging(true);
-        setHasDragged(false);
-        setIsRecentering(false);
-        setDragStart({ x: touch.clientX, y: touch.clientY });
-        setDragOffset({ x: rotation.x, y: rotation.y });
-
-        velRef.current = { x: 0, y: 0 };
         if (animFrameRef.current) {
             cancelAnimationFrame(animFrameRef.current);
             animFrameRef.current = null;
         }
-    };
+        const touch = e.touches[0];
+        isDraggingRef.current = true;
+        hasDraggedRef.current = false;
+        dragStartRef.current = { x: touch.clientX, y: touch.clientY };
+        dragOffsetRef.current = { x: posRef.current.x, y: posRef.current.y };
+        velRef.current = { x: 0, y: 0 };
+        setIsDragging(true);
+        setIsRecentering(false);
+        if (canvasRef.current) canvasRef.current.style.transition = 'none';
+    }, []);
 
-    const handleTouchMove = (e: React.TouchEvent) => {
-        if (!isDragging) return;
+    const handleTouchMove = useCallback((e: React.TouchEvent) => {
+        if (!isDraggingRef.current) return;
         const touch = e.touches[0];
 
-        const dx = touch.clientX - dragStart.x;
-        const dy = touch.clientY - dragStart.y;
+        const dx = touch.clientX - dragStartRef.current.x;
+        const dy = touch.clientY - dragStartRef.current.y;
 
-        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-            setHasDragged(true);
+        if (!hasDraggedRef.current && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+            hasDraggedRef.current = true;
         }
 
-        const nextRotY = dragOffset.y + dx * 0.2;
-        let nextRotX = dragOffset.x - dy * 0.2;
-
+        const nextRotY = dragOffsetRef.current.y + dx * 0.2;
+        let nextRotX = dragOffsetRef.current.x - dy * 0.2;
         nextRotX = Math.max(-30, Math.min(30, nextRotX));
 
         velRef.current = {
             x: nextRotX - posRef.current.x,
             y: nextRotY - posRef.current.y
         };
-
         posRef.current = { x: nextRotX, y: nextRotY };
-        setRotation({ x: nextRotX, y: nextRotY });
-    };
+        applyCanvasTransform(nextRotX, nextRotY);
+    }, [applyCanvasTransform]);
 
-    const handleTouchEnd = () => {
+    const handleTouchEnd = useCallback(() => {
         handleMouseUp();
-    };
+    }, [handleMouseUp]);
 
     const handlePopupMouseDown = (e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
@@ -375,6 +564,155 @@ export default function SnippetsGalleryDetails() {
         };
     }, [isPopupDragging, popupDragStart]);
 
+    // ── Note drag-out / drag-in handlers ──
+    const noteDragRef = useRef({ active: false, startX: 0, startY: 0, offsetX: 0, offsetY: 0 });
+
+    const handleNoteDragStart = (note: Note, e: React.MouseEvent | React.TouchEvent) => {
+        const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+        e.preventDefault();
+        noteDragRef.current = { active: true, startX: clientX, startY: clientY, offsetX: 0, offsetY: 0 };
+        setDraggedNoteId(note.id);
+        setDraggedNoteData(note);
+        setNoteFloatPos({ x: clientX - 180, y: clientY - 30 });
+    };
+
+    const handleGlobalNoteMove = useCallback((e: MouseEvent | TouchEvent) => {
+        if (!noteDragRef.current.active) return;
+        const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY;
+        setNoteFloatPos({ x: clientX - 180, y: clientY - 30 });
+
+        if (notesDimRef.current) {
+            const rect = notesDimRef.current.getBoundingClientRect();
+            const inside = clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+            setIsNoteExpanded(!inside);
+        }
+    }, []);
+
+    const handleGlobalNoteUp = useCallback(() => {
+        if (!noteDragRef.current.active) return;
+        noteDragRef.current.active = false;
+        if (!isNoteExpanded) {
+            setDraggedNoteId(null);
+            setDraggedNoteData(null);
+        }
+    }, [isNoteExpanded]);
+
+    useEffect(() => {
+        window.addEventListener("mousemove", handleGlobalNoteMove);
+        window.addEventListener("mouseup", handleGlobalNoteUp);
+        window.addEventListener("touchmove", handleGlobalNoteMove as any);
+        window.addEventListener("touchend", handleGlobalNoteUp);
+        return () => {
+            window.removeEventListener("mousemove", handleGlobalNoteMove);
+            window.removeEventListener("mouseup", handleGlobalNoteUp);
+            window.removeEventListener("touchmove", handleGlobalNoteMove as any);
+            window.removeEventListener("touchend", handleGlobalNoteUp);
+        };
+    }, [handleGlobalNoteMove, handleGlobalNoteUp]);
+
+    // Playground popup dragging handlers
+    const handlePlaygroundMouseDown = (e: React.MouseEvent) => {
+        const target = e.target as HTMLElement;
+        if (
+            target.closest('button') || 
+            target.closest('input') || 
+            target.closest('select') || 
+            target.closest('textarea') || 
+            target.closest('pre') || 
+            target.closest('code') || 
+            target.closest('a') || 
+            target.closest('iframe') || 
+            target.closest('.code-tabs-header') ||
+            target.closest('.pg-header-tab')
+        ) return;
+
+        setIsPlaygroundDragging(true);
+        setPlaygroundDragStart({
+            x: e.clientX,
+            y: e.clientY
+        });
+    };
+
+    const handlePlaygroundMouseMove = (e: MouseEvent) => {
+        if (!isPlaygroundDragging) return;
+        const dx = e.clientX - playgroundDragStart.x;
+        const dy = e.clientY - playgroundDragStart.y;
+
+        setPlaygroundDragStart({
+            x: e.clientX,
+            y: e.clientY
+        });
+
+        setPlaygroundOffset(prev => ({
+            x: prev.x + dx,
+            y: prev.y + dy
+        }));
+    };
+
+    const handlePlaygroundMouseUp = () => {
+        setIsPlaygroundDragging(false);
+    };
+
+    const handlePlaygroundTouchStart = (e: React.TouchEvent) => {
+        const target = e.target as HTMLElement;
+        if (
+            target.closest('button') || 
+            target.closest('input') || 
+            target.closest('select') || 
+            target.closest('textarea') || 
+            target.closest('pre') || 
+            target.closest('code') || 
+            target.closest('a') || 
+            target.closest('iframe') || 
+            target.closest('.code-tabs-header') ||
+            target.closest('.pg-header-tab')
+        ) return;
+
+        const touch = e.touches[0];
+        setIsPlaygroundDragging(true);
+        setPlaygroundDragStart({
+            x: touch.clientX,
+            y: touch.clientY
+        });
+    };
+
+    const handlePlaygroundTouchMove = (e: React.TouchEvent) => {
+        if (!isPlaygroundDragging) return;
+        const touch = e.touches[0];
+        const dx = touch.clientX - playgroundDragStart.x;
+        const dy = touch.clientY - playgroundDragStart.y;
+
+        setPlaygroundDragStart({
+            x: touch.clientX,
+            y: touch.clientY
+        });
+
+        setPlaygroundOffset(prev => ({
+            x: prev.x + dx,
+            y: prev.y + dy
+        }));
+    };
+
+    const handlePlaygroundTouchEnd = () => {
+        setIsPlaygroundDragging(false);
+    };
+
+    useEffect(() => {
+        if (isPlaygroundDragging) {
+            window.addEventListener("mousemove", handlePlaygroundMouseMove);
+            window.addEventListener("mouseup", handlePlaygroundMouseUp);
+        } else {
+            window.removeEventListener("mousemove", handlePlaygroundMouseMove);
+            window.removeEventListener("mouseup", handlePlaygroundMouseUp);
+        }
+        return () => {
+            window.removeEventListener("mousemove", handlePlaygroundMouseMove);
+            window.removeEventListener("mouseup", handlePlaygroundMouseUp);
+        };
+    }, [isPlaygroundDragging, playgroundDragStart]);
+
     // Copy Code Utility
     const handleCopy = (code: string) => {
         navigator.clipboard.writeText(code).then(() => {
@@ -458,6 +796,8 @@ export default function SnippetsGalleryDetails() {
     const totalSlots = N + 1; // +1 slot for the center header
     const dynamicRadius = Math.max(800, (totalSlots * targetArcDistance) / (2 * Math.PI));
     const dynamicPerspective = Math.max(700, dynamicRadius * 0.8);
+    // Keep ref in sync with computed value so applyCanvasTransform always uses the right perspective
+    dynamicPerspectiveRef.current = dynamicPerspective;
 
     if (loading) {
         return (
@@ -489,8 +829,18 @@ export default function SnippetsGalleryDetails() {
         );
     };
 
-    const getPlaygroundUrl = (title: string) => {
+    const getPlaygroundUrl = (snippet: Snippet) => {
+        if (snippet.playground_url) {
+            return snippet.playground_url;
+        }
+        const title = snippet.title;
         const t = title.toLowerCase();
+        if (t.includes("scroll") || t.includes("reveal")) {
+            return "/snippet-playground/preview-scroll.html";
+        }
+        if (t.includes("magnetic") || t.includes("hover")) {
+            return "/snippet-playground/preview-magnetic.html";
+        }
         if (t.includes("clipboard") || t.includes("copy")) {
             return "/snippet-playground/preview-clipboard.html";
         }
@@ -500,12 +850,480 @@ export default function SnippetsGalleryDetails() {
         if (t.includes("glass") || t.includes("morphism")) {
             return "/snippet-playground/preview-glass.html";
         }
-        return "/snippet-playground/index.html"; // Default fallback
+        return "/snippet-playground/preview-scroll.html"; // Default fallback
+    };
+
+    const getCustomIntegrationCode = (snippet: Snippet, config: Record<string, any>, tab: "vanilla" | "react") => {
+        if (tab === "vanilla" && snippet.integration_vanilla) return snippet.integration_vanilla;
+        if (tab === "react" && snippet.integration_react) return snippet.integration_react;
+
+        const titleLower = snippet.title.toLowerCase();
+
+        if (titleLower.includes("glass") || titleLower.includes("morphism")) {
+            const bgOpacity = config.bgOpacity ?? "0.65";
+            const blurValue = config.blurValue ?? "20px";
+            const borderOpacity = config.borderOpacity ?? "0.80";
+            const shadowOpacity = config.shadowOpacity ?? "0.06";
+
+            if (tab === "vanilla") {
+                return `<!-- Glassmorphism Card HTML -->
+<div class="glass-card">
+  <h3>Card Title</h3>
+  <p>Native GPU-accelerated frosted glass card component.</p>
+</div>
+
+<!-- Glassmorphism CSS -->
+<style>
+.glass-card {
+  background: rgba(255, 255, 255, ${bgOpacity});
+  backdrop-filter: blur(${blurValue});
+  -webkit-backdrop-filter: blur(${blurValue});
+  border: 1px solid rgba(255, 255, 255, ${borderOpacity});
+  border-radius: 1.5rem;
+  padding: 1.75rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, ${shadowOpacity});
+  color: #0f172a;
+}
+</style>`;
+            } else {
+                return `import React from 'react';
+
+export function GlassCard() {
+  return (
+    <div 
+      className="p-7 rounded-[1.5rem] text-slate-900 transition-all duration-300"
+      style={{
+        background: 'rgba(255, 255, 255, ${bgOpacity})',
+        backdropFilter: 'blur(${blurValue})',
+        WebkitBackdropFilter: 'blur(${blurValue})',
+        border: '1px solid rgba(255, 255, 255, ${borderOpacity})',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, ${shadowOpacity})'
+      }}
+    >
+      <h3 className="font-extrabold text-lg mb-2">Card Title</h3>
+      <p className="text-slate-600 text-sm">Native GPU-accelerated frosted glass card component.</p>
+    </div>
+  );
+}`;
+            }
+        }
+
+        if (titleLower.includes("scroll") || titleLower.includes("reveal")) {
+            const staggerDelay = config.staggerDelay ?? 120;
+            const threshold = config.threshold ?? 0.15;
+
+            if (tab === "vanilla") {
+                return `<!-- HTML Element with reveal markers -->
+<div class="reveal-container">
+  <div class="reveal-card" data-reveal>Card 1</div>
+  <div class="reveal-card" data-reveal>Card 2</div>
+  <div class="reveal-card" data-reveal>Card 3</div>
+</div>
+
+<!-- CSS Transition Styles -->
+<style>
+.reveal-card {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-card.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+</style>
+
+<!-- JavaScript Intersection Observer -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const container = document.querySelector(".reveal-container");
+  const delay = ${staggerDelay};
+
+  const observer = new IntersectionObserver((entries) => {
+    let index = 0;
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => {
+          entry.target.classList.add("revealed");
+        }, index * delay);
+        index++;
+        observer.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: ${threshold},
+    rootMargin: "0px 0px -50px 0px"
+  });
+
+  document.querySelectorAll("[data-reveal]").forEach(el => observer.observe(el));
+});
+</script>`;
+            } else {
+                return `import { useEffect, useRef, useState } from "react";
+
+interface ScrollRevealOptions {
+  threshold?: number;
+  rootMargin?: string;
+  staggerDelay?: number;
+}
+
+export function useScrollReveal<T extends HTMLElement>({
+  threshold = ${threshold},
+  rootMargin = "0px 0px -50px 0px",
+  staggerDelay = ${staggerDelay},
+}: ScrollRevealOptions = {}) {
+  const ref = useRef<T>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(el);
+
+          const children = el.querySelectorAll("[data-reveal]");
+          children.forEach((child, i) => {
+            (child as HTMLElement).style.transitionDelay = \`\${i * staggerDelay}ms\`;
+            child.classList.add("revealed");
+          });
+        }
+      },
+      { threshold, rootMargin }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [threshold, rootMargin, staggerDelay]);
+
+  return { ref, isVisible };
+}
+
+// Usage Example:
+// const { ref } = useScrollReveal({ threshold: ${threshold}, staggerDelay: ${staggerDelay} });
+// return <div ref={ref}><div data-reveal className="reveal-card">Card</div></div>;`;
+            }
+        }
+
+        if (titleLower.includes("magnetic") || titleLower.includes("hover")) {
+            const strength = config.strength ?? 0.35;
+            const ease = config.ease ?? 0.15;
+
+            if (tab === "vanilla") {
+                return `<!-- HTML Element -->
+<button class="magnetic-btn">Hover Me</button>
+
+<!-- JavaScript Magnetic Hover Animation -->
+<script>
+document.querySelectorAll(".magnetic-btn").forEach((btn) => {
+  const strength = ${strength};
+  const ease = ${ease};
+  let pos = { x: 0, y: 0 };
+  let target = { x: 0, y: 0 };
+  let raf = null;
+
+  function animate() {
+    pos.x += (target.x - pos.x) * ease;
+    pos.y += (target.y - pos.y) * ease;
+    btn.style.transform = \`translate(\${pos.x}px, \${pos.y}px)\`;
+
+    if (Math.abs(target.x - pos.x) > 0.1 || Math.abs(target.y - pos.y) > 0.1) {
+      raf = requestAnimationFrame(animate);
+    } else {
+      raf = null;
+    }
+  }
+
+  btn.addEventListener("mousemove", (e) => {
+    const rect = btn.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    target = {
+      x: (e.clientX - cx) * strength,
+      y: (e.clientY - cy) * strength,
+    };
+    if (!raf) raf = requestAnimationFrame(animate);
+  });
+
+  btn.addEventListener("mouseleave", () => {
+    target = { x: 0, y: 0 };
+    if (!raf) raf = requestAnimationFrame(animate);
+  });
+});
+</script>`;
+            } else {
+                return `import { useRef, useCallback } from "react";
+
+interface MagneticOptions {
+  strength?: number;
+  ease?: number;
+}
+
+export function useMagneticHover({ strength = ${strength}, ease = ${ease} }: MagneticOptions = {}) {
+  const ref = useRef<HTMLElement>(null);
+  const pos = useRef({ x: 0, y: 0 });
+  const target = useRef({ x: 0, y: 0 });
+  const raf = useRef<number>();
+
+  const animate = useCallback(() => {
+    pos.current.x += (target.current.x - pos.current.x) * ease;
+    pos.current.y += (target.current.y - pos.current.y) * ease;
+
+    if (ref.current) {
+      ref.current.style.transform = \`translate(\${pos.current.x}px, \${pos.current.y}px)\`;
+    }
+
+    if (
+      Math.abs(target.current.x - pos.current.x) > 0.1 ||
+      Math.abs(target.current.y - pos.current.y) > 0.1
+    ) {
+      raf.current = requestAnimationFrame(animate);
+    }
+  }, [ease]);
+
+  const onMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      const el = ref.current;
+      if (!el) return;
+
+      const rect = el.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      target.current = {
+        x: (e.clientX - centerX) * strength,
+        y: (e.clientY - centerY) * strength,
+      };
+
+      if (!raf.current) raf.current = requestAnimationFrame(animate);
+    },
+    [strength, animate]
+  );
+
+  const onMouseLeave = useCallback(() => {
+    target.current = { x: 0, y: 0 };
+    raf.current = requestAnimationFrame(animate);
+  }, [animate]);
+
+  return { ref, onMouseMove, onMouseLeave };
+}
+
+// Usage Example:
+// const magnetic = useMagneticHover({ strength: ${strength}, ease: ${ease} });
+// return <button {...magnetic}>Hover Me</button>;`;
+            }
+        }
+
+        if (titleLower.includes("clipboard") || titleLower.includes("copy")) {
+            const defaultCopyText = config.defaultCopyText ? config.defaultCopyText.replace(/"/g, '\\"') : 'ssh-keygen -t ed25519 -C \\"naufal@dev\\"';
+
+            if (tab === "vanilla") {
+                return `<!-- HTML Trigger -->
+<button onclick="handleCopy('${defaultCopyText}')">Copy Command</button>
+
+<!-- Clipboard JavaScript Utility -->
+<script>
+async function copyToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      return fallbackCopy(text);
+    }
+  }
+  return fallbackCopy(text);
+}
+
+function fallbackCopy(text) {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.style.cssText = "position:fixed;left:-9999px;opacity:0";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch {}
+  document.body.removeChild(textarea);
+  return ok;
+}
+
+async function handleCopy(text) {
+  const success = await copyToClipboard(text);
+  if (success) alert("Copied: " + text);
+}
+</script>`;
+            } else {
+                return `import React, { useState } from 'react';
+
+// Copy utility function
+export async function copyToClipboard(text: string): Promise<boolean> {
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      return fallbackCopy(text);
+    }
+  }
+  return fallbackCopy(text);
+}
+
+function fallbackCopy(text: string): boolean {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  let success = false;
+  try {
+    success = document.execCommand("copy");
+  } catch {
+    success = false;
+  }
+  document.body.removeChild(textarea);
+  return success;
+}
+
+// React Component Example
+export function CopyButton() {
+  const [copied, setCopied] = useState(false);
+  const textToCopy = "${defaultCopyText}";
+
+  const handleCopy = async () => {
+    const ok = await copyToClipboard(textToCopy);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <button 
+      onClick={handleCopy}
+      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-semibold transition"
+    >
+      {copied ? "✓ Copied!" : "Copy Command"}
+    </button>
+  );
+}`;
+            }
+        }
+
+        if (titleLower.includes("debounce") || titleLower.includes("cancel")) {
+            const delay = config.delay ?? 500;
+            const leading = config.leading ?? false;
+            const trailing = config.trailing ?? true;
+
+            if (tab === "vanilla") {
+                return `<!-- JS Debounce utility function -->
+<script>
+function debounce(fn, delay, options = {}) {
+  const { leading = ${leading}, trailing = ${trailing} } = options;
+  let timer = null;
+  let lastArgs = null;
+  let isLeadingInvoked = false;
+
+  return function(...args) {
+    lastArgs = args;
+
+    if (leading && !isLeadingInvoked) {
+      fn(...args);
+      isLeadingInvoked = true;
+    }
+
+    if (timer) clearTimeout(timer);
+
+    timer = setTimeout(() => {
+      if (trailing && lastArgs) {
+        fn(...lastArgs);
+      }
+      timer = null;
+      lastArgs = null;
+      isLeadingInvoked = false;
+    }, delay);
+  };
+}
+
+// Usage:
+// const myInput = document.getElementById("search");
+// const handleSearch = debounce((e) => {
+//   console.log("Searching for:", e.target.value);
+// }, ${delay});
+// myInput.addEventListener("input", handleSearch);
+</script>`;
+            } else {
+                return `import { useMemo, useEffect } from "react";
+
+export function debounce<T extends (...args: any[]) => any>(
+  fn: T,
+  delay: number,
+  options: { leading?: boolean; trailing?: boolean } = {}
+) {
+  const { leading = ${leading}, trailing = ${trailing} } = options;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let lastArgs: Parameters<T> | null = null;
+  let isLeadingInvoked = false;
+
+  return (...args: Parameters<T>) => {
+    lastArgs = args;
+
+    if (leading && !isLeadingInvoked) {
+      fn(...args);
+      isLeadingInvoked = true;
+    }
+
+    if (timer) clearTimeout(timer);
+
+    timer = setTimeout(() => {
+      if (trailing && lastArgs) {
+        fn(...lastArgs);
+      }
+      timer = null;
+      lastArgs = null;
+      isLeadingInvoked = false;
+    }, delay);
+  };
+}
+
+// React Search Component Example:
+// export function SearchInput() {
+//   const debouncedSearch = useMemo(() => {
+//     return debounce((query) => apiSearch(query), ${delay});
+//   }, []);
+//
+//   return <input type="text" onChange={(e) => debouncedSearch(e.target.value)} />;
+// }`;
+            }
+        }
+
+        return snippet.code;
+    };
+
+    const handleOpenPlayground = (e: React.MouseEvent, snippet: Snippet) => {
+        e.stopPropagation();
+        if (isDraggingRef.current || hasDraggedRef.current) return; // Prevent selection if dragging canvas
+        setSelectedPlaygroundSnippet(snippet);
+        setActivePlaygroundTab("demo");
+        setActiveCodeType("integrate");
+        setActiveIntegrationTab("vanilla");
+        setPlaygroundConfig({});
+        setIsCodeCopied(false);
+        setPlaygroundOffset({ x: 0, y: 0 });
+        setShowEditor(false);
+        setLiveEditorCode("");
     };
 
     const handleOpenCodes = (e: React.MouseEvent, snippet: Snippet) => {
         e.stopPropagation();
-        if (isDragging || hasDragged) return; // Prevent selection if dragging canvas
+        if (isDraggingRef.current || hasDraggedRef.current) return; // Prevent selection if dragging canvas
 
         const cardWrapper = e.currentTarget.closest(".gallery-card");
         if (!cardWrapper) return;
@@ -581,60 +1399,182 @@ export default function SnippetsGalleryDetails() {
                     <span className="unq-portal-text">BACK TO HOME</span>
                 </Link>
 
-                <div className="container">
-                    <div className="hero-content">
-                        <h1>{renderTitle(settings.hero_title || "Snippet Gallery")}</h1>
-                        <p className="subtitle">{settings.hero_subtitle || "Curated Reusable Code Gallery"}</p>
-                        <p className="value-prop">
-                            {settings.hero_value_prop || "A comprehensive vault of reusable code fragments and helper utilities built to optimize workflow efficiency, speed up development, and maintain high standards of code quality."}
-                        </p>
+                <div className="hero-split-layout">
+                    {/* Left — Hero text */}
+                    <div className="container hero-left-col">
+                        <div className="hero-content">
+                            <h1>{renderTitle(settings.hero_title || "Snippet Gallery")}</h1>
+                            <p className="subtitle">{settings.hero_subtitle || "Curated Reusable Code Gallery"}</p>
+                            <p className="value-prop">
+                                {settings.hero_value_prop || "A comprehensive vault of reusable code fragments and helper utilities built to optimize workflow efficiency, speed up development, and maintain high standards of code quality."}
+                            </p>
 
-                        <div className="hero-stats">
-                            <div className="stat-card">
-                                <div className="stat-icon-wrapper">
-                                    <Code size={24} className="stat-icon" />
+                            <div className="hero-stats">
+                                <div className="stat-card">
+                                    <div className="stat-icon-wrapper">
+                                        <Code size={24} className="stat-icon" />
+                                    </div>
+                                    <div className="stat-info">
+                                        <h3>{snippets.length}+</h3>
+                                        <p>Total Snippets</p>
+                                    </div>
                                 </div>
-                                <div className="stat-info">
-                                    <h3>{snippets.length}+</h3>
-                                    <p>Total Snippets</p>
+                                <div className="stat-card">
+                                    <div className="stat-icon-wrapper">
+                                        <LucideIcons.Binary size={24} className="stat-icon" />
+                                    </div>
+                                    <div className="stat-info">
+                                        <h3>{Array.from(new Set(snippets.map(s => s.language.toLowerCase()))).length}</h3>
+                                        <p>Languages Used</p>
+                                    </div>
+                                </div>
+                                <div className="stat-card">
+                                    <div className="stat-icon-wrapper">
+                                        <LucideIcons.Folders size={24} className="stat-icon" />
+                                    </div>
+                                    <div className="stat-info">
+                                        <h3>{Array.from(new Set(snippets.map(s => (s.category || "utility").toLowerCase()))).length}</h3>
+                                        <p>Categories</p>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="stat-card">
-                                <div className="stat-icon-wrapper">
-                                    <LucideIcons.Binary size={24} className="stat-icon" />
-                                </div>
-                                <div className="stat-info">
-                                    <h3>{Array.from(new Set(snippets.map(s => s.language.toLowerCase()))).length}</h3>
-                                    <p>Languages Used</p>
-                                </div>
-                            </div>
-                            <div className="stat-card">
-                                <div className="stat-icon-wrapper">
-                                    <LucideIcons.Folders size={24} className="stat-icon" />
-                                </div>
-                                <div className="stat-info">
-                                    <h3>{Array.from(new Set(snippets.map(s => (s.category || "utility").toLowerCase()))).length}</h3>
-                                    <p>Categories</p>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div className="cta-buttons">
-                            <a href="#gallery" className="btn btn-work group">
-                                Explore Gallery
-                                <svg className="icon-svg ml-2 group-hover:translate-y-1 transition-transform" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" fill="none">
-                                    <path d="M7 13l5 5 5-5M12 6v12"></path>
-                                </svg>
-                            </a>
+                            <div className="cta-buttons">
+                                <a href="#gallery" className="btn btn-work group">
+                                    Explore Gallery
+                                    <svg className="icon-svg ml-2 group-hover:translate-y-1 transition-transform" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" fill="none">
+                                        <path d="M7 13l5 5 5-5M12 6v12"></path>
+                                    </svg>
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </div>
+
+                    {/* Right — Notes Dimension */}
+                    <div className="notes-dimension" ref={notesDimRef}>
+                            <div className="notes-dim-inner">
+                                {/* Grid background */}
+                                <div className="notes-grid-bg" />
+
+                                {/* Animated traces */}
+                                <div className="notes-trace notes-trace-h notes-trace-h1" />
+                                <div className="notes-trace notes-trace-h notes-trace-h2" />
+                                <div className="notes-trace notes-trace-v notes-trace-v1" />
+                                <div className="notes-trace notes-trace-v notes-trace-v2" />
+
+                                {/* Header */}
+                                <div className="notes-dim-header">
+                                    <LucideIcons.StickyNote size={16} />
+                                    <span>Dev Notes</span>
+                                    <span className="notes-count">{notes.length}</span>
+                                </div>
+
+                                {/* Notes cards */}
+                                <div className="notes-cards-scroll">
+                                    {notes.length > 0 ? notes.map((note, idx) => (
+                                        <div
+                                            key={note.id}
+                                            className={`note-card note-card-draggable ${draggedNoteId === note.id ? 'note-dragging-source' : ''}`}
+                                            style={{
+                                                borderLeftColor: note.color || '#3A99C9',
+                                                animationDelay: `${idx * 0.1}s`,
+                                            }}
+                                            onMouseDown={(e) => handleNoteDragStart(note, e)}
+                                            onTouchStart={(e) => handleNoteDragStart(note, e)}
+                                        >
+                                            <div className="note-card-top">
+                                                <span className="note-type-icon">{NOTE_TYPE_ICONS[note.type] || "📝"}</span>
+                                                <span className="note-type-label">{note.type}</span>
+                                                {note.pinned && <LucideIcons.Pin size={10} className="note-pin" />}
+                                            </div>
+                                            <h4 className="note-title">{note.title}</h4>
+                                            {note.content && <p className="note-content">{note.content}</p>}
+                                            <span className="note-date">
+                                                {new Date(note.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                            </span>
+                                        </div>
+                                    )) : (
+                                        <>
+                                            <div className="note-card placeholder" style={{ borderLeftColor: '#3A99C9' }}>
+                                                <div className="note-card-top">
+                                                    <span className="note-type-icon">💡</span>
+                                                    <span className="note-type-label">idea</span>
+                                                </div>
+                                                <h4 className="note-title">Refactor auth middleware</h4>
+                                                <p className="note-content">Move to edge runtime for faster cold starts</p>
+                                            </div>
+                                            <div className="note-card placeholder" style={{ borderLeftColor: '#22c55e' }}>
+                                                <div className="note-card-top">
+                                                    <span className="note-type-icon">✅</span>
+                                                    <span className="note-type-label">todo</span>
+                                                </div>
+                                                <h4 className="note-title">Add dark mode to gallery</h4>
+                                                <p className="note-content">Theme toggle for 3D space</p>
+                                            </div>
+                                            <div className="note-card placeholder" style={{ borderLeftColor: '#f97316' }}>
+                                                <div className="note-card-top">
+                                                    <span className="note-type-icon">📚</span>
+                                                    <span className="note-type-label">learning</span>
+                                                </div>
+                                                <h4 className="note-title">Three.js shader basics</h4>
+                                                <p className="note-content">Vertex + fragment shaders for custom effects</p>
+                                            </div>
+                                            <div className="note-card placeholder" style={{ borderLeftColor: '#7c3aed' }}>
+                                                <div className="note-card-top">
+                                                    <span className="note-type-icon">🔔</span>
+                                                    <span className="note-type-label">reminder</span>
+                                                </div>
+                                                <h4 className="note-title">Deploy v2.1 by Friday</h4>
+                                                <p className="note-content">Include new snippets + gallery fixes</p>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
             </section>
+
+            {/* Floating dragged note */}
+            {draggedNoteData && draggedNoteId && (
+                <div
+                    className={`floating-note ${isNoteExpanded ? 'expanded' : 'collapsed'}`}
+                    style={{
+                        left: `${noteFloatPos.x}px`,
+                        top: `${noteFloatPos.y}px`,
+                        borderTopColor: draggedNoteData.color || '#3A99C9',
+                    }}
+                    onMouseDown={(e) => {
+                        e.preventDefault();
+                        noteDragRef.current = { active: true, startX: e.clientX, startY: e.clientY, offsetX: 0, offsetY: 0 };
+                    }}
+                    onTouchStart={(e) => {
+                        const t = e.touches[0];
+                        noteDragRef.current = { active: true, startX: t.clientX, startY: t.clientY, offsetX: 0, offsetY: 0 };
+                    }}
+                >
+                    <button className="floating-note-close" onClick={() => { setDraggedNoteId(null); setDraggedNoteData(null); setIsNoteExpanded(false); }}>
+                        <X size={14} />
+                    </button>
+                    <div className="fn-type">
+                        <span>{NOTE_TYPE_ICONS[draggedNoteData.type] || "📝"}</span>
+                        <span className="fn-type-label">{draggedNoteData.type}</span>
+                        {draggedNoteData.pinned && <span className="fn-pin">📌</span>}
+                    </div>
+                    <h3 className="fn-title">{draggedNoteData.title}</h3>
+                    <p className="fn-content">{draggedNoteData.content}</p>
+                    {isNoteExpanded && (
+                        <span className="fn-date">
+                            {new Date(draggedNoteData.created_at).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                        </span>
+                    )}
+                </div>
+            )}
 
             {/* Asymmetric 3D Gallery Wall canvas */}
             <section id="gallery" className="gallery-section" ref={galleryRef}>
                 <div 
-                    className={`gallery-viewport ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+                    className={`gallery-viewport ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                     ref={containerRef}
                     onMouseDown={handleMouseDown}
                     onTouchStart={handleTouchStart}
@@ -649,18 +1589,30 @@ export default function SnippetsGalleryDetails() {
                         ref={canvasRef}
                         style={{
                             transform: `translateZ(${dynamicPerspective}px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
-                            transition: isDragging 
-                                ? "none" 
-                                : isRecentering 
-                                    ? "transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)" 
-                                    : "transform 0.15s cubic-bezier(0.25, 1, 0.5, 1)"
+                            willChange: 'transform',
+                            transition: 'none'
                         }}
                     >
                         {/* 3D Floor Plane */}
-                        <div className="gallery-floor" />
+                        <div className="gallery-floor">
+                            {/* Animated light traces on floor grid */}
+                            <div className="grid-trace trace-h trace-h-1" />
+                            <div className="grid-trace trace-h trace-h-2" />
+                            <div className="grid-trace trace-h trace-h-3" />
+                            <div className="grid-trace trace-h trace-h-4" />
+                            <div className="grid-trace trace-v trace-v-1" />
+                            <div className="grid-trace trace-v trace-v-2" />
+                            <div className="grid-trace trace-v trace-v-3" />
+                            <div className="grid-trace trace-v trace-v-4" />
+                        </div>
 
                         {/* 3D Ceiling Plane */}
-                        <div className="gallery-ceiling" />
+                        <div className="gallery-ceiling">
+                            <div className="grid-trace trace-h trace-h-5" />
+                            <div className="grid-trace trace-h trace-h-6" />
+                            <div className="grid-trace trace-v trace-v-5" />
+                            <div className="grid-trace trace-v trace-v-6" />
+                        </div>
 
                         {/* 3D Circumference Guiding Rings */}
                         <div className="gallery-ring" style={{ "--yOffset": -350, "--radius": dynamicRadius } as React.CSSProperties} />
@@ -728,30 +1680,13 @@ export default function SnippetsGalleryDetails() {
                                             <span className="cat-tag">{snippet.category || "utility"}</span>
                                         </div>
                                         
-                                        {/* Stylized preview outcome thumbnail or default icon */}
+                                        {/* Scaled Live Demo Preview */}
                                         <div className="gallery-card-thumbnail">
-                                            {snippet.preview_image_url ? (
-                                                snippet.preview_image_url.match(/\.(mp4|webm|ogg|mov)$/i) ? (
-                                                    <video
-                                                        src={snippet.preview_image_url}
-                                                        className="w-full h-full object-cover"
-                                                        muted
-                                                        autoPlay
-                                                        loop
-                                                        playsInline
-                                                    />
-                                                ) : (
-                                                    <img
-                                                        src={snippet.preview_image_url}
-                                                        alt={snippet.title}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                )
-                                            ) : (
-                                                <div className="default-preview-icon">
-                                                    <Code size={32} className="opacity-70 stroke-[1.8]" />
-                                                </div>
-                                            )}
+                                            <ScaledPreviewIframe
+                                                src={getPlaygroundUrl(snippet)}
+                                                title={`${snippet.title} Preview`}
+                                                containerWidth={preset.width}
+                                            />
                                         </div>
 
                                         <div className="gallery-card-info">
@@ -762,24 +1697,22 @@ export default function SnippetsGalleryDetails() {
                                     {/* Hover Actions Popout Wrapper (beside card, behind card) */}
                                     <div className={`card-popout-actions side-${(snippet.title.charCodeAt(0) + idx) % 2 === 0 ? "left" : "right"}`}>
                                         <button
-                                            className="action-btn btn-codes"
+                                            className="action-btn btn-details"
                                             onClick={(e) => handleOpenCodes(e, snippet)}
-                                            title="View Codes"
+                                            title="View Details"
                                         >
-                                            <Code size={16} />
-                                            <span className="btn-label">Codes</span>
+                                            <Info size={16} />
+                                            <span className="btn-label">Details</span>
                                         </button>
-                                        <a
-                                            href={getPlaygroundUrl(snippet.title)}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
+                                        <button
+                                            type="button"
+                                            onClick={(e) => handleOpenPlayground(e, snippet)}
                                             className="action-btn btn-playground"
-                                            onClick={(e) => e.stopPropagation()}
                                             title="Open Playground"
                                         >
                                             <Play size={16} />
                                             <span className="btn-label">Playground</span>
-                                        </a>
+                                        </button>
                                     </div>
                                 </div>
                             );
@@ -839,72 +1772,221 @@ export default function SnippetsGalleryDetails() {
                                 )}
 
                                 {/* Preview File Outcome rendering */}
-                                {selectedSnippet.preview_image_url && (
-                                    <div className="panel-section">
-                                        <h3 className="section-title">Preview Outcome</h3>
-                                        <div className="panel-preview-wrapper mt-3 rounded-xl overflow-hidden border border-[#222]">
-                                            {selectedSnippet.preview_image_url.match(/\.(mp4|webm|ogg|mov)$/i) ? (
-                                                <video
-                                                    src={selectedSnippet.preview_image_url}
-                                                    className="w-full object-cover aspect-video"
-                                                    controls
-                                                    autoPlay
-                                                    muted
-                                                    loop
-                                                    playsInline
-                                                />
-                                            ) : (
-                                                <img
-                                                    src={selectedSnippet.preview_image_url}
-                                                    alt={selectedSnippet.title}
-                                                    className="w-full object-contain max-h-[300px] bg-black/40"
-                                                />
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Full Syntax Highlighted Code block with copy button */}
-                                <div className="panel-section relative mt-8">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <h3 className="section-title my-0">Code Snippet</h3>
-                                        <button
-                                            onClick={() => handleCopy(selectedSnippet.code)}
-                                            className="copy-btn-panel flex items-center rounded-full transition-all duration-200"
-                                        >
-                                            {copied ? (
-                                                <>
-                                                    <Check size={14} />
-                                                    <span>Copied!</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Copy size={14} />
-                                                    <span>Copy Code</span>
-                                                </>
-                                            )}
-                                        </button>
-                                    </div>
-                                    <div className="code-block-panel-wrapper rounded-xl overflow-hidden border border-slate-200 bg-[#f8fafc] mt-4 mb-6">
-                                        <div className="code-header-bar flex items-center gap-1.5 px-5 py-2.5 bg-slate-100/80 border-b border-slate-200">
-                                            <span className="w-2.5 h-2.5 rounded-full bg-red-500/70"></span>
-                                            <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70"></span>
-                                            <span className="w-2.5 h-2.5 rounded-full bg-green-500/70"></span>
-                                            <span className="ml-auto text-[10px] uppercase font-bold tracking-widest opacity-50 text-slate-500">{selectedSnippet.language}</span>
-                                        </div>
-                                        <pre className="p-5 overflow-x-auto custom-scrollbar" style={{ maxHeight: "400px", margin: 0 }}>
-                                            <code 
-                                                className="text-xs font-mono leading-relaxed select-all block text-slate-800 mt-2" 
-                                                style={{ fontFamily: "'Geist Mono', monospace", whiteSpace: "pre", tabSize: 2 }}
-                                                dangerouslySetInnerHTML={{ __html: highlightFullCode(selectedSnippet.code) }}
-                                            />
-                                        </pre>
+                                <div className="panel-section">
+                                    <h3 className="section-title">Preview Outcome</h3>
+                                    <div className="panel-preview-wrapper mt-3 rounded-xl overflow-hidden border border-[#e2e8f0]">
+                                        <ScaledPreviewIframe
+                                            src={getPlaygroundUrl(selectedSnippet)}
+                                            title={`${selectedSnippet.title} Preview`}
+                                        />
                                     </div>
                                 </div>
+
                             </div>
                         </div>
                     )}
                 </div>
+
+                {/* Playground Popup */}
+                {selectedPlaygroundSnippet && (
+                    <>
+                        <div className="playground-backdrop active" onClick={() => setSelectedPlaygroundSnippet(null)} />
+                        <div 
+                            className={`playground-popup-container ${isPlaygroundDragging ? "dragging" : ""}`}
+                            style={{
+                                left: `calc(50% + ${playgroundOffset.x}px)`,
+                                top: `calc(50% + ${playgroundOffset.y}px)`
+                            }}
+                            onMouseDown={handlePlaygroundMouseDown}
+                            onTouchStart={handlePlaygroundTouchStart}
+                            onTouchMove={handlePlaygroundTouchMove}
+                            onTouchEnd={handlePlaygroundTouchEnd}
+                        >
+                            <div className="playground-popup-header">
+                                <div className="header-title flex items-center gap-2" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                                    <LucideIcons.Sparkles size={18} color="#3A99C9" />
+                                    <span style={{ fontWeight: 'bold', fontSize: '0.875rem', letterSpacing: '0.025em', color: '#0f172a', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '200px' }}>
+                                        {selectedPlaygroundSnippet.title}
+                                    </span>
+                                </div>
+                                
+                                <div className="playground-header-tabs" style={{ display: 'flex', gap: '8px', background: 'rgba(0, 0, 0, 0.05)', padding: '4px', borderRadius: '30px', border: '1px solid rgba(0, 0, 0, 0.08)' }}>
+                                    <button 
+                                        className={`pg-header-tab ${activePlaygroundTab === "demo" ? "active" : ""}`}
+                                        onClick={() => setActivePlaygroundTab("demo")}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            background: activePlaygroundTab === "demo" ? '#3A99C9' : 'transparent',
+                                            color: activePlaygroundTab === "demo" ? 'white' : '#475569',
+                                            border: 'none',
+                                            borderRadius: '20px',
+                                            padding: '5px 14px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        <LucideIcons.Gamepad2 size={14} />
+                                        <span>Live Demo</span>
+                                    </button>
+                                    <button 
+                                        className={`pg-header-tab ${activePlaygroundTab === "code" ? "active" : ""}`}
+                                        onClick={() => setActivePlaygroundTab("code")}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            background: activePlaygroundTab === "code" ? '#3A99C9' : 'transparent',
+                                            color: activePlaygroundTab === "code" ? 'white' : '#475569',
+                                            border: 'none',
+                                            borderRadius: '20px',
+                                            padding: '5px 14px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        <LucideIcons.Code2 size={14} />
+                                        <span>Get Integration Code</span>
+                                    </button>
+                                </div>
+
+                                <button className="playground-close" onClick={() => setSelectedPlaygroundSnippet(null)}>
+                                    <X size={24} />
+                                </button>
+                            </div>
+                            <div className="playground-popup-body" ref={wrapperRef}>
+                                {activePlaygroundTab === "demo" ? (
+                                    <div className="playground-iframe-wrapper">
+                                        <iframe
+                                            className="playground-iframe"
+                                            src={getPlaygroundUrl(selectedPlaygroundSnippet)}
+                                            style={{ transform: `scale(${playgroundScale})` }}
+                                            title={`${selectedPlaygroundSnippet.title} Demo`}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="playground-code-view" style={{ display: 'flex', flexDirection: 'column', gap: '16px', minHeight: '380px' }}>
+                                        {/* Sub tabs */}
+                                        <div className="code-tabs-header" style={{ display: 'flex', gap: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+                                            <button 
+                                                onClick={() => setActiveCodeType("integrate")}
+                                                style={{
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    color: activeCodeType === "integrate" ? '#3A99C9' : '#64748b',
+                                                    fontWeight: 'bold',
+                                                    fontSize: '0.85rem',
+                                                    cursor: 'pointer',
+                                                    paddingBottom: '4px',
+                                                    borderBottom: activeCodeType === "integrate" ? '2px solid #3A99C9' : 'none'
+                                                }}
+                                            >
+                                                Integration Code Example
+                                            </button>
+                                            <button 
+                                                onClick={() => setActiveCodeType("raw")}
+                                                style={{
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    color: activeCodeType === "raw" ? '#3A99C9' : '#64748b',
+                                                    fontWeight: 'bold',
+                                                    fontSize: '0.85rem',
+                                                    cursor: 'pointer',
+                                                    paddingBottom: '4px',
+                                                    borderBottom: activeCodeType === "raw" ? '2px solid #3A99C9' : 'none'
+                                                }}
+                                            >
+                                                Raw Source Code
+                                            </button>
+                                        </div>
+
+                                        {/* Sub-sub tabs if Integration Code Example is selected */}
+                                        {activeCodeType === "integrate" && (
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <button 
+                                                    onClick={() => setActiveIntegrationTab("vanilla")}
+                                                    style={{
+                                                        background: activeIntegrationTab === "vanilla" ? 'rgba(58, 153, 201, 0.08)' : 'transparent',
+                                                        color: activeIntegrationTab === "vanilla" ? '#3A99C9' : '#475569',
+                                                        border: activeIntegrationTab === "vanilla" ? '1px solid #3A99C9' : '1px solid #cbd5e1',
+                                                        borderRadius: '8px',
+                                                        padding: '4px 12px',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 600,
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    HTML/CSS/JS (Vanilla)
+                                                </button>
+                                                <button 
+                                                    onClick={() => setActiveIntegrationTab("react")}
+                                                    style={{
+                                                        background: activeIntegrationTab === "react" ? 'rgba(58, 153, 201, 0.08)' : 'transparent',
+                                                        color: activeIntegrationTab === "react" ? '#3A99C9' : '#475569',
+                                                        border: activeIntegrationTab === "react" ? '1px solid #3A99C9' : '1px solid #cbd5e1',
+                                                        borderRadius: '8px',
+                                                        padding: '4px 12px',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 600,
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    React / TSX Component
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {/* Code Display block */}
+                                        <div className="code-block-wrapper" style={{ position: 'relative', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
+                                            <div className="code-block-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f1f5f9', padding: '8px 16px', borderBottom: '1px solid #e2e8f0' }}>
+                                                <span style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: 'monospace' }}>
+                                                    {activeCodeType === "raw" 
+                                                        ? `${selectedPlaygroundSnippet.language.toUpperCase()} Source` 
+                                                        : activeIntegrationTab === "vanilla" ? "HTML / CSS / JS" : "JSX / TSX"}
+                                                </span>
+                                                <button 
+                                                    onClick={() => handleCopyConfiguredCode(
+                                                        activeCodeType === "raw" 
+                                                            ? selectedPlaygroundSnippet.code 
+                                                            : getCustomIntegrationCode(selectedPlaygroundSnippet, playgroundConfig, activeIntegrationTab)
+                                                    )}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                        background: isCodeCopied ? '#22c55e' : 'white',
+                                                        color: isCodeCopied ? 'white' : '#475569',
+                                                        border: isCodeCopied ? 'none' : '1px solid #cbd5e1',
+                                                        borderRadius: '6px',
+                                                        padding: '4px 10px',
+                                                        fontSize: '0.7rem',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    {isCodeCopied ? <LucideIcons.Check size={12} /> : <LucideIcons.Copy size={12} />}
+                                                    <span>{isCodeCopied ? "Copied!" : "Copy Code"}</span>
+                                                </button>
+                                            </div>
+                                            <pre style={{ margin: 0, padding: '16px', maxHeight: '320px', overflowY: 'auto', fontFamily: "'Geist Mono', monospace", fontSize: '0.75rem', lineHeight: '1.6', color: '#334155', whiteSpace: 'pre', textAlign: 'left' }}>
+                                                <code>
+                                                    {activeCodeType === "raw" 
+                                                        ? selectedPlaygroundSnippet.code 
+                                                        : getCustomIntegrationCode(selectedPlaygroundSnippet, playgroundConfig, activeIntegrationTab)}
+                                                </code>
+                                            </pre>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </>
+                )}
             </section>
 
             {/* Let's Work Together & Contact Section */}
@@ -1088,6 +2170,384 @@ export default function SnippetsGalleryDetails() {
                     background-color: var(--color-bg-primary, #0a0a0a);
                 }
 
+                /* ═══════════════════════════════════════
+                   HERO SPLIT LAYOUT + NOTES DIMENSION
+                   ═══════════════════════════════════════ */
+                .hero-split-layout {
+                    display: flex;
+                    align-items: stretch;
+                    width: 100%;
+                    gap: 0;
+                    padding-right: 2rem;
+                }
+
+                .hero-left-col {
+                    flex: 1;
+                    min-width: 0;
+                }
+
+                .notes-dimension {
+                    flex: 0 0 380px;
+                    position: relative;
+                    overflow: hidden;
+                    border: 1px solid rgba(0, 0, 0, 0.08);
+                    border-radius: 1.25rem;
+                    background: radial-gradient(circle at center, #ffffff 0%, #FAF9F6 70%, #E2DFD8 100%);
+                    display: flex;
+                    flex-direction: column;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+                    margin-top: -12rem;
+                    margin-bottom: -12rem;
+                    align-self: stretch;
+                }
+
+                .notes-dim-inner {
+                    position: relative;
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    overflow: hidden;
+                }
+
+                /* Grid background */
+                .notes-grid-bg {
+                    position: absolute;
+                    inset: 0;
+                    background-image:
+                        linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+                    background-size: 50px 50px;
+                    background-position: center;
+                    pointer-events: none;
+                    z-index: 0;
+                }
+
+                /* Animated traces for notes grid */
+                .notes-trace {
+                    position: absolute;
+                    pointer-events: none;
+                    z-index: 1;
+                }
+                .notes-trace-h {
+                    width: 100%;
+                    height: 1px;
+                    left: 0;
+                    background: linear-gradient(90deg,
+                        transparent 0%, transparent 25%,
+                        rgba(58, 153, 201, 0.4) 45%,
+                        rgba(27, 79, 114, 0.7) 50%,
+                        rgba(58, 153, 201, 0.4) 55%,
+                        transparent 75%, transparent 100%
+                    );
+                    background-size: 300px 1px;
+                }
+                .notes-trace-v {
+                    height: 100%;
+                    width: 1px;
+                    top: 0;
+                    background: linear-gradient(180deg,
+                        transparent 0%, transparent 25%,
+                        rgba(58, 153, 201, 0.4) 45%,
+                        rgba(27, 79, 114, 0.7) 50%,
+                        rgba(58, 153, 201, 0.4) 55%,
+                        transparent 75%, transparent 100%
+                    );
+                    background-size: 1px 300px;
+                }
+                .notes-trace-h1 {
+                    top: 120px;
+                    animation: ntrace-h 6s linear infinite;
+                }
+                .notes-trace-h2 {
+                    top: 280px;
+                    animation: ntrace-h 8s linear infinite reverse;
+                    animation-delay: -2s;
+                }
+                .notes-trace-v1 {
+                    left: 160px;
+                    animation: ntrace-v 7s linear infinite;
+                    animation-delay: -1s;
+                }
+                .notes-trace-v2 {
+                    left: 320px;
+                    animation: ntrace-v 9s linear infinite reverse;
+                    animation-delay: -4s;
+                }
+                @keyframes ntrace-h {
+                    0%   { background-position: -300px 0; }
+                    100% { background-position: 680px 0; }
+                }
+                @keyframes ntrace-v {
+                    0%   { background-position: 0 -300px; }
+                    100% { background-position: 0 720px; }
+                }
+
+                /* Header bar */
+                .notes-dim-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 1rem 1.5rem;
+                    font-size: 0.75rem;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                    letter-spacing: 0.1em;
+                    color: rgba(0, 0, 0, 0.5);
+                    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+                    position: relative;
+                    z-index: 2;
+                    flex-shrink: 0;
+                }
+                .notes-count {
+                    margin-left: auto;
+                    font-size: 0.65rem;
+                    background: rgba(58, 153, 201, 0.12);
+                    color: #1B4F72;
+                    padding: 0.15rem 0.5rem;
+                    border-radius: 99px;
+                    font-weight: 800;
+                }
+
+                /* Scrollable cards area */
+                .notes-cards-scroll {
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 1rem 1.5rem;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.75rem;
+                    position: relative;
+                    z-index: 2;
+                }
+                .notes-cards-scroll::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .notes-cards-scroll::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .notes-cards-scroll::-webkit-scrollbar-thumb {
+                    background: rgba(0, 0, 0, 0.08);
+                    border-radius: 99px;
+                }
+
+                /* Note card */
+                .note-card {
+                    background: rgba(255, 255, 255, 0.7);
+                    border: 1px solid rgba(0, 0, 0, 0.06);
+                    border-left: 3px solid #3A99C9;
+                    border-radius: 10px;
+                    padding: 0.85rem 1rem;
+                    transition: all 0.3s ease;
+                    animation: noteSlideIn 0.5s ease-out both;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+                }
+                .note-card:hover {
+                    background: #ffffff;
+                    border-color: rgba(0, 0, 0, 0.1);
+                    transform: translateX(3px);
+                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+                }
+                .note-card.placeholder {
+                    opacity: 0.6;
+                }
+
+                @keyframes noteSlideIn {
+                    from { opacity: 0; transform: translateX(-10px); }
+                    to { opacity: 1; transform: translateX(0); }
+                }
+
+                .note-card-top {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.4rem;
+                    margin-bottom: 0.35rem;
+                }
+                .note-type-icon {
+                    font-size: 0.75rem;
+                    line-height: 1;
+                }
+                .note-type-label {
+                    font-size: 0.6rem;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    color: rgba(0, 0, 0, 0.35);
+                }
+                .note-pin {
+                    margin-left: auto;
+                    color: #3A99C9;
+                }
+
+                .note-title {
+                    font-size: 0.82rem;
+                    font-weight: 700;
+                    color: #1a202c;
+                    margin: 0 0 0.2rem;
+                    line-height: 1.35;
+                }
+                .note-content {
+                    font-size: 0.7rem;
+                    color: rgba(0, 0, 0, 0.45);
+                    line-height: 1.45;
+                    margin: 0;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                }
+                .note-date {
+                    display: block;
+                    margin-top: 0.35rem;
+                    font-size: 0.58rem;
+                    font-weight: 700;
+                    color: rgba(0, 0, 0, 0.25);
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                }
+
+                .note-card-draggable {
+                    cursor: grab;
+                    user-select: none;
+                    touch-action: none;
+                }
+                .note-card-draggable:active {
+                    cursor: grabbing;
+                }
+                .note-dragging-source {
+                    opacity: 0;
+                    height: 0;
+                    padding: 0;
+                    margin: 0;
+                    border: none;
+                    overflow: hidden;
+                    pointer-events: none;
+                    transition: all 0.3s ease;
+                }
+
+                /* ── Floating dragged note ── */
+                .floating-note {
+                    position: fixed;
+                    z-index: 9999;
+                    background: #ffffff;
+                    border: 1px solid rgba(0, 0, 0, 0.08);
+                    border-top: 4px solid #3A99C9;
+                    border-radius: 1rem;
+                    padding: 1.25rem;
+                    cursor: grab;
+                    user-select: none;
+                    pointer-events: auto;
+                    transition: width 0.3s ease, padding 0.3s ease, box-shadow 0.3s ease;
+                }
+                .floating-note:active { cursor: grabbing; }
+
+                .floating-note.collapsed {
+                    width: 280px;
+                    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+                }
+                .floating-note.collapsed .fn-content {
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                }
+
+                .floating-note.expanded {
+                    width: 380px;
+                    padding: 1.75rem;
+                    box-shadow:
+                        0 30px 70px rgba(0, 0, 0, 0.15),
+                        0 10px 25px rgba(0, 0, 0, 0.08);
+                }
+                .floating-note.expanded .fn-content {
+                    display: block;
+                    white-space: pre-wrap;
+                }
+                .floating-note.expanded .fn-title {
+                    font-size: 1.2rem;
+                }
+
+                .floating-note-close {
+                    position: absolute;
+                    top: 0.75rem;
+                    right: 0.75rem;
+                    background: rgba(0, 0, 0, 0.04);
+                    border: none;
+                    border-radius: 50%;
+                    width: 24px;
+                    height: 24px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    color: rgba(0, 0, 0, 0.3);
+                    transition: all 0.2s;
+                }
+                .floating-note-close:hover {
+                    background: rgba(0, 0, 0, 0.08);
+                    color: #000;
+                }
+
+                .fn-type {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                    margin-bottom: 0.5rem;
+                }
+                .fn-type-label {
+                    font-size: 0.6rem;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    color: rgba(0, 0, 0, 0.35);
+                }
+                .fn-pin {
+                    margin-left: auto;
+                    font-size: 0.6rem;
+                }
+
+                .fn-title {
+                    font-size: 0.9rem;
+                    font-weight: 800;
+                    color: #1a202c;
+                    margin: 0 0 0.4rem;
+                    line-height: 1.35;
+                    padding-right: 1.5rem;
+                    transition: font-size 0.3s ease;
+                }
+
+                .fn-content {
+                    font-size: 0.8rem;
+                    color: rgba(0, 0, 0, 0.55);
+                    line-height: 1.6;
+                    margin: 0;
+                    transition: all 0.3s ease;
+                }
+
+                .fn-date {
+                    display: block;
+                    margin-top: 0.75rem;
+                    font-size: 0.6rem;
+                    font-weight: 700;
+                    color: rgba(0, 0, 0, 0.2);
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    padding-top: 0.6rem;
+                    border-top: 1px solid rgba(0, 0, 0, 0.05);
+                }
+
+                @media (max-width: 900px) {
+                    .hero-split-layout {
+                        flex-direction: column;
+                    }
+                    .notes-dimension {
+                        flex: none;
+                        width: 100%;
+                        min-height: 300px;
+                        max-height: 400px;
+                    }
+                }
+
                 :global(.milestones-unified-wrapper) {
                     position: relative;
                     z-index: 20;
@@ -1100,27 +2560,12 @@ export default function SnippetsGalleryDetails() {
                     height: 0px;
                     position: absolute;
                     transform-style: preserve-3d;
+                    will-change: transform;
+                    backface-visibility: hidden;
                 }
 
                 /* 3D Environment elements style */
-                .gallery-floor {
-                    position: absolute;
-                    width: 4000px;
-                    height: 4000px;
-                    top: 50%;
-                    left: 50%;
-                    margin-left: -2000px;
-                    margin-top: -2000px;
-                    background-image: 
-                        linear-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(0, 0, 0, 0.08) 1px, transparent 1px);
-                    background-size: 80px 80px;
-                    background-position: center;
-                    transform: translateY(400px) rotateX(90deg);
-                    transform-style: preserve-3d;
-                    pointer-events: none;
-                }
-
+                .gallery-floor,
                 .gallery-ceiling {
                     position: absolute;
                     width: 4000px;
@@ -1129,14 +2574,134 @@ export default function SnippetsGalleryDetails() {
                     left: 50%;
                     margin-left: -2000px;
                     margin-top: -2000px;
-                    background-image: 
+                    background-image:
                         linear-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px),
                         linear-gradient(90deg, rgba(0, 0, 0, 0.08) 1px, transparent 1px);
                     background-size: 80px 80px;
                     background-position: center;
-                    transform: translateY(-400px) rotateX(90deg);
                     transform-style: preserve-3d;
                     pointer-events: none;
+                    overflow: hidden;
+                }
+                .gallery-floor {
+                    transform: translateY(400px) rotateX(90deg);
+                }
+                .gallery-ceiling {
+                    transform: translateY(-400px) rotateX(90deg);
+                }
+
+                /* ── Animated grid light traces ── */
+                .grid-trace {
+                    position: absolute;
+                    pointer-events: none;
+                    will-change: transform;
+                }
+
+                /* Horizontal traces — full width, thin height, slide vertically */
+                .trace-h {
+                    width: 100%;
+                    height: 2px;
+                    left: 0;
+                    background: linear-gradient(90deg,
+                        transparent 0%,
+                        transparent 30%,
+                        rgba(58, 153, 201, 0.5) 45%,
+                        rgba(27, 79, 114, 0.8) 50%,
+                        rgba(58, 153, 201, 0.5) 55%,
+                        transparent 70%,
+                        transparent 100%
+                    );
+                    background-size: 800px 2px;
+                }
+
+                /* Vertical traces — full height, thin width, slide horizontally */
+                .trace-v {
+                    height: 100%;
+                    width: 2px;
+                    top: 0;
+                    background: linear-gradient(180deg,
+                        transparent 0%,
+                        transparent 30%,
+                        rgba(58, 153, 201, 0.5) 45%,
+                        rgba(27, 79, 114, 0.8) 50%,
+                        rgba(58, 153, 201, 0.5) 55%,
+                        transparent 70%,
+                        transparent 100%
+                    );
+                    background-size: 2px 800px;
+                }
+
+                /* Floor horizontal traces — each on a different grid line, different speed */
+                .trace-h-1 {
+                    top: 960px;
+                    animation: trace-slide-h 8s linear infinite;
+                }
+                .trace-h-2 {
+                    top: 1600px;
+                    animation: trace-slide-h 11s linear infinite reverse;
+                    animation-delay: -3s;
+                }
+                .trace-h-3 {
+                    top: 2240px;
+                    animation: trace-slide-h 9.5s linear infinite;
+                    animation-delay: -6s;
+                }
+                .trace-h-4 {
+                    top: 2880px;
+                    animation: trace-slide-h 12s linear infinite reverse;
+                    animation-delay: -1.5s;
+                }
+
+                /* Floor vertical traces */
+                .trace-v-1 {
+                    left: 880px;
+                    animation: trace-slide-v 10s linear infinite;
+                }
+                .trace-v-2 {
+                    left: 1520px;
+                    animation: trace-slide-v 7.5s linear infinite reverse;
+                    animation-delay: -4s;
+                }
+                .trace-v-3 {
+                    left: 2400px;
+                    animation: trace-slide-v 13s linear infinite;
+                    animation-delay: -7s;
+                }
+                .trace-v-4 {
+                    left: 3120px;
+                    animation: trace-slide-v 9s linear infinite reverse;
+                    animation-delay: -2s;
+                }
+
+                /* Ceiling traces */
+                .trace-h-5 {
+                    top: 1200px;
+                    animation: trace-slide-h 14s linear infinite;
+                    animation-delay: -5s;
+                }
+                .trace-h-6 {
+                    top: 2640px;
+                    animation: trace-slide-h 10s linear infinite reverse;
+                    animation-delay: -8s;
+                }
+                .trace-v-5 {
+                    left: 1040px;
+                    animation: trace-slide-v 11s linear infinite;
+                    animation-delay: -3s;
+                }
+                .trace-v-6 {
+                    left: 2800px;
+                    animation: trace-slide-v 8.5s linear infinite reverse;
+                    animation-delay: -6s;
+                }
+
+                @keyframes trace-slide-h {
+                    0%   { background-position: -800px 0; }
+                    100% { background-position: 4800px 0; }
+                }
+                @keyframes trace-slide-v {
+                    0%   { background-position: 0 -800px; }
+                    100% { background-position: 0 4800px; }
                 }
 
                 .gallery-ring {
@@ -1258,13 +2823,11 @@ export default function SnippetsGalleryDetails() {
                 }
 
                 .gallery-card-thumbnail {
-                    background: #0f172a;
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
                     border-radius: 8px;
                     overflow: hidden;
-                    height: 120px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
+                    /* Height is driven by the aspect-ratio of the scaled iframe inside */
                     position: relative;
                 }
 
@@ -1414,8 +2977,8 @@ export default function SnippetsGalleryDetails() {
                 .side-right .action-btn {
                     flex-direction: row;
                 }
-                .side-right .btn-codes:hover {
-                    width: 100px;
+                .side-right .btn-details:hover {
+                    width: 112px;
                     justify-content: flex-start;
                     padding-left: 14px;
                     padding-right: 0;
@@ -1439,8 +3002,8 @@ export default function SnippetsGalleryDetails() {
                 .side-left .action-btn {
                     flex-direction: row-reverse;
                 }
-                .side-left .btn-codes:hover {
-                    width: 100px;
+                .side-left .btn-details:hover {
+                    width: 112px;
                     justify-content: flex-start;
                     padding-right: 14px;
                     padding-left: 0;
@@ -1553,6 +3116,256 @@ export default function SnippetsGalleryDetails() {
                     opacity: 1;
                     transform: scale(1);
                     pointer-events: auto;
+                }
+
+                /* Playground Popup styles */
+                .playground-backdrop {
+                    position: absolute;
+                    inset: 0;
+                    background: rgba(0, 0, 0, 0.45);
+                    backdrop-filter: blur(10px);
+                    z-index: 1040;
+                    opacity: 0;
+                    pointer-events: none;
+                    transition: opacity 0.4s ease;
+                }
+
+                .playground-backdrop.active {
+                    opacity: 1;
+                    pointer-events: auto;
+                }
+
+                .playground-popup-container {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    width: 90vw;
+                    max-width: 960px;
+                    background: #ffffff;
+                    border: 1px solid rgba(0, 0, 0, 0.08);
+                    border-radius: 24px;
+                    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
+                    overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                    z-index: 1050;
+                    animation: playgroundPopupFadeIn 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+                    cursor: grab;
+                }
+
+                .playground-popup-container.dragging {
+                    cursor: grabbing;
+                }
+
+                @keyframes playgroundPopupFadeIn {
+                    from { opacity: 0; transform: translate(-50%, -46%) scale(0.95); }
+                    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                }
+
+                .playground-popup-header {
+                    height: 54px;
+                    background: #f8fafc;
+                    border-bottom: 1px solid #e2e8f0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 0 1.75rem;
+                }
+
+                .playground-close {
+                    background: rgba(0, 0, 0, 0.03);
+                    border: 1px solid rgba(0, 0, 0, 0.05);
+                    color: rgba(0, 0, 0, 0.4);
+                    border-radius: 50%;
+                    width: 2.25rem;
+                    height: 2.25rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                }
+
+                .playground-close:hover {
+                    background: rgba(0, 0, 0, 0.08);
+                    color: #000;
+                    transform: rotate(90deg);
+                }
+
+                .playground-popup-body {
+                    width: 100%;
+                    padding: 1.5rem;
+                    background: #ffffff;
+                }
+
+                .playground-iframe-wrapper {
+                    position: relative;
+                    width: 100%;
+                    padding-bottom: 52.5%; /* Aspect ratio 1200:630 */
+                    height: 0;
+                    overflow: hidden;
+                    border-radius: 14px;
+                    border: 1px solid #e2e8f0;
+                    background: #f8fafc;
+                }
+
+                .playground-iframe {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 1200px;
+                    height: 630px;
+                    border: none;
+                    transform-origin: 0 0;
+                }
+
+                /* Try It button */
+                .try-it-btn {
+                    position: absolute;
+                    bottom: 1.25rem;
+                    right: 1.25rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 0.6rem 1.25rem;
+                    background: linear-gradient(135deg, #1B4F72, #3A99C9);
+                    color: #fff;
+                    border: none;
+                    border-radius: 12px;
+                    font-size: 0.8rem;
+                    font-weight: 800;
+                    cursor: pointer;
+                    z-index: 20;
+                    box-shadow: 0 4px 16px rgba(27, 79, 114, 0.3);
+                    transition: all 0.25s ease;
+                }
+                .try-it-btn:hover {
+                    transform: translateY(-2px) scale(1.03);
+                    box-shadow: 0 8px 24px rgba(27, 79, 114, 0.4);
+                }
+
+                /* ── Live Editor Split View ── */
+                .live-editor-split {
+                    display: flex;
+                    height: 480px;
+                    border-radius: 14px;
+                    overflow: hidden;
+                    border: 1px solid #e2e8f0;
+                }
+
+                .live-editor-pane {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    background: #1e293b;
+                    min-width: 0;
+                }
+
+                .live-preview-pane {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    background: #f8fafc;
+                    border-left: 1px solid #e2e8f0;
+                    min-width: 0;
+                }
+
+                .editor-toolbar {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 0.5rem 0.75rem;
+                    background: rgba(0, 0, 0, 0.15);
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                    flex-shrink: 0;
+                }
+
+                .live-preview-pane .editor-toolbar {
+                    background: rgba(0, 0, 0, 0.02);
+                    border-bottom: 1px solid #e2e8f0;
+                }
+
+                .editor-toolbar-label {
+                    font-size: 0.65rem;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    color: rgba(255, 255, 255, 0.5);
+                }
+
+                .live-preview-pane .editor-toolbar-label {
+                    color: #94a3b8;
+                }
+
+                .editor-run-btn,
+                .editor-close-btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.3rem;
+                    padding: 0.3rem 0.7rem;
+                    border-radius: 6px;
+                    font-size: 0.7rem;
+                    font-weight: 700;
+                    cursor: pointer;
+                    border: none;
+                    margin-left: auto;
+                    transition: all 0.2s;
+                }
+
+                .editor-run-btn {
+                    background: #22c55e;
+                    color: #fff;
+                }
+                .editor-run-btn:hover {
+                    background: #16a34a;
+                }
+
+                .editor-close-btn {
+                    background: rgba(255, 255, 255, 0.1);
+                    color: rgba(255, 255, 255, 0.6);
+                    margin-left: 0.35rem;
+                }
+                .editor-close-btn:hover {
+                    background: rgba(255, 255, 255, 0.2);
+                    color: #fff;
+                }
+
+                .live-editor-textarea {
+                    flex: 1;
+                    width: 100%;
+                    resize: none;
+                    border: none;
+                    outline: none;
+                    padding: 1rem;
+                    background: #0f172a;
+                    color: #e2e8f0;
+                    font-family: 'Geist Mono', 'SF Mono', 'Fira Code', monospace;
+                    font-size: 0.8rem;
+                    line-height: 1.6;
+                    tab-size: 2;
+                }
+
+                .live-editor-textarea::placeholder {
+                    color: rgba(255, 255, 255, 0.2);
+                }
+
+                .live-preview-iframe {
+                    flex: 1;
+                    width: 100%;
+                    border: none;
+                    background: #fff;
+                }
+
+                @media (max-width: 768px) {
+                    .live-editor-split {
+                        flex-direction: column;
+                        height: 600px;
+                    }
+                    .live-preview-pane {
+                        border-left: none;
+                        border-top: 1px solid #e2e8f0;
+                    }
                 }
 
                 .panel-container {

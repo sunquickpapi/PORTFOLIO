@@ -9,20 +9,20 @@
     width: 1200px;
     height: 630px;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-    color: #f0f0f5;
+    color: #0F172A;
     overflow: hidden;
     position: relative;
-    background: #0a0a12;
+    background: #F8FAFC;
   }
 
   .bg-mesh {
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(ellipse at 20% 50%, rgba(58, 153, 201, 0.2) 0%, transparent 55%),
-      radial-gradient(ellipse at 80% 30%, rgba(124, 58, 237, 0.18) 0%, transparent 50%),
-      radial-gradient(ellipse at 50% 90%, rgba(249, 115, 22, 0.12) 0%, transparent 50%),
-      radial-gradient(ellipse at 70% 70%, rgba(236, 72, 153, 0.1) 0%, transparent 45%);
+      radial-gradient(ellipse at 20% 50%, rgba(58, 153, 201, 0.08) 0%, transparent 55%),
+      radial-gradient(ellipse at 80% 30%, rgba(124, 58, 237, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 90%, rgba(249, 115, 22, 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 70%, rgba(236, 72, 153, 0.04) 0%, transparent 45%);
   }
 
   .container {
@@ -48,7 +48,7 @@
     align-items: center;
     gap: 0.4rem;
     background: rgba(249, 115, 22, 0.1);
-    color: #f97316;
+    color: #ea580c;
     padding: 0.4rem 1rem;
     border-radius: 99px;
     font-size: 0.7rem;
@@ -66,14 +66,14 @@
   }
 
   .left h1 span {
-    background: linear-gradient(135deg, #3A99C9, #a855f7, #f97316);
+    background: linear-gradient(135deg, #3A99C9, #7c3aed, #ea580c);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
 
   .left p {
     font-size: 1rem;
-    color: rgba(255,255,255,0.5);
+    color: #475569;
     line-height: 1.6;
   }
 
@@ -88,34 +88,66 @@
     font-weight: 700;
     padding: 0.3rem 0.7rem;
     border-radius: 6px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.08);
-    color: rgba(255,255,255,0.5);
+    background: rgba(0,0,0,0.03);
+    border: 1px solid rgba(0,0,0,0.06);
+    color: #64748b;
   }
 
   .props-list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 0.25rem;
+    gap: 1rem;
+    margin-top: 0.5rem;
   }
 
-  .prop {
+  .prop-control {
     display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .prop-label {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 0.75rem;
     font-size: 0.75rem;
   }
 
   .prop-key {
     font-family: 'SF Mono', monospace;
-    color: #a855f7;
+    color: #7c3aed;
     font-weight: 700;
-    min-width: 110px;
   }
 
   .prop-val {
-    color: rgba(255,255,255,0.45);
+    color: #64748b;
+    font-family: monospace;
+    font-size: 0.7rem;
+  }
+
+  .prop-slider {
+    width: 100%;
+    -webkit-appearance: none;
+    background: rgba(0,0,0,0.05);
+    height: 6px;
+    border-radius: 3px;
+    outline: none;
+  }
+
+  .prop-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #7c3aed;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    transition: transform 0.1s;
+  }
+
+  .prop-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
   }
 
   .right {
@@ -128,28 +160,39 @@
   }
 
   .glass-card {
-    background: rgba(255, 255, 255, 0.07);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    --glass-bg: rgba(255, 255, 255, 0.65);
+    --glass-border: rgba(255, 255, 255, 0.8);
+    --glass-shadow: rgba(0, 0, 0, 0.06);
+    --glass-blur: 20px;
+
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
     border-radius: 1.5rem;
     padding: 1.75rem;
     box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      0 8px 32px var(--glass-shadow),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  .glass-card:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 20px 40px var(--glass-shadow),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+
   .glass-card.featured {
     grid-row: span 2;
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.15);
+    border-color: var(--glass-border);
     box-shadow:
-      0 16px 48px rgba(0, 0, 0, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      0 16px 48px var(--glass-shadow),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
   }
 
   .card-icon {
@@ -166,7 +209,6 @@
   .card-icon.blue { background: rgba(58, 153, 201, 0.15); }
   .card-icon.purple { background: rgba(124, 58, 237, 0.15); }
   .card-icon.orange { background: rgba(249, 115, 22, 0.15); }
-  .card-icon.pink { background: rgba(236, 72, 153, 0.12); }
 
   .glass-card h3 {
     font-size: 1.1rem;
@@ -176,7 +218,7 @@
 
   .glass-card .desc {
     font-size: 0.8rem;
-    color: rgba(255,255,255,0.45);
+    color: #475569;
     line-height: 1.5;
     flex: 1;
   }
@@ -190,16 +232,17 @@
     letter-spacing: 0.08em;
     padding: 0.2rem 0.55rem;
     border-radius: 5px;
-    background: rgba(255,255,255,0.06);
-    color: rgba(255,255,255,0.4);
+    background: rgba(0,0,0,0.03);
+    color: #64748b;
     width: fit-content;
   }
 
   .code-line {
     font-family: 'SF Mono', monospace;
     font-size: 0.65rem;
-    color: rgba(255,255,255,0.3);
-    background: rgba(0,0,0,0.2);
+    color: #334155;
+    background: rgba(0,0,0,0.02);
+    border: 1px solid rgba(0,0,0,0.04);
     padding: 0.4rem 0.6rem;
     border-radius: 6px;
     margin-top: 0.75rem;
@@ -208,8 +251,8 @@
     text-overflow: ellipsis;
   }
 
-  .code-line .kw { color: #a855f7; }
-  .code-line .val { color: #22c55e; }
+  .code-line .kw { color: #7c3aed; }
+  .code-line .val { color: #16a34a; }
   .code-line .fn { color: #3A99C9; }
 </style>
 </head>
@@ -220,7 +263,7 @@
     <div class="left">
       <div class="badge">🎨 Styling</div>
       <h1>Glass<br><span>Morphism</span><br>Card Component</h1>
-      <p>Production-ready glassmorphism with CSS custom properties for theming. Auto light/dark mode adaptation.</p>
+      <p>Interactive glassmorphism sandbox. Drag the sliders to configure layout custom properties in real-time.</p>
       <div class="tags">
         <span class="tag">#glassmorphism</span>
         <span class="tag">#card</span>
@@ -228,22 +271,35 @@
         <span class="tag">#css-variables</span>
         <span class="tag">#blur</span>
       </div>
+      
       <div class="props-list">
-        <div class="prop">
-          <span class="prop-key">--glass-bg</span>
-          <span class="prop-val">rgba(255,255,255,0.08)</span>
+        <div class="prop-control">
+          <div class="prop-label">
+            <span class="prop-key">--glass-bg</span>
+            <span class="prop-val" id="val-bg">rgba(255,255,255,0.65)</span>
+          </div>
+          <input type="range" class="prop-slider" id="slide-bg" min="0.1" max="0.9" step="0.05" value="0.65" />
         </div>
-        <div class="prop">
-          <span class="prop-key">--glass-blur</span>
-          <span class="prop-val">20px</span>
+        <div class="prop-control">
+          <div class="prop-label">
+            <span class="prop-key">--glass-blur</span>
+            <span class="prop-val" id="val-blur">20px</span>
+          </div>
+          <input type="range" class="prop-slider" id="slide-blur" min="0" max="40" step="1" value="20" />
         </div>
-        <div class="prop">
-          <span class="prop-key">--glass-border</span>
-          <span class="prop-val">rgba(255,255,255,0.12)</span>
+        <div class="prop-control">
+          <div class="prop-label">
+            <span class="prop-key">--glass-border</span>
+            <span class="prop-val" id="val-border">rgba(255,255,255,0.8)</span>
+          </div>
+          <input type="range" class="prop-slider" id="slide-border" min="0.1" max="1.0" step="0.05" value="0.80" />
         </div>
-        <div class="prop">
-          <span class="prop-key">--glass-shadow</span>
-          <span class="prop-val">rgba(0,0,0,0.25)</span>
+        <div class="prop-control">
+          <div class="prop-label">
+            <span class="prop-key">--glass-shadow</span>
+            <span class="prop-val" id="val-shadow">rgba(0,0,0,0.06)</span>
+          </div>
+          <input type="range" class="prop-slider" id="slide-shadow" min="0.01" max="0.3" step="0.01" value="0.06" />
         </div>
       </div>
     </div>
@@ -254,7 +310,7 @@
           <div class="card-icon blue">🔮</div>
           <h3>Backdrop Blur</h3>
           <p class="desc">Native GPU-accelerated frosted glass via CSS backdrop-filter. Smooth 60fps compositing on modern browsers.</p>
-          <div class="code-line"><span class="fn">backdrop-filter</span>: <span class="fn">blur</span>(<span class="val">var(--glass-blur)</span>);</div>
+          <div class="code-line"><span class="fn">backdrop-filter</span>: <span class="fn">blur</span>(<span class="val" id="code-blur">20px</span>);</div>
         </div>
         <span class="card-tag">CSS Filter</span>
       </div>
@@ -278,5 +334,60 @@
       </div>
     </div>
   </div>
+
+  <script>
+    const slideBg = document.getElementById("slide-bg");
+    const slideBlur = document.getElementById("slide-blur");
+    const slideBorder = document.getElementById("slide-border");
+    const slideShadow = document.getElementById("slide-shadow");
+
+    const valBg = document.getElementById("val-bg");
+    const valBlur = document.getElementById("val-blur");
+    const valBorder = document.getElementById("val-border");
+    const valShadow = document.getElementById("val-shadow");
+    const codeBlur = document.getElementById("code-blur");
+
+    const cards = document.querySelectorAll(".glass-card");
+
+    function updateStyles() {
+      const bgOpacity = slideBg.value;
+      const blurValue = slideBlur.value + "px";
+      const borderOpacity = slideBorder.value;
+      const shadowOpacity = slideShadow.value;
+
+      valBg.textContent = `rgba(255,255,255,${bgOpacity})`;
+      valBlur.textContent = blurValue;
+      valBorder.textContent = `rgba(255,255,255,${borderOpacity})`;
+      valShadow.textContent = `rgba(0,0,0,${shadowOpacity})`;
+      
+      codeBlur.textContent = blurValue;
+
+      cards.forEach(card => {
+        card.style.setProperty("--glass-bg", `rgba(255, 255, 255, ${bgOpacity})`);
+        card.style.setProperty("--glass-blur", blurValue);
+        card.style.setProperty("--glass-border", `rgba(255, 255, 255, ${borderOpacity})`);
+        card.style.setProperty("--glass-shadow", `rgba(0, 0, 0, ${shadowOpacity})`);
+      });
+
+      // Broadcast changes to parent window
+      window.parent.postMessage({
+        type: "playground-config",
+        params: {
+          bgOpacity: bgOpacity,
+          blurValue: blurValue,
+          borderOpacity: borderOpacity,
+          shadowOpacity: shadowOpacity
+        }
+      }, "*");
+    }
+
+    slideBg.addEventListener("input", updateStyles);
+    slideBlur.addEventListener("input", updateStyles);
+    slideBorder.addEventListener("input", updateStyles);
+    slideShadow.addEventListener("input", updateStyles);
+
+    // Initial setup
+    updateStyles();
+  </script>
 </body>
 </html>

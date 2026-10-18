@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { createClient } from "@supabase/supabase-js";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+
+const BUCKET = "uploads";
 
 export async function POST(req: Request) {
     // Authenticate the admin session
@@ -19,27 +22,33 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
         }
 
-        const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
+        const buffer = Buffer.from(await file.arrayBuffer());
 
-        // Path to public/uploads
-        const uploadDir = path.join(process.cwd(), "public", "uploads");
-        
-        // Ensure directory exists recursively
-        await mkdir(uploadDir, { recursive: true });
-
-        // Generate unique filename to prevent collisons
+        // Generate unique filename to prevent collisions
         const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-        const fileExtension = path.extname(file.name);
-        const filename = `${uniqueSuffix}${fileExtension}`;
-        const filePath = path.join(uploadDir, filename);
+        const filename = `${uniqueSuffix}${path.extname(file.name)}`;
 
-        // Save file
-        await writeFile(filePath, buffer);
+        // Prefer Supabase Storage: Vercel's filesystem is read-only/ephemeral,
+        // so files written to public/ in production never become reachable.
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-        // Public static URL path
-        const fileUrl = `/uploads/${filename}`;
-        return NextResponse.json({ url: fileUrl });
+        if (supabaseUrl && supabaseKey) {
+            const supabase = createClient(supabaseUrl, supabaseKey);
+            const { error } = await supabase.storage
+                .from(BUCKET)
+                .upload(filename, buffer, { contentType: file.type || undefined, upsert: false });
+            if (error) throw error;
+
+            const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
+            return NextResponse.json({ url: data.publicUrl });
+        }
+
+        // Local fallback (dev without Supabase)
+        const uploadDir = path.join(process.cwd(), "public", "uploads");
+        await mkdir(uploadDir, { recursive: true });
+        await writeFile(path.join(uploadDir, filename), buffer);
+        return NextResponse.json({ url: `/uploads/${filename}` });
     } catch (error: any) {
         console.error("Upload endpoint error:", error);
         return NextResponse.json({ error: error.message || "Failed to upload file" }, { status: 500 });
