@@ -20,6 +20,7 @@ import {
     LayoutGrid,
     CheckCircle2
 } from "lucide-react";
+import FileUploadButton from "@/components/Admin/FileUploadButton";
 
 export default function EducationForm({ id }: { id?: string }) {
     const router = useRouter();
@@ -210,6 +211,10 @@ export default function EducationForm({ id }: { id?: string }) {
                                 className="premium-input"
                                 value={formData.logo_url}
                                 onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
+                            />
+                            <FileUploadButton
+                                previewUrl={formData.logo_url || ""}
+                                onUploaded={([url]) => setFormData((prev) => ({ ...prev, logo_url: url }))}
                             />
                         </div>
 

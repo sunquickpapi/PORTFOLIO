@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, Save, Info, Camera, BarChart3, Edit3, X } from "lucide-react";
+import FileUploadButton from "@/components/Admin/FileUploadButton";
 
 export default function ProfilePage() {
     const router = useRouter();
@@ -291,6 +292,12 @@ export default function ProfilePage() {
                                             value={formData.logo_url || ""}
                                             onChange={handleChange}
                                         />
+                                        {isEditing && (
+                                            <FileUploadButton
+                                                previewUrl={formData.logo_url || ""}
+                                                onUploaded={([url]) => setFormData((prev) => ({ ...prev, logo_url: url }))}
+                                            />
+                                        )}
                                     </div>
                                     <div className="input-group full-width">
                                         <label>Hero Background URL</label>
@@ -301,6 +308,12 @@ export default function ProfilePage() {
                                             value={formData.hero_bg_url || ""}
                                             onChange={handleChange}
                                         />
+                                        {isEditing && (
+                                            <FileUploadButton
+                                                previewUrl={formData.hero_bg_url || ""}
+                                                onUploaded={([url]) => setFormData((prev) => ({ ...prev, hero_bg_url: url }))}
+                                            />
+                                        )}
                                     </div>
                                 </div>
                             </section>

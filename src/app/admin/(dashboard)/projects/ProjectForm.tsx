@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import FileUploadButton from "@/components/Admin/FileUploadButton";
 import {
     Layout,
     Code,
@@ -210,7 +211,11 @@ function ProjectFormContent({ projectId }: ProjectFormProps) {
                             value={formData.image_url || ""}
                             onChange={handleChange}
                         />
-                        <p className="helper-text">Recommendation: Use paths like <code className="code-path">/assets/image.jpg</code></p>
+                        <FileUploadButton
+                            previewUrl={formData.image_url || ""}
+                            onUploaded={([url]) => setFormData((prev) => ({ ...prev, image_url: url }))}
+                        />
+                        <p className="helper-text">Paste a path like <code className="code-path">/assets/image.jpg</code>, or upload an image from your computer.</p>
                     </div>
 
                     <div className="input-group full-width">
@@ -226,7 +231,20 @@ function ProjectFormContent({ projectId }: ProjectFormProps) {
                             value={formData.preview_images as string || ""}
                             onChange={handleChange}
                         />
-                        <p className="helper-text">Separate multiple high-res gallery items with commas.</p>
+                        <FileUploadButton
+                            multiple
+                            label="Add images from files"
+                            onUploaded={(urls) =>
+                                setFormData((prev) => {
+                                    const existing = String(prev.preview_images || "")
+                                        .split(",")
+                                        .map((u) => u.trim())
+                                        .filter(Boolean);
+                                    return { ...prev, preview_images: [...existing, ...urls].join(", ") };
+                                })
+                            }
+                        />
+                        <p className="helper-text">Separate multiple high-res gallery items with commas. Uploaded images are added to the end of the list.</p>
                     </div>
                 </div>
             </section>

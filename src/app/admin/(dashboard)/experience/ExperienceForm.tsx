@@ -16,6 +16,7 @@ import {
     Building2,
     Globe
 } from "lucide-react";
+import FileUploadButton from "@/components/Admin/FileUploadButton";
 
 export default function ExperienceForm({ id }: { id?: string }) {
     const router = useRouter();
@@ -172,6 +173,10 @@ export default function ExperienceForm({ id }: { id?: string }) {
                             placeholder="/assets/logo.png"
                             value={formData.logo_url}
                             onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
+                        />
+                        <FileUploadButton
+                            previewUrl={formData.logo_url || ""}
+                            onUploaded={([url]) => setFormData((prev) => ({ ...prev, logo_url: url }))}
                         />
                         <p className="helper-text">Recommendation: Use high-quality PNGs with transparent backgrounds.</p>
                     </div>
