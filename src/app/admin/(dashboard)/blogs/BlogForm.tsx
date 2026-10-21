@@ -17,6 +17,7 @@ import {
     Hash
 } from "lucide-react";
 import Link from "next/link";
+import FileUploadButton from "@/components/Admin/FileUploadButton";
 
 interface BlogFormProps {
     blogId?: string;
@@ -165,6 +166,10 @@ export default function BlogForm({ blogId }: BlogFormProps) {
                                 className="premium-input"
                                 value={formData.header_image_url || ""}
                                 onChange={handleChange}
+                            />
+                            <FileUploadButton
+                                previewUrl={formData.header_image_url || ""}
+                                onUploaded={([url]) => setFormData((prev) => ({ ...prev, header_image_url: url }))}
                             />
                         </div>
 

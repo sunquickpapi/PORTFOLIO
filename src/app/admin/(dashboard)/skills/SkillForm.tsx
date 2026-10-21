@@ -11,6 +11,7 @@ import {
     Cloud,
     Search
 } from "lucide-react";
+import FileUploadButton from "@/components/Admin/FileUploadButton";
 
 export default function SkillForm({ id }: { id?: string }) {
     const router = useRouter();
@@ -146,6 +147,11 @@ export default function SkillForm({ id }: { id?: string }) {
                                     <Search size={18} />
                                 </div>
                             </div>
+                            <FileUploadButton
+                                accept="image/*,.svg"
+                                previewUrl={formData.icon_url || ""}
+                                onUploaded={([url]) => setFormData((prev) => ({ ...prev, icon_url: url }))}
+                            />
                             <p className="helper-text">
                                 <Sparkles size={10} style={{ marginRight: '4px' }} />
                                 Use SimpleIcons name or a relative path to your custom SVG.
