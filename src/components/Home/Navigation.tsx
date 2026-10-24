@@ -1,7 +1,7 @@
 "use client";
 
-import { Home, User, Code, Layout, MessageSquare, BookOpen, Mail, Github, Linkedin, FileText, Sun, Moon, Menu, X, ChevronUp, FileCode } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Home, User, Code, Layout, MessageSquare, BookOpen, Mail, Github, Linkedin, FileText, Sun, Moon, Menu, X, ChevronUp, ChevronDown, FileCode, Briefcase, ArrowUpRight, Download } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
 
 export default function Navigation() {
@@ -12,6 +12,25 @@ export default function Navigation() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [showBackToTop, setShowBackToTop] = useState(false);
     const [atTop, setAtTop] = useState(true);
+    const [hireOpen, setHireOpen] = useState(false);
+    const hireRef = useRef<HTMLDivElement>(null);
+
+    // Close the Hire Me menu on outside click or Escape
+    useEffect(() => {
+        if (!hireOpen) return;
+        const onPointer = (e: PointerEvent) => {
+            if (hireRef.current && !hireRef.current.contains(e.target as Node)) setHireOpen(false);
+        };
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setHireOpen(false);
+        };
+        document.addEventListener("pointerdown", onPointer);
+        document.addEventListener("keydown", onKey);
+        return () => {
+            document.removeEventListener("pointerdown", onPointer);
+            document.removeEventListener("keydown", onKey);
+        };
+    }, [hireOpen]);
 
     useEffect(() => {
         setMounted(true);
@@ -63,6 +82,37 @@ export default function Navigation() {
             window.removeEventListener("scroll", handleScroll);
         };
     }, []);
+
+    const hireLinks = [
+        {
+            label: "GitHub",
+            hint: "See my code",
+            href: profile?.github_url || "https://github.com/sunquickpapi",
+            icon: Github,
+            external: true,
+        },
+        {
+            label: "LinkedIn",
+            hint: "Connect with me",
+            href: profile?.linkedin_url || "https://www.linkedin.com/in/muhammad-naufal-bin-mohd-nizam-0603b2279",
+            icon: Linkedin,
+            external: true,
+        },
+        {
+            label: "Email",
+            hint: "Send me a message",
+            href: profile?.email ? `mailto:${profile.email}` : "#contact",
+            icon: Mail,
+            external: false,
+        },
+        {
+            label: "Resume",
+            hint: "Download PDF",
+            href: profile?.resume_url || "/assets/resume.pdf",
+            icon: FileText,
+            download: true,
+        },
+    ];
 
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -191,6 +241,20 @@ export default function Navigation() {
 
             <nav className={`dock-wrapper ${atTop ? "is-expanded" : ""}`}>
                 <div className="dock">
+                    {/* Logo */}
+                    <div className="dock-group">
+                        <a href="/admin/login" className="dock-item dock-item-logo" data-label="Admin" aria-label="Admin">
+                            <img
+                                src={profile?.logo_url || "/assets/NameLogo.png"}
+                                alt="FVL"
+                                className="dock-logo w-8 h-8 rounded-full"
+                            />
+                            <span className="dock-tooltip">Admin</span>
+                        </a>
+                    </div>
+
+                    <div className="dock-separator"></div>
+
                     {/* Main Sections */}
                     <div className="dock-group">
                         {navItems.map((item) => {
@@ -214,48 +278,64 @@ export default function Navigation() {
 
                     <div className="dock-separator"></div>
 
-                    {/* Socials & Tools */}
-                    <div className="dock-group">
-                        <a href="https://github.com/sunquickpapi" target="_blank" className="dock-item" data-label="GitHub">
-                            <Github size={20} />
-                            <span className="dock-tooltip">GitHub</span>
-                        </a>
-                        <a href="https://www.linkedin.com/in/muhammad-naufal-bin-mohd-nizam-0603b2279" target="_blank" className="dock-item" data-label="LinkedIn">
-                            <Linkedin size={20} />
-                            <span className="dock-tooltip">LinkedIn</span>
-                        </a>
-                        <a href="#contact" className="dock-item" data-label="Contact">
-                            <Mail size={20} />
-                            <span className="dock-tooltip">Contact</span>
-                        </a>
-                        <a href="#" download className="dock-item" data-label="Resume">
-                            <FileText size={20} />
-                            <span className="dock-tooltip">Resume</span>
-                        </a>
-                    </div>
-
-                    <div className="dock-separator"></div>
-
-                    {/* Utility & Theme */}
-                    <div className="dock-group">
+                    {/* Theme + Hire Me */}
+                    <div className="dock-group dock-group-actions">
                         {mounted && (
                             <button
                                 onClick={toggleTheme}
                                 className="dock-item theme-toggle"
                                 data-label={theme === 'dark' ? "Light Mode" : "Dark Mode"}
+                                aria-label={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
                             >
                                 {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
                                 <span className="dock-tooltip">{theme === 'dark' ? "Light Mode" : "Dark Mode"}</span>
                             </button>
                         )}
-                        <a href="/admin/login" className="dock-item dock-item-logo" data-label="Admin">
-                            <img
-                                src={profile?.logo_url || "/assets/NameLogo.png"}
-                                alt="Admin"
-                                className="dock-logo w-8 h-8 rounded-full"
-                            />
-                            <span className="dock-tooltip">Admin</span>
-                        </a>
+
+                        <div className={`hire ${hireOpen ? "is-open" : ""}`} ref={hireRef}>
+                            <button
+                                type="button"
+                                className="hire-btn"
+                                aria-haspopup="menu"
+                                aria-expanded={hireOpen}
+                                aria-controls="hire-menu"
+                                onClick={() => setHireOpen((o) => !o)}
+                            >
+                                <Briefcase size={16} strokeWidth={2.25} />
+                                <span>Hire Me</span>
+                                <ChevronDown size={14} strokeWidth={2.5} className="hire-chevron" />
+                            </button>
+
+                            <div id="hire-menu" className="hire-menu" role="menu" aria-hidden={!hireOpen}>
+                                {hireLinks.map((link, i) => {
+                                    const Icon = link.icon;
+                                    return (
+                                        <a
+                                            key={link.label}
+                                            href={link.href}
+                                            role="menuitem"
+                                            tabIndex={hireOpen ? 0 : -1}
+                                            className="hire-item"
+                                            style={{ transitionDelay: hireOpen ? `${40 + i * 35}ms` : "0ms" }}
+                                            {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                                            {...(link.download ? { download: true } : {})}
+                                            onClick={() => setHireOpen(false)}
+                                        >
+                                            <span className="hire-item-icon"><Icon size={17} /></span>
+                                            <span className="hire-item-text">
+                                                <span className="hire-item-label">{link.label}</span>
+                                                <span className="hire-item-hint">{link.hint}</span>
+                                            </span>
+                                            {link.download ? (
+                                                <Download size={15} className="hire-item-arrow" />
+                                            ) : (
+                                                <ArrowUpRight size={15} className="hire-item-arrow" />
+                                            )}
+                                        </a>
+                                    );
+                                })}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </nav>

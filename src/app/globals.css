@@ -10407,3 +10407,184 @@ html.fvl-loading body {
     transition: opacity 0.2s ease;
   }
 }
+
+/* === DOCK: Hire Me button + dropdown === */
+.dock-group-actions {
+  gap: 0.35rem;
+}
+
+.hire {
+  position: relative;
+}
+
+.hire-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 40px;
+  padding: 0 0.8rem 0 0.9rem;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1B4F72 0%, #2a7aa8 100%);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 4px 14px -4px rgba(27, 79, 114, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: transform 0.2s ease, box-shadow 0.25s ease, filter 0.25s ease;
+}
+
+.hire-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow: 0 8px 20px -6px rgba(27, 79, 114, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.hire-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.hire-btn:focus-visible {
+  outline: 2px solid #3A99C9;
+  outline-offset: 2px;
+}
+
+.hire-chevron {
+  opacity: 0.8;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hire.is-open .hire-chevron {
+  transform: rotate(180deg);
+}
+
+:root.dark .hire-btn {
+  background: linear-gradient(135deg, #2a7aa8 0%, #3A99C9 100%);
+  box-shadow: 0 4px 16px -4px rgba(58, 153, 201, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.hire-menu {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: -0.5rem;
+  width: 248px;
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 18px 40px -12px rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px) scale(0.97);
+  transform-origin: top right;
+  transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 0.28s;
+}
+
+.hire.is-open .hire-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s;
+}
+
+.hire-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 12px;
+  color: var(--color-text-primary);
+  text-decoration: none;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.2s ease, transform 0.25s ease, background 0.2s ease;
+}
+
+.hire.is-open .hire-item {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hire-item:hover,
+.hire-item:focus-visible {
+  background: rgba(58, 153, 201, 0.1);
+  opacity: 1;
+  outline: none;
+}
+
+.hire-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: #1B4F72;
+  background: rgba(58, 153, 201, 0.1);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.hire-item:hover .hire-item-icon {
+  background: #1B4F72;
+  color: #fff;
+}
+
+:root.dark .hire-item-icon {
+  color: #7cc7ea;
+  background: rgba(58, 153, 201, 0.15);
+}
+
+:root.dark .hire-item:hover .hire-item-icon {
+  background: #3A99C9;
+  color: #fff;
+}
+
+.hire-item-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.hire-item-label {
+  font-family: var(--font-display);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.hire-item-hint {
+  font-size: 0.72rem;
+  opacity: 0.6;
+  margin-top: 2px;
+}
+
+.hire-item-arrow {
+  opacity: 0;
+  transform: translate(-4px, 4px);
+  color: #3A99C9;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.hire-item:hover .hire-item-arrow {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hire-menu,
+  .hire-item,
+  .hire-chevron {
+    transition: none !important;
+  }
+}
