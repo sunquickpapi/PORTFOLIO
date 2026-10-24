@@ -11,6 +11,7 @@ export default function Navigation() {
     const [activeSection, setActiveSection] = useState("home");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [showBackToTop, setShowBackToTop] = useState(false);
+    const [atTop, setAtTop] = useState(true);
 
     useEffect(() => {
         setMounted(true);
@@ -49,9 +50,14 @@ export default function Navigation() {
 
         const handleScroll = () => {
             setShowBackToTop(window.scrollY > 500);
+            // Hysteresis: collapse past 80px, expand again only near the very top,
+            // so small scroll jitters around one threshold don't make it flicker.
+            const y = window.scrollY;
+            setAtTop((prev) => (prev ? y < 80 : y < 24));
         };
 
-        window.addEventListener("scroll", handleScroll);
+        handleScroll();
+        window.addEventListener("scroll", handleScroll, { passive: true });
         return () => {
             observer.disconnect();
             window.removeEventListener("scroll", handleScroll);
@@ -62,15 +68,15 @@ export default function Navigation() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const navItems = [
+    const navItems: { id: string; label: string; short?: string; icon: typeof Home }[] = [
         { id: "home", label: "Home", icon: Home },
-        { id: "about", label: "About Me", icon: User },
-        { id: "tech-stack", label: "TechStack", icon: Code },
-        { id: "projects", label: "Project", icon: Layout },
+        { id: "about", label: "About Me", short: "About", icon: User },
+        { id: "tech-stack", label: "TechStack", short: "Stack", icon: Code },
+        { id: "projects", label: "Project", short: "Projects", icon: Layout },
         { id: "snippets", label: "Snippets", icon: FileCode },
         { id: "testimonials", label: "Testimonials", icon: MessageSquare },
         { id: "blog-latest", label: "Blog", icon: BookOpen },
-        { id: "contact", label: "Contacts", icon: Mail },
+        { id: "contact", label: "Contacts", short: "Contact", icon: Mail },
     ];
 
     return (
@@ -183,7 +189,7 @@ export default function Navigation() {
                 </div>
             </div>
 
-            <nav className="dock-wrapper">
+            <nav className={`dock-wrapper ${atTop ? "is-expanded" : ""}`}>
                 <div className="dock">
                     {/* Main Sections */}
                     <div className="dock-group">
@@ -193,11 +199,13 @@ export default function Navigation() {
                                 <a
                                     key={item.id}
                                     href={`#${item.id}`}
-                                    className={`dock-item ${activeSection === item.id ? "active" : ""}`}
+                                    className={`dock-item dock-item-nav ${activeSection === item.id ? "active" : ""}`}
                                     data-label={item.label}
+                                    aria-label={item.label}
                                     onClick={() => setActiveSection(item.id)}
                                 >
-                                    <Icon size={20} />
+                                    <span className="dock-icon"><Icon size={20} /></span>
+                                    <span className="dock-word">{item.short || item.label}</span>
                                     <span className="dock-tooltip">{item.label}</span>
                                 </a>
                             );
