@@ -222,7 +222,6 @@ export default function PassCard({ socials = {} }: { socials?: Socials }) {
                     </div>
                 </div>
             </div>
-            <div className="pass-hint">{back ? "Click to flip back" : "Click the card to flip it"}</div>
 
             <style jsx>{`
                 .pass {
@@ -631,15 +630,6 @@ export default function PassCard({ socials = {} }: { socials?: Socials }) {
                     transform: rotate(-4deg);
                 }
 
-                .pass-hint {
-                    font-family: var(--font-display);
-                    font-size: 0.75rem;
-                    font-weight: 600;
-                    letter-spacing: 0.02em;
-                    color: var(--color-text-primary);
-                    opacity: 0.45;
-                    margin-top: 1.4rem;
-                }
 
 
                 @media (prefers-reduced-motion: reduce) {
