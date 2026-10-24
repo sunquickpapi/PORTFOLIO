@@ -39,8 +39,8 @@ export default function PassCard() {
         const r = el.getBoundingClientRect();
         const px = (e.clientX - r.left) / r.width; // 0..1
         const py = (e.clientY - r.top) / r.height;
-        el.style.setProperty("--ry", `${(px - 0.5) * 14}deg`);
-        el.style.setProperty("--rx", `${(0.5 - py) * 10}deg`);
+        el.style.setProperty("--ry", `${(px - 0.5) * 24}deg`);
+        el.style.setProperty("--rx", `${(0.5 - py) * 18}deg`);
         el.style.setProperty("--gx", `${px * 100}%`);
         el.style.setProperty("--gy", `${py * 100}%`);
     };
@@ -233,8 +233,8 @@ export default function PassCard() {
                     transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
                 }
                 .pass-tilt:hover {
-                    transform: rotateX(var(--rx)) rotateY(var(--ry)) translateZ(0) scale(1.035);
-                    transition: transform 0.15s ease-out;
+                    transform: translateY(-10px) rotateX(var(--rx)) rotateY(var(--ry)) scale(1.05);
+                    transition: transform 0.2s ease-out;
                 }
                 .pass-tilt:focus-visible {
                     box-shadow: 0 0 0 3px #46c1e6;
@@ -284,8 +284,9 @@ export default function PassCard() {
                     inset: 0;
                     border-radius: inherit;
                     pointer-events: none;
-                    background: radial-gradient(circle at var(--gx) var(--gy), rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 45%);
-                    mix-blend-mode: soft-light;
+                    background: radial-gradient(circle at var(--gx) var(--gy), rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0) 40%),
+                        linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.18) 45%, transparent 60%);
+                    mix-blend-mode: normal;
                     opacity: 0;
                     transition: opacity 0.3s ease;
                 }
@@ -303,7 +304,7 @@ export default function PassCard() {
                     gap: 26px;
                 }
                 .pass-tilt:hover .pass-front {
-                    box-shadow: 0 44px 80px rgba(13, 42, 66, 0.34), inset 0 0 0 10px #dce4e8, inset 0 0 80px rgba(27, 79, 114, 0.12);
+                    box-shadow: 0 60px 100px rgba(13, 42, 66, 0.4), 0 0 0 2px rgba(70, 193, 230, 0.55), inset 0 0 0 10px #dce4e8, inset 0 0 80px rgba(27, 79, 114, 0.12);
                 }
                 .pf-left {
                     display: flex;
@@ -449,7 +450,14 @@ export default function PassCard() {
                 }
                 /* Little life on hover: the standing sprite leans in */
                 .pass-tilt:hover .pf-sprite {
-                    transform: translateY(-4px) rotate(-1.5deg);
+                    transform: translateY(-8px) rotate(-3deg);
+                }
+                .pass-tilt:hover .pass-back {
+                    box-shadow: 0 60px 100px rgba(0, 0, 0, 0.55), 0 0 0 2px rgba(70, 193, 230, 0.55), inset 0 0 0 10px #1b4f72;
+                }
+                /* Floor shadow tightens while the card is lifted */
+                .pass-stage:hover .pass-shadow {
+                    opacity: 0.4;
                 }
 
                 /* ---------- BACK ---------- */
