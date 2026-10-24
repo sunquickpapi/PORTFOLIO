@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Courier_Prime, Black_Ops_One, JetBrains_Mono } from "next/font/google";
+import { Github, Instagram, Linkedin } from "lucide-react";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
 const blackOps = Black_Ops_One({ subsets: ["latin"], weight: "400", display: "swap" });
@@ -15,7 +16,15 @@ const H = 440;
  * "Pixel Pass" ID card for the hero. Floats gently, tilts toward the cursor with a
  * glare highlight on hover, and flips to the back on click / Enter / Space.
  */
-export default function PassCard() {
+type Socials = { linkedin?: string | null; github?: string | null; instagram?: string | null };
+
+export default function PassCard({ socials = {} }: { socials?: Socials }) {
+    const links = [
+        { label: "LinkedIn", href: socials.linkedin || "https://www.linkedin.com/in/muhammad-naufal-bin-mohd-nizam-0603b2279", Icon: Linkedin },
+        { label: "GitHub", href: socials.github || "https://github.com/sunquickpapi", Icon: Github },
+        { label: "Instagram", href: socials.instagram, Icon: Instagram },
+    ].filter((l): l is { label: string; href: string; Icon: typeof Github } => !!l.href);
+
     const stageRef = useRef<HTMLDivElement>(null);
     const tiltRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(0.6);
@@ -131,14 +140,25 @@ export default function PassCard() {
                                             <div className="pf-title">PASS CARD</div>
                                             <div className="pf-code">CARD CODE: PX2026-08/FW &nbsp;CODE · FOCUS · CRAFT</div>
                                         </div>
-                                        <div className="pf-badges">
-                                            <div className="pf-square" />
-                                            <div className="pf-px">PX</div>
-                                            <div className="pf-dots">
-                                                <span>8</span>
-                                                <span>B</span>
-                                                <span>IT</span>
-                                            </div>
+                                        <div className="pf-socials">
+                                            {links.map(({ label, href, Icon }, i) => (
+                                                <a
+                                                    key={label}
+                                                    href={href}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="pf-social"
+                                                    style={{ transitionDelay: `${i * 70}ms` }}
+                                                    aria-label={label}
+                                                    title={label}
+                                                    tabIndex={back ? -1 : 0}
+                                                    // Open the link without flipping the card
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    onKeyDown={(e) => e.stopPropagation()}
+                                                >
+                                                    <Icon size={18} strokeWidth={2.25} />
+                                                </a>
+                                            ))}
                                         </div>
                                     </div>
 
@@ -427,37 +447,40 @@ export default function PassCard() {
                     letter-spacing: 1px;
                     margin-top: 4px;
                 }
-                .pf-badges {
+                .pf-socials {
                     display: flex;
                     align-items: center;
-                    gap: 10px;
+                    gap: 12px;
                 }
-                .pf-square {
-                    width: 22px;
-                    height: 22px;
-                    background: #46c1e6;
-                }
-                .pf-px {
-                    font-size: 24px;
-                    font-weight: 700;
-                    font-style: italic;
-                    letter-spacing: -1px;
-                }
-                .pf-dots {
-                    display: flex;
-                    gap: 6px;
-                }
-                .pf-dots span {
-                    width: 22px;
-                    height: 22px;
-                    border: 2px solid #0d2a42;
+                .pf-social {
+                    width: 42px;
+                    height: 42px;
                     border-radius: 50%;
-                    display: flex;
+                    border: 2px solid #0d2a42;
+                    color: #0d2a42;
+                    display: inline-flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 11px;
-                    font-weight: 700;
                     box-sizing: border-box;
+                    text-decoration: none;
+                    background: transparent;
+                    transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease, color 0.2s ease,
+                        border-color 0.2s ease, box-shadow 0.25s ease;
+                }
+                /* Card hover: the icons slide up one after another */
+                .pass-stage:hover .pf-social {
+                    transform: translateY(-6px);
+                }
+                /* Icon hover: lifts further and fills with cyan */
+                .pass-stage .pf-social:hover,
+                .pass-stage .pf-social:focus-visible {
+                    transform: translateY(-12px);
+                    transition-delay: 0ms !important;
+                    background: #46c1e6;
+                    border-color: #46c1e6;
+                    color: #0d2a42;
+                    box-shadow: 0 10px 18px -6px rgba(70, 193, 230, 0.7);
+                    outline: none;
                 }
                 .pf-right {
                     position: relative;

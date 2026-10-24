@@ -79,7 +79,7 @@ export default function Hero() {
                     </div>
 
                     <div className="hero-pass">
-                        <PassCard />
+                        <PassCard socials={{ linkedin: profile.linkedin_url, github: profile.github_url, instagram: profile.instagram_url }} />
                     </div>
                 </div>
             )}
