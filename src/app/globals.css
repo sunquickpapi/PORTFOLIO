@@ -10709,3 +10709,8 @@ html.fvl-loading body {
     padding: 0.75rem 1rem;
   }
 }
+
+/* Pass card: softer glare on the dark back face */
+.pass-back .pass-glare {
+  filter: opacity(0.45);
+}

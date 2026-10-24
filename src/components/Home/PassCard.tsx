@@ -21,6 +21,11 @@ export default function PassCard() {
     const [scale, setScale] = useState(0.6);
     const [back, setBack] = useState(false);
 
+    // Tilt is eased every frame toward a target, so it never jumps or stutters
+    const target = useRef({ rx: 0, ry: 0, gx: 50, gy: 30 });
+    const current = useRef({ rx: 0, ry: 0, gx: 50, gy: 30 });
+    const raf = useRef<number | null>(null);
+
     // Scale the 900×440 design to the available width
     useEffect(() => {
         const el = stageRef.current;
@@ -32,49 +37,70 @@ export default function PassCard() {
         return () => ro.disconnect();
     }, []);
 
-    // Cursor-follow tilt (written straight to CSS variables: no re-render per mouse move)
-    const onMove = (e: React.PointerEvent) => {
+    useEffect(() => () => {
+        if (raf.current) cancelAnimationFrame(raf.current);
+    }, []);
+
+    const tick = () => {
         const el = tiltRef.current;
-        if (!el || e.pointerType === "touch") return;
-        const r = el.getBoundingClientRect();
-        const px = (e.clientX - r.left) / r.width; // 0..1
-        const py = (e.clientY - r.top) / r.height;
-        el.style.setProperty("--ry", `${(px - 0.5) * 24}deg`);
-        el.style.setProperty("--rx", `${(0.5 - py) * 18}deg`);
-        el.style.setProperty("--gx", `${px * 100}%`);
-        el.style.setProperty("--gy", `${py * 100}%`);
+        const c = current.current;
+        const t = target.current;
+        const k = 0.14;
+        c.rx += (t.rx - c.rx) * k;
+        c.ry += (t.ry - c.ry) * k;
+        c.gx += (t.gx - c.gx) * k;
+        c.gy += (t.gy - c.gy) * k;
+        if (el) {
+            el.style.transform = `rotateX(${c.rx.toFixed(2)}deg) rotateY(${c.ry.toFixed(2)}deg)`;
+            el.style.setProperty("--gx", `${c.gx.toFixed(1)}%`);
+            el.style.setProperty("--gy", `${c.gy.toFixed(1)}%`);
+        }
+        const settled = Math.abs(t.rx - c.rx) < 0.02 && Math.abs(t.ry - c.ry) < 0.02;
+        raf.current = settled ? null : requestAnimationFrame(tick);
+    };
+    const kick = () => {
+        if (raf.current == null) raf.current = requestAnimationFrame(tick);
+    };
+
+    // Pointer is tracked on the stage, which never moves, so hover can't flicker
+    const onMove = (e: React.PointerEvent) => {
+        if (e.pointerType === "touch" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        const r = e.currentTarget.getBoundingClientRect();
+        const px = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+        const py = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+        target.current = { rx: (0.5 - py) * 16, ry: (px - 0.5) * 22, gx: px * 100, gy: py * 100 };
+        kick();
     };
     const onLeave = () => {
-        const el = tiltRef.current;
-        if (!el) return;
-        el.style.setProperty("--ry", "0deg");
-        el.style.setProperty("--rx", "0deg");
+        target.current = { rx: 0, ry: 0, gx: 50, gy: 30 };
+        kick();
     };
 
     const flip = () => setBack((b) => !b);
 
     return (
         <div className={`pass ${courier.className}`}>
-            <div ref={stageRef} className="pass-stage" style={{ height: H * scale }}>
+            <div
+                ref={stageRef}
+                className="pass-stage"
+                style={{ height: H * scale }}
+                role="button"
+                tabIndex={0}
+                aria-pressed={back}
+                aria-label={back ? "Pass card, back side. Press to flip to the front." : "Pass card, front side. Press to flip to the back."}
+                onPointerMove={onMove}
+                onPointerLeave={onLeave}
+                onClick={flip}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        flip();
+                    }
+                }}
+            >
                 <div className="pass-float">
-                    <div
-                        ref={tiltRef}
-                        className="pass-tilt"
-                        role="button"
-                        tabIndex={0}
-                        aria-pressed={back}
-                        aria-label={back ? "Pass card, back side. Press to flip to the front." : "Pass card, front side. Press to flip to the back."}
-                        onPointerMove={onMove}
-                        onPointerLeave={onLeave}
-                        onClick={flip}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === "Space" || e.key === " ") {
-                                e.preventDefault();
-                                flip();
-                            }
-                        }}
-                        style={{ width: W * scale, height: H * scale }}
-                    >
+                    <div className="pass-lift">
+                    <div ref={tiltRef} className="pass-tilt" style={{ width: W * scale, height: H * scale }}>
                         <div className="pass-canvas" style={{ transform: `scale(${scale})` }}>
                             <div className={`pass-flip ${back ? "is-back" : ""}`}>
                                 {/* FRONT */}
@@ -84,7 +110,8 @@ export default function PassCard() {
                                             <div className="pf-stamp">
                                                 <div className="pf-stamp-inner">
                                                     <div className="pf-photo">
-                                                        <div className="pf-photo-img" />
+                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                        <img className="pf-photo-img" src="/assets/passcard/pass-photo.webp" alt="" draggable={false} />
                                                     </div>
                                                     <div className="pf-name-row">
                                                         <div className={`pf-name ${jetbrains.className}`}>NAUFAL NIZAM</div>
@@ -116,7 +143,8 @@ export default function PassCard() {
                                     </div>
 
                                     <div className="pf-right">
-                                        <div className="pf-sprite" />
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img className="pf-sprite" src="/assets/passcard/pass-sprite.webp" alt="" draggable={false} />
                                         {/* Covers the edge of the sitting scene that sits next to the sprite in the artwork */}
                                         <div className="pf-sprite-cover" />
                                     </div>
@@ -155,6 +183,7 @@ export default function PassCard() {
                                 </div>
                             </div>
                         </div>
+                    </div>
                     </div>
                 </div>
                 <div className="pass-shadow" style={{ width: W * scale * 0.8 }} />
@@ -218,26 +247,34 @@ export default function PassCard() {
                     }
                 }
 
-                /* Hover: tilt toward cursor + lift */
+                /* The stage is the hover/click target and never moves */
+                .pass-stage {
+                    cursor: pointer;
+                    outline: none;
+                    border-radius: 24px;
+                    -webkit-tap-highlight-color: transparent;
+                }
+                .pass-stage:focus-visible .pass-tilt {
+                    box-shadow: 0 0 0 3px #46c1e6;
+                    border-radius: 18px;
+                }
+
+                /* Lift + scale on hover (eased by CSS; tilt is eased in JS) */
+                .pass-lift {
+                    transform-style: preserve-3d;
+                    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+                    will-change: transform;
+                }
+                .pass-stage:hover .pass-lift {
+                    transform: translateY(-10px) scale(1.04);
+                }
+
                 .pass-tilt {
-                    --rx: 0deg;
-                    --ry: 0deg;
                     --gx: 50%;
                     --gy: 30%;
                     position: relative;
-                    cursor: pointer;
-                    outline: none;
-                    border-radius: 18px;
                     transform-style: preserve-3d;
-                    transform: rotateX(var(--rx)) rotateY(var(--ry)) translateZ(0) scale(1);
-                    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-                }
-                .pass-tilt:hover {
-                    transform: translateY(-10px) rotateX(var(--rx)) rotateY(var(--ry)) scale(1.05);
-                    transition: transform 0.2s ease-out;
-                }
-                .pass-tilt:focus-visible {
-                    box-shadow: 0 0 0 3px #46c1e6;
+                    will-change: transform;
                 }
 
                 .pass-canvas {
@@ -252,6 +289,7 @@ export default function PassCard() {
                     height: 100%;
                     transform-style: preserve-3d;
                     transition: transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+                    will-change: transform;
                 }
                 .pass-flip.is-back {
                     transform: rotateY(180deg);
@@ -290,7 +328,7 @@ export default function PassCard() {
                     opacity: 0;
                     transition: opacity 0.3s ease;
                 }
-                .pass-tilt:hover .pass-glare {
+                .pass-stage:hover .pass-glare {
                     opacity: 1;
                 }
 
@@ -303,7 +341,7 @@ export default function PassCard() {
                     grid-template-columns: 290px 1fr 170px;
                     gap: 26px;
                 }
-                .pass-tilt:hover .pass-front {
+                .pass-stage:hover .pass-front {
                     box-shadow: 0 60px 100px rgba(13, 42, 66, 0.4), 0 0 0 2px rgba(70, 193, 230, 0.55), inset 0 0 0 10px #dce4e8, inset 0 0 80px rgba(27, 79, 114, 0.12);
                 }
                 .pf-left {
@@ -339,19 +377,13 @@ export default function PassCard() {
                     background: #c9d4da;
                     overflow: hidden;
                 }
-                .pf-photo-img,
-                .pf-sprite {
-                    position: absolute;
-                    background-image: url(/assets/passcard/pass-pixel.webp);
-                    background-repeat: no-repeat;
-                    image-rendering: pixelated;
-                    mix-blend-mode: multiply;
-                    filter: brightness(1.12) contrast(1.12);
-                }
                 .pf-photo-img {
+                    position: absolute;
                     inset: 0;
-                    background-size: 880px auto;
-                    background-position: -150px -208px;
+                    width: 100%;
+                    height: 100%;
+                    image-rendering: pixelated;
+                    user-select: none;
                 }
                 .pf-name-row {
                     height: 46px;
@@ -432,12 +464,13 @@ export default function PassCard() {
                     overflow: hidden;
                 }
                 .pf-sprite {
-                    width: 157px;
-                    height: 369px;
+                    position: absolute;
                     left: -1px;
-                    top: 6px;
-                    background-size: 455px auto;
-                    background-position: -286px 4px;
+                    top: 10px;
+                    width: 157px;
+                    height: 364px;
+                    image-rendering: pixelated;
+                    user-select: none;
                     transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
                 }
                 .pf-sprite-cover {
@@ -449,10 +482,10 @@ export default function PassCard() {
                     background: #e9eef0;
                 }
                 /* Little life on hover: the standing sprite leans in */
-                .pass-tilt:hover .pf-sprite {
+                .pass-stage:hover .pf-sprite {
                     transform: translateY(-8px) rotate(-3deg);
                 }
-                .pass-tilt:hover .pass-back {
+                .pass-stage:hover .pass-back {
                     box-shadow: 0 60px 100px rgba(0, 0, 0, 0.55), 0 0 0 2px rgba(70, 193, 230, 0.55), inset 0 0 0 10px #1b4f72;
                 }
                 /* Floor shadow tightens while the card is lifted */
@@ -586,8 +619,8 @@ export default function PassCard() {
                     .pass-shadow {
                         animation: none;
                     }
-                    .pass-tilt,
-                    .pass-tilt:hover {
+                    .pass-lift,
+                    .pass-stage:hover .pass-lift {
                         transform: none;
                     }
                     .pass-flip {
