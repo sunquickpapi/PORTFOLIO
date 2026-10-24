@@ -10588,3 +10588,10 @@ html.fvl-loading body {
     transition: none !important;
   }
 }
+
+/* Group dividers are plain space (no line) */
+.dock-separator {
+  width: 0;
+  background: none;
+  margin: 0 1rem;
+}
