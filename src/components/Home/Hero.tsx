@@ -77,7 +77,7 @@ export default function Hero() {
                         </div>
                     </div>
 
-                    <HeroCard />
+                    <HeroCard photo={profile.hero_photo_url} name={profile.name} />
                 </div>
             )}
         </section>
@@ -85,9 +85,13 @@ export default function Hero() {
 }
 
 /** Right-hand brand card: FVL mark with slowly orbiting rings + availability badge. */
-function HeroCard() {
+function HeroCard({ photo, name }: { photo?: string | null; name?: string }) {
     return (
-        <div className="hero-card" aria-hidden="false">
+        <div className={`hero-card ${photo ? "has-photo" : ""}`}>
+            {photo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="hero-card-photo" src={photo} alt={name || "Portrait"} />
+            ) : (
             <div className="hero-card-inner">
                 <svg className="hero-card-orbits" viewBox="0 0 400 400" aria-hidden="true">
                     <circle className="orbit orbit-1" cx="200" cy="200" r="150" />
@@ -114,6 +118,7 @@ function HeroCard() {
                     <path className="hero-card-ink" d="M260 16H288V132H341V158H284Q260 158 260 134Z" />
                 </svg>
             </div>
+            )}
 
             <div className="hero-card-badge">
                 <span className="hero-card-pulse" />

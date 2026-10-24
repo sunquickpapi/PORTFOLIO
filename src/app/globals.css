@@ -10807,3 +10807,33 @@ html.fvl-loading body {
   color: #3A99C9;
   opacity: 1;
 }
+
+/* Hero card with an admin-uploaded photo instead of the logo */
+.hero-card.has-photo {
+  overflow: hidden;
+  padding: 0;
+}
+
+.hero-card-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+/* Soft fade at the bottom so the badge always reads clearly */
+.hero-card.has-photo::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 35%;
+  border-radius: 0 0 32px 32px;
+  background: linear-gradient(to top, rgba(8, 20, 32, 0.35), transparent);
+  pointer-events: none;
+}
+
+.hero-card.has-photo .hero-card-badge {
+  z-index: 1;
+}
