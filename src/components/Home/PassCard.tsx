@@ -11,6 +11,8 @@ const jetbrains = JetBrains_Mono({ subsets: ["latin"], weight: "700", display: "
 /** Native design size from Claude design; the card is scaled to fit its column. */
 const W = 900;
 const H = 440;
+/** Flip duration. The easing is symmetric, so the card is exactly edge-on at FLIP_MS / 2. */
+const FLIP_MS = 800;
 
 /**
  * "Pixel Pass" ID card for the hero. Floats gently, tilts toward the cursor with a
@@ -29,6 +31,8 @@ export default function PassCard({ socials = {} }: { socials?: Socials }) {
     const tiltRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(0.6);
     const [back, setBack] = useState(false);
+    const [bounce, setBounce] = useState<"" | "a" | "b">("");
+    const flipping = useRef(false);
 
     // Tilt is eased every frame toward a target, so it never jumps or stutters
     const target = useRef({ rx: 0, ry: 0, gx: 50, gy: 30 });
@@ -85,7 +89,16 @@ export default function PassCard({ socials = {} }: { socials?: Socials }) {
         kick();
     };
 
-    const flip = () => setBack((b) => !b);
+    // One flip at a time: a click mid-flip would desync the face swap from the rotation
+    const flip = () => {
+        if (flipping.current) return;
+        flipping.current = true;
+        setBack((b) => !b);
+        setBounce((b) => (b === "a" ? "b" : "a")); // alternate class names to restart the depth animation
+        window.setTimeout(() => {
+            flipping.current = false;
+        }, FLIP_MS);
+    };
 
     return (
         <div className={`pass ${courier.className}`}>
@@ -111,6 +124,7 @@ export default function PassCard({ socials = {} }: { socials?: Socials }) {
                     <div className="pass-lift">
                     <div ref={tiltRef} className="pass-tilt" style={{ width: W * scale, height: H * scale }}>
                         <div className="pass-canvas" style={{ transform: `scale(${scale})` }}>
+                            <div className={`pass-depth ${bounce ? `depth-${bounce}` : ""}`}>
                             <div className={`pass-flip ${back ? "is-back" : ""}`}>
                                 {/* FRONT */}
                                 <div className="pass-face pass-front" aria-hidden={back}>
@@ -201,6 +215,7 @@ export default function PassCard({ socials = {} }: { socials?: Socials }) {
                                     </div>
                                     <div className="pass-glare" />
                                 </div>
+                            </div>
                             </div>
                         </div>
                     </div>
@@ -303,12 +318,33 @@ export default function PassCard({ socials = {} }: { socials?: Socials }) {
                     transform-origin: top left;
                     transform-style: preserve-3d;
                 }
+                /* Depth: the card dips back slightly while it turns, then settles */
+                .pass-depth {
+                    width: 100%;
+                    height: 100%;
+                    transform-style: preserve-3d;
+                }
+                .pass-depth.depth-a {
+                    animation: pass-depth-a ${FLIP_MS}ms cubic-bezier(0.45, 0, 0.55, 1);
+                }
+                .pass-depth.depth-b {
+                    animation: pass-depth-b ${FLIP_MS}ms cubic-bezier(0.45, 0, 0.55, 1);
+                }
+                @keyframes pass-depth-a {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(0.9); }
+                }
+                @keyframes pass-depth-b {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(0.9); }
+                }
                 .pass-flip {
                     position: relative;
                     width: 100%;
                     height: 100%;
                     transform-style: preserve-3d;
-                    transition: transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+                    /* Symmetric ease-in-out: edge-on exactly at the halfway point */
+                    transition: transform ${FLIP_MS}ms cubic-bezier(0.45, 0, 0.55, 1);
                     will-change: transform;
                 }
                 .pass-flip.is-back {
@@ -323,7 +359,8 @@ export default function PassCard({ socials = {} }: { socials?: Socials }) {
                     backface-visibility: hidden;
                     -webkit-backface-visibility: hidden;
                     overflow: hidden;
-                    transition: opacity 0s linear 0.4s, box-shadow 0.3s ease;
+                    /* Swap faces exactly when the card is edge-on (invisible), so there is never a gap */
+                    transition: opacity 0s linear ${FLIP_MS / 2}ms, box-shadow 0.3s ease;
                 }
                 .pass-back {
                     transform: rotateY(180deg);
@@ -648,6 +685,13 @@ export default function PassCard({ socials = {} }: { socials?: Socials }) {
                     }
                     .pass-flip {
                         transition-duration: 0.01ms;
+                    }
+                    .pass-face {
+                        transition-delay: 0ms;
+                    }
+                    .pass-depth.depth-a,
+                    .pass-depth.depth-b {
+                        animation: none;
                     }
                 }
             `}</style>
