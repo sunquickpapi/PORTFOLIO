@@ -149,6 +149,7 @@ export default function SkillForm({ id }: { id?: string }) {
                             </div>
                             <FileUploadButton
                                 accept="image/*,.svg"
+                                aspect={1}
                                 previewUrl={formData.icon_url || ""}
                                 onUploaded={([url]) => setFormData((prev) => ({ ...prev, icon_url: url }))}
                             />

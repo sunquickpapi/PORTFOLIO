@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Upload } from "lucide-react";
+import ImageCropper from "./ImageCropper";
 
 type Props = {
     /** Called with the public URL(s) of the uploaded file(s). */
@@ -11,8 +12,12 @@ type Props = {
     /** Allow picking several files at once (e.g. gallery images). */
     multiple?: boolean;
     label?: string;
-    /** Current value; when it is an image URL a small thumbnail is shown. */
+    /** Current value; when it is an image URL a preview is shown. */
     previewUrl?: string;
+    /** Open the crop window for images before uploading (default true). */
+    crop?: boolean;
+    /** Starting aspect ratio in the crop window (width / height). null = Original. */
+    aspect?: number | null;
 };
 
 async function uploadOne(file: File): Promise<string> {
@@ -31,6 +36,10 @@ async function uploadOne(file: File): Promise<string> {
 }
 
 const IMAGE_RE = /\.(png|jpe?g|gif|webp|avif|svg)(\?.*)?$/i;
+// SVGs are vector and GIFs may be animated: cropping would flatten them, so upload those as-is
+const isCroppable = (f: File) => f.type.startsWith("image/") && !/svg|gif/.test(f.type);
+
+type CropRequest = { file: File; progress?: string; resolve: (f: File | null) => void };
 
 export default function FileUploadButton({
     onUploaded,
@@ -38,10 +47,22 @@ export default function FileUploadButton({
     multiple = false,
     label = "Add from file",
     previewUrl,
+    crop = true,
+    aspect = null,
 }: Props) {
     const inputRef = useRef<HTMLInputElement>(null);
     const [busy, setBusy] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [cropReq, setCropReq] = useState<CropRequest | null>(null);
+
+    /** Shows the crop window; resolves with the file to upload, or null if cancelled. */
+    const askCrop = (file: File, progress?: string) =>
+        new Promise<File | null>((resolve) => setCropReq({ file, progress, resolve }));
+
+    const finishCrop = (result: File | null) => {
+        cropReq?.resolve(result);
+        setCropReq(null);
+    };
 
     const handleFiles = async (files: FileList | null) => {
         if (!files || files.length === 0) return;
@@ -50,8 +71,15 @@ export default function FileUploadButton({
         const urls: string[] = [];
         try {
             for (let i = 0; i < list.length; i++) {
+                let file: File | null = list[i];
+                const progress = list.length > 1 ? `${i + 1} of ${list.length}` : undefined;
+                if (crop && isCroppable(file)) {
+                    setBusy("Cropping...");
+                    file = await askCrop(file, progress);
+                    if (!file) continue; // cancelled this one
+                }
                 setBusy(list.length > 1 ? `Uploading ${i + 1} of ${list.length}...` : "Uploading...");
-                urls.push(await uploadOne(list[i]));
+                urls.push(await uploadOne(file));
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : "Upload failed");
@@ -62,7 +90,8 @@ export default function FileUploadButton({
         }
     };
 
-    const showThumb = previewUrl && !previewUrl.includes(",") && IMAGE_RE.test(previewUrl.trim());
+    const current = previewUrl?.trim() || "";
+    const showThumb = current && !current.includes(",") && IMAGE_RE.test(current);
 
     return (
         <div className="fub-wrap">
@@ -90,11 +119,25 @@ export default function FileUploadButton({
             </label>
 
             {showThumb && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={previewUrl!.trim()} alt="" className="fub-thumb" />
+                <a href={current} target="_blank" rel="noopener noreferrer" className="fub-thumb-link" title="Open full image">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={current} alt="Current image" className="fub-thumb" />
+                    <span className="fub-thumb-label">Preview</span>
+                </a>
             )}
 
             {error && <span className="fub-error">{error}</span>}
+
+            {cropReq && (
+                <ImageCropper
+                    file={cropReq.file}
+                    aspect={aspect}
+                    progress={cropReq.progress}
+                    onCancel={() => finishCrop(null)}
+                    onSkip={() => finishCrop(cropReq.file)}
+                    onConfirm={(f) => finishCrop(f)}
+                />
+            )}
 
             <style jsx>{`
                 .fub-wrap {
@@ -136,12 +179,36 @@ export default function FileUploadButton({
                     background: rgba(56, 189, 248, 0.12);
                     border-color: rgba(56, 189, 248, 0.25);
                 }
-                .fub-thumb {
-                    height: 36px;
-                    max-width: 64px;
-                    object-fit: cover;
-                    border-radius: 6px;
+                .fub-thumb-link {
+                    position: relative;
+                    display: inline-block;
+                    border-radius: 10px;
+                    overflow: hidden;
                     border: 1px solid rgba(27, 79, 114, 0.15);
+                    line-height: 0;
+                }
+                .fub-thumb {
+                    height: 56px;
+                    max-width: 120px;
+                    object-fit: cover;
+                    display: block;
+                    background: repeating-conic-gradient(#eef2f6 0% 25%, #fff 0% 50%) 50% / 12px 12px;
+                }
+                .fub-thumb-label {
+                    position: absolute;
+                    inset: auto 0 0 0;
+                    padding: 2px 0;
+                    font-size: 0.6rem;
+                    font-weight: 700;
+                    line-height: 1.4;
+                    text-align: center;
+                    color: #fff;
+                    background: rgba(8, 20, 32, 0.55);
+                    opacity: 0;
+                    transition: opacity 0.2s ease;
+                }
+                .fub-thumb-link:hover .fub-thumb-label {
+                    opacity: 1;
                 }
                 .fub-error {
                     font-size: 0.72rem;

@@ -311,6 +311,7 @@ export default function ProfilePage() {
                                             onChange={handleChange}
                                         />
                                         <FileUploadButton
+                                            aspect={16 / 9}
                                             previewUrl={formData.hero_bg_url || ""}
                                             onUploaded={([url]) => {
                                                 setFormData((prev) => ({ ...prev, hero_bg_url: url }));

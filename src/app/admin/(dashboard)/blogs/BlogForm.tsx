@@ -185,6 +185,7 @@ export default function BlogForm({ blogId }: BlogFormProps) {
                                 onChange={handleChange}
                             />
                             <FileUploadButton
+                                aspect={16 / 9}
                                 previewUrl={formData.header_image_url || ""}
                                 onUploaded={([url]) => setFormData((prev) => ({ ...prev, header_image_url: url }))}
                             />

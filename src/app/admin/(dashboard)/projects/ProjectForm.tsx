@@ -212,6 +212,7 @@ function ProjectFormContent({ projectId }: ProjectFormProps) {
                             onChange={handleChange}
                         />
                         <FileUploadButton
+                            aspect={16 / 9}
                             previewUrl={formData.image_url || ""}
                             onUploaded={([url]) => setFormData((prev) => ({ ...prev, image_url: url }))}
                         />
@@ -233,6 +234,7 @@ function ProjectFormContent({ projectId }: ProjectFormProps) {
                         />
                         <FileUploadButton
                             multiple
+                            aspect={16 / 9}
                             label="Add images from files"
                             onUploaded={(urls) =>
                                 setFormData((prev) => {
