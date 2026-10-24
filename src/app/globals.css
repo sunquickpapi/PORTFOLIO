@@ -10659,3 +10659,53 @@ html.fvl-loading body {
 .hero-clean .hero-grid.no-card {
   grid-template-columns: minmax(0, 1fr);
 }
+
+/* Hero with the Pixel Pass card on the right */
+.hero-clean .hero-grid.has-pass {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  max-width: 1320px;
+  gap: clamp(1.5rem, 4vw, 4rem);
+}
+
+.hero-pass {
+  width: 100%;
+  animation: hero-pass-in 1s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+
+@keyframes hero-pass-in {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1024px) {
+  .hero-clean .hero-grid.has-pass {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hero-pass {
+    max-width: 640px;
+    margin: 1rem auto 0;
+  }
+}
+
+/* Too small to read on phones */
+@media (max-width: 640px) {
+  .hero-pass {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-pass { animation: none; }
+}
+
+/* Keep the three stat cards on one row beside the pass card */
+@media (min-width: 1025px) {
+  .hero-clean .has-pass .hero-stats {
+    flex-wrap: nowrap;
+  }
+  .hero-clean .has-pass .stat-card {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0.75rem 1rem;
+  }
+}

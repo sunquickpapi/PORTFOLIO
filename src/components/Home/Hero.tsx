@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Download, Mail, ChevronDown, Trophy, Coffee, Zap } from "lucide-react";
+import PassCard from "./PassCard";
 
 export default function Hero() {
     const [profile, setProfile] = useState<any>(null);
@@ -26,7 +27,7 @@ export default function Hero() {
                     <div className="animate-pulse text-[var(--color-text-muted)] text-2xl font-bold tracking-tighter">Initializing Portfolio...</div>
                 </div>
             ) : (
-                <div className="container hero-grid no-card">
+                <div className="container hero-grid has-pass">
                     <div className="hero-content text-left">
                         <h1>
                             Hello Everyone,<br />
@@ -75,6 +76,10 @@ export default function Hero() {
                                 Contact Me
                             </a>
                         </div>
+                    </div>
+
+                    <div className="hero-pass">
+                        <PassCard />
                     </div>
                 </div>
             )}
