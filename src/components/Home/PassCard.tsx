@@ -221,7 +221,6 @@ export default function PassCard({ socials = {} }: { socials?: Socials }) {
                     </div>
                     </div>
                 </div>
-                <div className="pass-shadow" style={{ width: W * scale * 0.8 }} />
             </div>
             <div className="pass-hint">{back ? "Click to flip back" : "Click the card to flip it"}</div>
 
@@ -244,43 +243,19 @@ export default function PassCard({ socials = {} }: { socials?: Socials }) {
 
                 /* Gentle idle float */
                 .pass-float {
-                    animation: pass-float 6s ease-in-out infinite;
+                    animation: pass-float 10s ease-in-out infinite;
                     transform-style: preserve-3d;
                 }
                 @keyframes pass-float {
                     0%,
                     100% {
-                        transform: translateY(0) rotate(-1.2deg);
+                        transform: translateY(0) rotate(-0.8deg);
                     }
                     50% {
-                        transform: translateY(-14px) rotate(0.4deg);
+                        transform: translateY(-12px) rotate(0.3deg);
                     }
                 }
 
-                /* Shadow on the "floor" breathes with the float */
-                .pass-shadow {
-                    position: absolute;
-                    left: 50%;
-                    bottom: -34px;
-                    height: 28px;
-                    transform: translateX(-50%);
-                    border-radius: 50%;
-                    background: radial-gradient(ellipse at center, rgba(13, 42, 66, 0.28), transparent 70%);
-                    filter: blur(6px);
-                    animation: pass-shadow 6s ease-in-out infinite;
-                    pointer-events: none;
-                }
-                @keyframes pass-shadow {
-                    0%,
-                    100% {
-                        opacity: 0.9;
-                        transform: translateX(-50%) scaleX(1);
-                    }
-                    50% {
-                        opacity: 0.55;
-                        transform: translateX(-50%) scaleX(0.88);
-                    }
-                }
 
                 /* The stage is the hover/click target and never moves */
                 .pass-stage {
@@ -548,10 +523,6 @@ export default function PassCard({ socials = {} }: { socials?: Socials }) {
                 .pass-stage:hover .pass-back {
                     box-shadow: 0 60px 100px rgba(0, 0, 0, 0.55), 0 0 0 2px rgba(70, 193, 230, 0.55), inset 0 0 0 10px #1b4f72;
                 }
-                /* Floor shadow tightens while the card is lifted */
-                .pass-stage:hover .pass-shadow {
-                    opacity: 0.4;
-                }
 
                 /* ---------- BACK ---------- */
                 .pass-back {
@@ -670,13 +641,9 @@ export default function PassCard({ socials = {} }: { socials?: Socials }) {
                     margin-top: 1.4rem;
                 }
 
-                :global(:root.dark) .pass-shadow {
-                    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.6), transparent 70%);
-                }
 
                 @media (prefers-reduced-motion: reduce) {
-                    .pass-float,
-                    .pass-shadow {
+                    .pass-float {
                         animation: none;
                     }
                     .pass-lift,
