@@ -10637,165 +10637,12 @@ html.fvl-loading body {
   padding-top: 4rem;
 }
 
-/* Brand card */
-.hero-card {
-  position: relative;
-  justify-self: end;
-  width: 100%;
-  max-width: 400px;
-  aspect-ratio: 4 / 5;
-  border-radius: 32px;
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.9), rgba(240, 247, 252, 0.75));
-  border: 1px solid rgba(27, 79, 114, 0.1);
-  box-shadow:
-    0 1px 2px rgba(16, 42, 67, 0.04),
-    0 30px 60px -25px rgba(27, 79, 114, 0.28);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  animation: hero-card-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-:root.dark .hero-card {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(58, 153, 201, 0.05));
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 30px 60px -25px rgba(0, 0, 0, 0.6);
-}
-
-.hero-card-inner {
-  position: relative;
-  width: 82%;
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  margin-top: -8%;
-}
-
-.hero-card-orbits,
-.hero-card-mark {
-  grid-area: 1 / 1;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.hero-card-mark {
-  width: 64%;
-  height: auto;
-  color: var(--color-text-primary);
-}
-
-.hero-card-ink { fill: currentColor; }
-
-.hero-card-ring {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 15;
-}
-
-.orbit {
-  fill: none;
-  stroke: rgba(27, 79, 114, 0.18);
-  stroke-width: 1;
-  transform-origin: 200px 200px;
-}
-
-.orbit-1 { stroke-dasharray: 2 7; animation: hero-spin 60s linear infinite; }
-.orbit-2 { stroke: rgba(27, 79, 114, 0.1); }
-
-:root.dark .orbit { stroke: rgba(255, 255, 255, 0.16); }
-:root.dark .orbit-2 { stroke: rgba(255, 255, 255, 0.08); }
-
-.orbit-dot { fill: #3A99C9; }
-.orbit-dot-soft { fill: #75C2E6; opacity: 0.7; }
-
-.orbit-dot-track {
-  transform-origin: 200px 200px;
-}
-.orbit-dot-track-1 { animation: hero-spin 18s linear infinite; }
-.orbit-dot-track-2 { animation: hero-spin 30s linear infinite reverse; }
-
-.hero-card-badge {
-  position: absolute;
-  bottom: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.55rem 1rem;
-  border-radius: 999px;
-  white-space: nowrap;
-  font-family: var(--font-display);
-  font-size: 0.82rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--color-text-primary);
-  background: var(--portfolio-bg);
-  border: 1px solid rgba(27, 79, 114, 0.1);
-  box-shadow: 0 6px 18px -8px rgba(27, 79, 114, 0.3);
-}
-
-:root.dark .hero-card-badge {
-  border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(10, 10, 10, 0.7);
-}
-
-.hero-card-pulse {
-  position: relative;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #22c55e;
-}
-
-.hero-card-pulse::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: #22c55e;
-  animation: hero-pulse 2s ease-out infinite;
-}
-
-@keyframes hero-spin { to { transform: rotate(360deg); } }
-@keyframes hero-pulse {
-  0% { transform: scale(1); opacity: 0.6; }
-  100% { transform: scale(2.8); opacity: 0; }
-}
-@keyframes hero-card-in {
-  from { opacity: 0; transform: translateY(24px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
 
 /* Tablet / phone: stack, card under the text */
 @media (max-width: 1024px) {
   .hero-clean .hero-grid {
     grid-template-columns: 1fr;
     padding-top: 2rem;
-  }
-  .hero-card {
-    justify-self: center;
-    max-width: 320px;
-  }
-}
-
-@media (max-width: 640px) {
-  .hero-card {
-    display: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .orbit-1,
-  .orbit-dot-track,
-  .hero-card-pulse::after,
-  .hero-card {
-    animation: none !important;
   }
 }
 
@@ -10808,32 +10655,7 @@ html.fvl-loading body {
   opacity: 1;
 }
 
-/* Hero card with an admin-uploaded photo instead of the logo */
-.hero-card.has-photo {
-  overflow: hidden;
-  padding: 0;
-}
-
-.hero-card-photo {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: inherit;
-}
-
-/* Soft fade at the bottom so the badge always reads clearly */
-.hero-card.has-photo::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 35%;
-  border-radius: 0 0 32px 32px;
-  background: linear-gradient(to top, rgba(8, 20, 32, 0.35), transparent);
-  pointer-events: none;
-}
-
-.hero-card.has-photo .hero-card-badge {
-  z-index: 1;
+/* No photo: single column, text keeps its comfortable reading width */
+.hero-clean .hero-grid.no-card {
+  grid-template-columns: minmax(0, 1fr);
 }

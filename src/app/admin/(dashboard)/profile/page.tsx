@@ -26,7 +26,6 @@ export default function ProfilePage() {
         coffee_consumed: 0,
         logo_url: "",
         hero_bg_url: "",
-        hero_photo_url: "",
         resume_url: "",
         tech_learned_count: 0,
         dumbells_lifted_count: 0,
@@ -301,42 +300,6 @@ export default function ProfilePage() {
                                                 setIsEditing(true);
                                             }}
                                         />
-                                    </div>
-                                    <div className="input-group full-width">
-                                        <label>Hero Card Photo</label>
-                                        <p className="field-hint">
-                                            Shown in the card next to your intro on the homepage. Leave empty to show your FVL logo.
-                                        </p>
-                                        <input
-                                            name="hero_photo_url"
-                                            readOnly={!isEditing}
-                                            placeholder="No photo: the FVL logo is shown"
-                                            value={formData.hero_photo_url || ""}
-                                            onChange={handleChange}
-                                        />
-                                        <div className="hero-photo-actions">
-                                            <FileUploadButton
-                                                aspect={4 / 5}
-                                                label={formData.hero_photo_url ? "Replace photo" : "Add photo"}
-                                                previewUrl={formData.hero_photo_url || ""}
-                                                onUploaded={([url]) => {
-                                                    setFormData((prev) => ({ ...prev, hero_photo_url: url }));
-                                                    setIsEditing(true);
-                                                }}
-                                            />
-                                            {formData.hero_photo_url && (
-                                                <button
-                                                    type="button"
-                                                    className="hero-photo-remove"
-                                                    onClick={() => {
-                                                        setFormData((prev) => ({ ...prev, hero_photo_url: "" }));
-                                                        setIsEditing(true);
-                                                    }}
-                                                >
-                                                    Remove photo (show logo)
-                                                </button>
-                                            )}
-                                        </div>
                                     </div>
                                     <div className="input-group full-width">
                                         <label>Resume / CV (PDF)</label>
@@ -777,31 +740,6 @@ export default function ProfilePage() {
                     .save-btn { width: 100%; }
                 }
             
-                .field-hint {
-                    font-size: 0.75rem;
-                    opacity: 0.6;
-                    margin: -0.15rem 0 0.5rem;
-                }
-                .hero-photo-actions {
-                    display: flex;
-                    align-items: center;
-                    flex-wrap: wrap;
-                    gap: 0.75rem;
-                }
-                .hero-photo-remove {
-                    margin-top: 0.5rem;
-                    font-size: 0.72rem;
-                    font-weight: 700;
-                    color: #ef4444;
-                    background: rgba(239, 68, 68, 0.06);
-                    border: 1px solid rgba(239, 68, 68, 0.12);
-                    padding: 0.4rem 0.85rem;
-                    border-radius: 8px;
-                    cursor: pointer;
-                }
-                .hero-photo-remove:hover {
-                    background: rgba(239, 68, 68, 0.12);
-                }
 `}</style>
         </div>
     );
