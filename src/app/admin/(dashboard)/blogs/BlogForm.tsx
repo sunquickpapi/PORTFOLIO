@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
     ChevronLeft,
@@ -88,6 +88,23 @@ export default function BlogForm({ blogId }: BlogFormProps) {
         } finally {
             setLoading(false);
         }
+    };
+
+    const contentRef = useRef<HTMLTextAreaElement>(null);
+
+    // Insert uploaded images into the article at the cursor (content is rendered as HTML)
+    const insertImages = (urls: string[]) => {
+        const el = contentRef.current;
+        const html = urls.map((u) => `<img src="${u}" alt="" />`).join("\n");
+        setFormData((prev: typeof formData) => {
+            const text = prev.content || "";
+            const start = el ? el.selectionStart : text.length;
+            const end = el ? el.selectionEnd : text.length;
+            const before = text.slice(0, start);
+            const after = text.slice(end);
+            const pad = (s: string) => (s && !s.endsWith("\n") ? "\n" : "");
+            return { ...prev, content: `${before}${pad(before)}${html}\n${after}` };
+        });
     };
 
     const handleChange = (
@@ -246,6 +263,7 @@ export default function BlogForm({ blogId }: BlogFormProps) {
                             </label>
                             <textarea
                                 name="content"
+                                ref={contentRef}
                                 required
                                 rows={15}
                                 placeholder="Elaborate on your insights, research, and discoveries..."
@@ -253,9 +271,14 @@ export default function BlogForm({ blogId }: BlogFormProps) {
                                 value={formData.content || ""}
                                 onChange={handleChange}
                             />
+                            <FileUploadButton
+                                multiple
+                                label="Insert image into article"
+                                onUploaded={insertImages}
+                            />
                             <p className="helper-text">
                                 <Sparkles size={10} style={{ marginRight: '4px' }} />
-                                Markdown is supported for rich formatting and code snippets.
+                                Images are inserted where your cursor is.
                             </p>
                         </div>
                     </div>

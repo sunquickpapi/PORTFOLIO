@@ -26,6 +26,7 @@ export default function ProfilePage() {
         coffee_consumed: 0,
         logo_url: "",
         hero_bg_url: "",
+        resume_url: "",
         tech_learned_count: 0,
         dumbells_lifted_count: 0,
     });
@@ -292,12 +293,13 @@ export default function ProfilePage() {
                                             value={formData.logo_url || ""}
                                             onChange={handleChange}
                                         />
-                                        {isEditing && (
-                                            <FileUploadButton
-                                                previewUrl={formData.logo_url || ""}
-                                                onUploaded={([url]) => setFormData((prev) => ({ ...prev, logo_url: url }))}
-                                            />
-                                        )}
+                                        <FileUploadButton
+                                            previewUrl={formData.logo_url || ""}
+                                            onUploaded={([url]) => {
+                                                setFormData((prev) => ({ ...prev, logo_url: url }));
+                                                setIsEditing(true);
+                                            }}
+                                        />
                                     </div>
                                     <div className="input-group full-width">
                                         <label>Hero Background URL</label>
@@ -308,12 +310,31 @@ export default function ProfilePage() {
                                             value={formData.hero_bg_url || ""}
                                             onChange={handleChange}
                                         />
-                                        {isEditing && (
-                                            <FileUploadButton
-                                                previewUrl={formData.hero_bg_url || ""}
-                                                onUploaded={([url]) => setFormData((prev) => ({ ...prev, hero_bg_url: url }))}
-                                            />
-                                        )}
+                                        <FileUploadButton
+                                            previewUrl={formData.hero_bg_url || ""}
+                                            onUploaded={([url]) => {
+                                                setFormData((prev) => ({ ...prev, hero_bg_url: url }));
+                                                setIsEditing(true);
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="input-group full-width">
+                                        <label>Resume / CV (PDF)</label>
+                                        <input
+                                            name="resume_url"
+                                            readOnly={!isEditing}
+                                            placeholder="/assets/resume.pdf"
+                                            value={formData.resume_url || ""}
+                                            onChange={handleChange}
+                                        />
+                                        <FileUploadButton
+                                            accept="application/pdf"
+                                            label="Upload resume (PDF)"
+                                            onUploaded={([url]) => {
+                                                setFormData((prev) => ({ ...prev, resume_url: url }));
+                                                setIsEditing(true);
+                                            }}
+                                        />
                                     </div>
                                 </div>
                             </section>
