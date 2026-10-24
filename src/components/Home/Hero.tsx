@@ -19,21 +19,14 @@ export default function Hero() {
     }, []);
 
     return (
-        <section
-            id="home"
-            className="hero"
-            style={{
-                backgroundImage: profile?.hero_bg_url
-                    ? `var(--hero-gradient), url('${profile.hero_bg_url}')`
-                    : undefined
-            }}
-        >
+        <section id="home" className="hero hero-clean">
+            <div className="hero-bg" aria-hidden="true" />
             {!profile ? (
                 <div className="container" style={{ minHeight: "600px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <div className="animate-pulse text-[var(--color-text-muted)] text-2xl font-bold tracking-tighter">Initializing Portfolio...</div>
                 </div>
             ) : (
-                <div className="container">
+                <div className="container hero-grid">
                     <div className="hero-content text-left">
                         <h1>
                             Hello Everyone,<br />
@@ -83,8 +76,50 @@ export default function Hero() {
                             </a>
                         </div>
                     </div>
+
+                    <HeroCard />
                 </div>
             )}
         </section>
     );
 }
+
+/** Right-hand brand card: FVL mark with slowly orbiting rings + availability badge. */
+function HeroCard() {
+    return (
+        <div className="hero-card" aria-hidden="false">
+            <div className="hero-card-inner">
+                <svg className="hero-card-orbits" viewBox="0 0 400 400" aria-hidden="true">
+                    <circle className="orbit orbit-1" cx="200" cy="200" r="150" />
+                    <circle className="orbit orbit-2" cx="200" cy="200" r="182" />
+                    <g className="orbit-dot-track orbit-dot-track-1">
+                        <circle cx="200" cy="50" r="5" className="orbit-dot" />
+                    </g>
+                    <g className="orbit-dot-track orbit-dot-track-2">
+                        <circle cx="200" cy="18" r="3.5" className="orbit-dot orbit-dot-soft" />
+                    </g>
+                </svg>
+
+                <svg className="hero-card-mark" viewBox="-92 -182 540 540" role="img" aria-label="FVL logo">
+                    <defs>
+                        <linearGradient id="heroV" x1="0.15" y1="1" x2="0.95" y2="0">
+                            <stop offset="0" stopColor="#0d2a42" />
+                            <stop offset="0.45" stopColor="#1B4F72" />
+                            <stop offset="1" stopColor="#46C1E6" />
+                        </linearGradient>
+                    </defs>
+                    <circle className="hero-card-ring" cx="178" cy="88" r="248" />
+                    <path className="hero-card-ink" d="M12 158V40Q12 16 36 16H107V44H40V80H96V104H40V158Z" />
+                    <path fill="url(#heroV)" d="M116 16H144L183 114L220 16H248L184 160Z" />
+                    <path className="hero-card-ink" d="M260 16H288V132H341V158H284Q260 158 260 134Z" />
+                </svg>
+            </div>
+
+            <div className="hero-card-badge">
+                <span className="hero-card-pulse" />
+                Open to internships
+            </div>
+        </div>
+    );
+}
+
