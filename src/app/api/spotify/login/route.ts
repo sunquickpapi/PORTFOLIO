@@ -6,8 +6,18 @@ import { SPOTIFY_SCOPES, spotifyCreds } from "@/lib/spotify";
 
 /** Admin only: starts the one-time "connect my Spotify" sign-in. */
 export async function GET(req: Request) {
+    const here = new URL(req.url);
+    // Always run on the www address: the admin sign-in and the Spotify redirect URI both live there
+    const host = here.hostname;
+    const local = host === "localhost" || host === "127.0.0.1" || host.endsWith(".vercel.app");
+    if (!local && !host.startsWith("www.")) {
+        return NextResponse.redirect(`https://www.${host}${here.pathname}`);
+    }
     const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session) {
+        // not signed in: go sign in to the admin, then come straight back here
+        return NextResponse.redirect(new URL(`/admin/login?callbackUrl=${encodeURIComponent(here.pathname)}`, here.origin));
+    }
     const creds = spotifyCreds();
     if (!creds) return NextResponse.json({ error: "Set SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET first." }, { status: 400 });
 
