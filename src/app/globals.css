@@ -10792,3 +10792,44 @@ html.fvl-loading body {
 @media (prefers-reduced-motion: reduce) {
   .hero-earbuds { animation: none; }
 }
+
+/* "More About My Journey" link under the hero intro */
+.hero-journey {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 1.75rem;
+  padding: 0.8rem 1.35rem;
+  border-radius: 999px;
+  border: 1.5px solid rgba(27, 79, 114, 0.28);
+  color: var(--color-text-primary);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, transform 0.25s ease,
+    opacity 0.5s ease, visibility 0s linear 0s;
+}
+.hero-journey:hover,
+.hero-journey:focus-visible {
+  background: #1b4f72;
+  border-color: #1b4f72;
+  color: #fff;
+  opacity: 1;
+  transform: translateY(-1px);
+}
+.hero-journey-arrow {
+  display: inline-block;
+  transition: transform 0.25s ease;
+}
+.hero-journey:hover .hero-journey-arrow {
+  transform: translateX(4px);
+}
+/* desktop intro: appears once the typing finishes */
+.hero-grid.is-intro:not(.is-typed) .hero-journey {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+}

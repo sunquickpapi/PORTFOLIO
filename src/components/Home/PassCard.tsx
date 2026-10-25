@@ -104,9 +104,7 @@ export default function PassCard({
     };
     const goToAbout = () => {
         if (onAbout) return onAbout();
-        const target = document.getElementById("about");
-        if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
-        else window.location.hash = "about";
+        window.location.assign("/about");
     };
     const stickerRefs = useRef<(HTMLButtonElement | null)[]>([]);
     // Each stamp loops on its own: fade in slowly at a random free spot, stay a while,

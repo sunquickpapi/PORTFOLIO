@@ -118,9 +118,9 @@ export default function Navigation() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const navItems: { id: string; label: string; short?: string; icon: typeof Home }[] = [
+    const navItems: { id: string; label: string; short?: string; icon: typeof Home; href?: string }[] = [
         { id: "home", label: "Home", icon: Home },
-        { id: "about", label: "About Me", short: "About", icon: User },
+        { id: "about", label: "About Me", short: "About", icon: User, href: "/about" },
         { id: "tech-stack", label: "TechStack", short: "Stack", icon: Code },
         { id: "projects", label: "Project", short: "Projects", icon: Layout },
         { id: "snippets", label: "Snippets", icon: FileCode },
@@ -155,7 +155,7 @@ export default function Navigation() {
                                 return (
                                     <a
                                         key={item.id}
-                                        href={`#${item.id}`}
+                                        href={item.href || `#${item.id}`}
                                         className={`drawer-link ${activeSection === item.id ? "active" : ""}`}
                                         onClick={() => {
                                             setActiveSection(item.id);
@@ -262,7 +262,7 @@ export default function Navigation() {
                             return (
                                 <a
                                     key={item.id}
-                                    href={`#${item.id}`}
+                                    href={item.href || `#${item.id}`}
                                     className={`dock-item dock-item-nav ${activeSection === item.id ? "active" : ""}`}
                                     data-label={item.label}
                                     aria-label={item.label}

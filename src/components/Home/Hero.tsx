@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import PassCard from "./PassCard";
 import Dossier from "./Dossier";
 import Earbuds from "./Earbuds";
@@ -144,14 +146,15 @@ export default function Hero() {
     };
     const done = typing && count >= total;
 
+    const router = useRouter();
     const toggle = useCallback(() => {
+        // tablets/phones show the intro already, so the card's button goes to the About page
         if (!intro) {
-            const target = document.getElementById("about");
-            if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+            router.push("/about");
             return;
         }
         setRevealed((r) => !r);
-    }, [intro]);
+    }, [intro, router]);
 
     return (
         <section id="home" className="hero hero-clean">
@@ -174,6 +177,9 @@ export default function Hero() {
                             {part("bio")}
                             {done && <span className="type-caret is-final" aria-hidden="true" />}
                         </p>
+                        <Link href="/about" className="hero-journey" tabIndex={intro && !done ? -1 : undefined}>
+                            More About My Journey <span className="hero-journey-arrow" aria-hidden="true">→</span>
+                        </Link>
                     </div>
 
                     <div className="hero-pass" ref={passRef}>
