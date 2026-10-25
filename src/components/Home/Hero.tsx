@@ -108,7 +108,7 @@ export default function Hero() {
     const bio = profile?.tagline || profile?.bio || "A passionate Intelligent System Engineer crafting smart solutions.";
 
     const segs: Seg[] = [
-        { key: "h1a", text: "Hello Everyone,", speed: SPEED.h1 },
+        { key: "h1a", text: (profile?.hero_greeting ?? "Hello Everyone,").trim() || "Hello Everyone,", speed: SPEED.h1 },
         { key: "h1b", text: "I'm ", speed: SPEED.h1 },
         { key: "name", text: name, speed: SPEED.h1, gradient: true },
         { key: "subtitle", text: role, speed: SPEED.subtitle },

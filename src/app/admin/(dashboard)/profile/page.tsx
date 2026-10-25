@@ -27,6 +27,7 @@ export default function ProfilePage() {
         logo_url: "",
         hero_bg_url: "",
         resume_url: "",
+        hero_greeting: "Hello Everyone,",
         route_from: "MLK",
         route_to: "KDH",
         tech_learned_count: 0,
@@ -158,8 +159,19 @@ export default function ProfilePage() {
                                 </div>
 
                                 <div className="grid-layout">
+                                    <div className="input-group full-width">
+                                        <label>Hero greeting (first line)</label>
+                                        <input
+                                            name="hero_greeting"
+                                            readOnly={!isEditing}
+                                            placeholder="Hello Everyone,"
+                                            maxLength={40}
+                                            value={formData.hero_greeting ?? ""}
+                                            onChange={handleChange}
+                                        />
+                                    </div>
                                     <div className="input-group">
-                                        <label>Full Name</label>
+                                        <label>Full Name (hero shows &quot;I&apos;m&quot; + last word)</label>
                                         <input
                                             name="name"
                                             required
@@ -170,7 +182,7 @@ export default function ProfilePage() {
                                         />
                                     </div>
                                     <div className="input-group">
-                                        <label>Main Role</label>
+                                        <label>Main Role (line under your name)</label>
                                         <input
                                             name="role"
                                             required
@@ -181,11 +193,12 @@ export default function ProfilePage() {
                                         />
                                     </div>
                                     <div className="input-group full-width">
-                                        <label>Hero Tagline</label>
-                                        <input
+                                        <label>Hero intro paragraph (tagline)</label>
+                                        <textarea
                                             name="tagline"
+                                            rows={4}
                                             readOnly={!isEditing}
-                                            placeholder="Catchy tagline..."
+                                            placeholder="The paragraph under your role in the hero. Leave empty to use your Bio."
                                             value={formData.tagline || ""}
                                             onChange={handleChange}
                                         />
