@@ -10750,7 +10750,7 @@ html.fvl-loading body {
 }
 .hero-dossier {
   position: absolute;
-  right: -40px;
+  right: -84px;
   bottom: -212px; /* just tucked under the card's corner */
   z-index: 3;
   transform: rotate(4deg);
@@ -10761,7 +10761,7 @@ html.fvl-loading body {
   to { opacity: 1; transform: rotate(4deg); }
 }
 @media (max-width: 1280px) {
-  .hero-dossier { right: 0; }
+  .hero-dossier { right: -36px; }
 }
 @media (max-width: 1024px) {
   .hero-dossier { display: none; }
