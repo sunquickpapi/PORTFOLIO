@@ -3,9 +3,12 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Courier_Prime } from "next/font/google";
 import PassCard from "./PassCard";
 import Dossier from "./Dossier";
 import Earbuds from "./Earbuds";
+
+const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
 
 /*
  * Desktop intro: the pass card starts centred and the text is hidden.
@@ -177,8 +180,18 @@ export default function Hero() {
                             {part("bio")}
                             {done && <span className="type-caret is-final" aria-hidden="true" />}
                         </p>
+                        {/* paper slip from the same file as the résumé dossier */}
                         <Link href="/about" className="hero-journey" tabIndex={intro && !done ? -1 : undefined}>
-                            More About My Journey <span className="hero-journey-arrow" aria-hidden="true">→</span>
+                            <span className="hj-page" aria-hidden="true" />
+                            <span className="hj-slip">
+                                <span className="hj-text">
+                                    <span className={`hj-kicker ${courier.className}`}>FILE:: N°02</span>
+                                    <span className="hj-title">More About My Journey</span>
+                                </span>
+                                <span className={`hj-chip ${courier.className}`}>
+                                    READ <span className="hj-arrow" aria-hidden="true">→</span>
+                                </span>
+                            </span>
                         </Link>
                     </div>
 

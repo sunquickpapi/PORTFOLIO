@@ -10793,37 +10793,113 @@ html.fvl-loading body {
   .hero-earbuds { animation: none; }
 }
 
-/* "More About My Journey" link under the hero intro */
+/* "More About My Journey": a paper slip matching the résumé dossier */
 .hero-journey {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  margin-top: 1.75rem;
-  padding: 0.8rem 1.35rem;
-  border-radius: 999px;
-  border: 1.5px solid rgba(27, 79, 114, 0.28);
-  color: var(--color-text-primary);
-  font-weight: 600;
-  font-size: 1rem;
-  letter-spacing: 0.01em;
+  position: relative;
+  display: inline-block;
+  margin-top: 1.9rem;
   text-decoration: none;
-  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, transform 0.25s ease,
-    opacity 0.5s ease, visibility 0s linear 0s;
+  color: #0d2a42;
+  transition: opacity 0.5s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 0s;
 }
 .hero-journey:hover,
 .hero-journey:focus-visible {
-  background: #1b4f72;
-  border-color: #1b4f72;
-  color: #fff;
-  opacity: 1;
-  transform: translateY(-1px);
+  opacity: 1; /* the site-wide link hover dims links */
+  outline: none;
 }
-.hero-journey-arrow {
+.hj-slip {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+  padding: 0.85rem 0.95rem 0.9rem 1.35rem;
+  border-radius: 6px 16px 10px 6px;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9 0.35' numOctaves='3' seed='7'/><feColorMatrix values='0 0 0 0 0.05  0 0 0 0 0.16  0 0 0 0 0.26  0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+    radial-gradient(120% 90% at 15% 0%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 60%),
+    linear-gradient(160deg, #f6f9fb 0%, #e7eef2 55%, #d8e2e8 100%);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 0 0 1px rgba(13, 42, 66, 0.06),
+    0 12px 22px -12px rgba(13, 42, 66, 0.45), 0 2px 4px -1px rgba(13, 42, 66, 0.18);
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.45s ease;
+}
+/* spine fold, like the file cover */
+.hj-slip::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 8px;
+  width: 1px;
+  background: rgba(13, 42, 66, 0.12);
+  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.85);
+}
+/* a page peeking out behind the slip */
+.hj-page {
+  position: absolute;
+  inset: 5px -7px -5px 9px;
+  border-radius: 6px 16px 10px 6px;
+  background: linear-gradient(100deg, #e9eff3, #d9e2e8);
+  box-shadow: 0 6px 14px -8px rgba(13, 42, 66, 0.4);
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hj-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+}
+.hj-kicker {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #1b4f72;
+}
+.hj-title {
+  font-family: var(--font-geist-sans), Inter, -apple-system, sans-serif;
+  font-size: 1.08rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+  color: #0d2a42;
+}
+.hj-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid rgba(13, 42, 66, 0.45);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #1b4f72;
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+.hj-arrow {
   display: inline-block;
-  transition: transform 0.25s ease;
+  transition: transform 0.3s ease;
 }
-.hero-journey:hover .hero-journey-arrow {
-  transform: translateX(4px);
+.hero-journey:hover .hj-slip,
+.hero-journey:focus-visible .hj-slip {
+  transform: translateY(-3px) rotate(-0.6deg);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 0 0 1px rgba(13, 42, 66, 0.06),
+    0 18px 28px -14px rgba(13, 42, 66, 0.5), 0 3px 6px -2px rgba(13, 42, 66, 0.2);
+}
+.hero-journey:hover .hj-page,
+.hero-journey:focus-visible .hj-page {
+  transform: translate(6px, 2px) rotate(1.4deg);
+}
+.hero-journey:hover .hj-chip,
+.hero-journey:focus-visible .hj-chip {
+  background: #0d2a42;
+  border-color: #0d2a42;
+  color: #e9eef0;
+}
+.hero-journey:hover .hj-arrow {
+  transform: translateX(3px);
+}
+.hero-journey:focus-visible .hj-slip {
+  outline: 2px dashed #3a99c9;
+  outline-offset: 4px;
 }
 /* desktop intro: appears once the typing finishes */
 .hero-grid.is-intro:not(.is-typed) .hero-journey {
