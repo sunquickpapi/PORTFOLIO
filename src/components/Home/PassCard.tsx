@@ -38,6 +38,15 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
     const [scale, setScale] = useState(0.6);
     const [back, setBack] = useState(false);
     const [bounce, setBounce] = useState<"" | "a" | "b">("");
+    const [openStat, setOpenStat] = useState<number | null>(null);
+
+    // Escape closes an open sticker tag
+    useEffect(() => {
+        if (openStat === null) return;
+        const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenStat(null);
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [openStat]);
     const flipping = useRef(false);
 
     // Tilt is eased every frame toward a target, so it never jumps or stutters
@@ -100,6 +109,7 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
         if (flipping.current) return;
         flipping.current = true;
         setBack((b) => !b);
+        setOpenStat(null);
         setBounce((b) => (b === "a" ? "b" : "a")); // alternate class names to restart the depth animation
         window.setTimeout(() => {
             flipping.current = false;
@@ -160,14 +170,32 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
                                             <div className="pf-title">PASS CARD</div>
                                             <div className="pf-code">CARD CODE: PX2026-08/FW &nbsp;CODE · FOCUS · CRAFT</div>
                                         </div>
-                                        <div className="pf-stats">
-                                            {statItems.map(({ label, value, Icon }) => (
-                                                <div key={label} className="pf-stat">
-                                                    <Icon className="pf-stat-icon" size={16} strokeWidth={2.5} />
-                                                    <div className="pf-stat-value">{value}+</div>
-                                                    <div className="pf-stat-label">{label}</div>
-                                                </div>
-                                            ))}
+                                        <div className="pf-stickers">
+                                            {statItems.map(({ label, value, Icon }, i) => {
+                                                const open = openStat === i;
+                                                return (
+                                                    <div key={label} className={`pf-sticker-wrap pf-sticker-${i} ${open ? "is-open" : ""}`}>
+                                                        <button
+                                                            type="button"
+                                                            className="pf-sticker"
+                                                            aria-expanded={open}
+                                                            aria-label={`${label}: ${value}+`}
+                                                            tabIndex={back ? -1 : 0}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation(); // don't flip the card
+                                                                setOpenStat(open ? null : i);
+                                                            }}
+                                                            onKeyDown={(e) => e.stopPropagation()}
+                                                        >
+                                                            <Icon size={26} strokeWidth={2.4} />
+                                                        </button>
+                                                        <div className="pf-tag" role="status" aria-hidden={!open}>
+                                                            <span className="pf-tag-value">{value}+</span>
+                                                            <span className="pf-tag-label">{label}</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                         <div className="pf-socials">
                                             {links.map(({ label, href, Icon }, i) => (
@@ -473,38 +501,114 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
                     letter-spacing: 1px;
                     margin-top: 4px;
                 }
-                /* Stats: same language as the ISSUED / VALID THRU boxes on the back */
-                .pf-stats {
-                    display: grid;
-                    grid-template-columns: repeat(3, minmax(0, 1fr));
-                    gap: 10px;
+                /* Stats as stickers slapped on the card; tap one to reveal its tag */
+                .pf-stickers {
+                    display: flex;
+                    align-items: center;
+                    gap: 26px;
+                    padding: 46px 0 6px 6px; /* room above for the tags */
                 }
-                .pf-stat {
-                    border: 1.5px solid rgba(27, 79, 114, 0.35);
-                    padding: 10px 11px 11px;
+                .pf-sticker-wrap {
+                    position: relative;
+                }
+                .pf-sticker {
+                    width: 66px;
+                    height: 66px;
+                    border-radius: 50%;
+                    border: 5px solid #fff;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    padding: 0;
+                    box-shadow: 0 1px 1px rgba(13, 42, 66, 0.15), 0 6px 12px -4px rgba(13, 42, 66, 0.45);
+                    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+                    outline: none;
+                }
+                /* Each sticker has its own colour and a slightly different tilt */
+                .pf-sticker-0 .pf-sticker {
+                    background: #46c1e6;
+                    color: #0d2a42;
+                    transform: rotate(-9deg);
+                }
+                .pf-sticker-1 .pf-sticker {
+                    background: #0d2a42;
+                    color: #46c1e6;
+                    transform: rotate(6deg) translateY(6px);
+                }
+                .pf-sticker-2 .pf-sticker {
+                    background: #f4d35e;
+                    color: #0d2a42;
+                    transform: rotate(-4deg) translateY(-3px);
+                }
+                .pf-sticker:hover,
+                .pf-sticker:focus-visible,
+                .is-open .pf-sticker {
+                    transform: rotate(0deg) translateY(-3px) scale(1.08) !important;
+                    box-shadow: 0 1px 1px rgba(13, 42, 66, 0.15), 0 12px 18px -6px rgba(13, 42, 66, 0.5);
+                }
+                .pf-sticker:focus-visible {
+                    box-shadow: 0 0 0 3px #46c1e6, 0 12px 18px -6px rgba(13, 42, 66, 0.5);
+                }
+
+                /* Tag that pops out above a sticker */
+                .pf-tag {
+                    position: absolute;
+                    bottom: calc(100% + 12px);
+                    left: 50%;
                     display: flex;
                     flex-direction: column;
-                    gap: 5px;
-                    box-sizing: border-box;
+                    gap: 3px;
+                    padding: 9px 13px 10px;
+                    background: #0d2a42;
+                    color: #e9eef0;
+                    border-radius: 10px;
+                    white-space: nowrap;
+                    box-shadow: 0 10px 22px -8px rgba(13, 42, 66, 0.55);
+                    pointer-events: none;
+                    opacity: 0;
+                    transform: translate(-50%, 8px) scale(0.85);
+                    transform-origin: bottom center;
+                    transition: opacity 0.18s ease, transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+                    z-index: 2;
                 }
-                .pf-stat :global(.pf-stat-icon) {
-                    color: #46c1e6;
-                    margin-bottom: 2px;
+                .pf-tag::after {
+                    content: "";
+                    position: absolute;
+                    top: 100%;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    border: 7px solid transparent;
+                    border-top-color: #0d2a42;
                 }
-                .pf-stat-value {
-                    font-size: 30px;
+                /* Keep the outer tags inside the card */
+                .pf-sticker-0 .pf-tag {
+                    left: -4px;
+                    transform: translate(0, 8px) scale(0.85);
+                    transform-origin: bottom left;
+                }
+                .pf-sticker-0 .pf-tag::after {
+                    left: 37px;
+                }
+                .is-open .pf-tag {
+                    opacity: 1;
+                    transform: translate(-50%, 0) scale(1);
+                }
+                .pf-sticker-0.is-open .pf-tag {
+                    transform: translate(0, 0) scale(1);
+                }
+                .pf-tag-value {
+                    font-size: 26px;
                     font-weight: 700;
                     letter-spacing: 1px;
                     line-height: 1;
-                    color: #0d2a42;
+                    color: #46c1e6;
                 }
-                .pf-stat-label {
+                .pf-tag-label {
                     font-size: 11px;
                     font-weight: 700;
-                    letter-spacing: 0.5px;
-                    line-height: 1.2;
+                    letter-spacing: 1px;
                     text-transform: uppercase;
-                    color: #1b4f72;
                 }
                 .pf-socials {
                     display: flex;
