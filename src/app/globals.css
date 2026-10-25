@@ -10751,7 +10751,7 @@ html.fvl-loading body {
 .hero-dossier {
   position: absolute;
   right: -84px;
-  bottom: -194px; /* tucked under the card's corner */
+  bottom: -160px; /* overlaps the card's corner a little */
   z-index: 3;
   transform: rotate(4deg);
   animation: hero-dossier-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.6s both;
