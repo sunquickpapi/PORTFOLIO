@@ -222,8 +222,6 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
                                     <div className="pf-right">
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img className="pf-sprite" src="/assets/passcard/pass-sprite.webp" alt="" draggable={false} />
-                                        {/* Covers the edge of the sitting scene that sits next to the sprite in the artwork */}
-                                        <div className="pf-sprite-cover" />
                                     </div>
 
                                     <div className="pass-glare" />
@@ -657,20 +655,8 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
                     height: 364px;
                     image-rendering: pixelated;
                     user-select: none;
-                    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-                }
-                .pf-sprite-cover {
-                    position: absolute;
-                    left: 0;
-                    top: 225px;
-                    width: 16px;
-                    bottom: 0;
-                    background: #e9eef0;
                 }
                 /* Little life on hover: the standing sprite leans in */
-                .pass-stage:hover .pf-sprite {
-                    transform: translateY(-8px) rotate(-3deg);
-                }
                 .pass-stage:hover .pass-back {
                     box-shadow: 0 60px 100px rgba(0, 0, 0, 0.55), 0 0 0 2px rgba(70, 193, 230, 0.55), inset 0 0 0 10px #1b4f72;
                 }
