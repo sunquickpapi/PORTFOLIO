@@ -10833,3 +10833,19 @@ html.fvl-loading body {
   pointer-events: none;
   transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
 }
+
+/* Expanded dock: equal-width ends so the section words sit dead centre */
+.dock > .dock-group:first-child,
+.dock > .dock-group-actions {
+  min-width: 0;
+  transition: min-width var(--dock-dur) var(--dock-ease);
+}
+.dock > .dock-group-actions {
+  justify-content: flex-end;
+}
+@media (min-width: 1100px) {
+  .dock-wrapper.is-expanded .dock > .dock-group:first-child,
+  .dock-wrapper.is-expanded .dock > .dock-group-actions {
+    min-width: 168px;
+  }
+}
