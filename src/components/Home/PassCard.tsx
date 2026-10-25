@@ -193,10 +193,8 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
                                     </div>
 
                                     <div className="pf-mid">
-                                        <div>
-                                            <div className="pf-title">PASS CARD</div>
-                                            <div className="pf-code">CARD CODE: PX2026-08/FW &nbsp;CODE · FOCUS · CRAFT</div>
-                                        </div>
+                                        {/* Empty top slot keeps the stamps and social icons in place */}
+                                        <div aria-hidden="true" />
                                         <div className="pf-stickers">
                                             {statItems.map(({ label, value, stamp }, i) => {
                                                 const open = openStat === i;
