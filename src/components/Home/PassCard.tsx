@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Courier_Prime, Black_Ops_One, JetBrains_Mono } from "next/font/google";
-import { Coffee, Github, Instagram, Linkedin, Trophy, Zap } from "lucide-react";
+import { ArrowRight, Coffee, Github, Instagram, Linkedin, Trophy, Zap } from "lucide-react";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
 const blackOps = Black_Ops_One({ subsets: ["latin"], weight: "400", display: "swap" });
@@ -40,6 +40,21 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
     const [bounce, setBounce] = useState<"" | "a" | "b">("");
     const [openStat, setOpenStat] = useState<number | null>(null);
     const [hoverStat, setHoverStat] = useState(-1);
+    const [aboutHover, setAboutHover] = useState(false);
+    const aboutRef = useRef<HTMLAnchorElement>(null);
+
+    // Same position-based hit test as the stamps (reliable inside the tilted card)
+    const aboutAt = (x: number, y: number) => {
+        const el = aboutRef.current;
+        if (back || !el) return false;
+        const r = el.getBoundingClientRect();
+        return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    };
+    const goToAbout = () => {
+        const target = document.getElementById("about");
+        if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+        else window.location.hash = "about";
+    };
     const stickerRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
     // Chrome's own hover/click hit-testing flickers on elements inside the tilted 3D card,
@@ -110,6 +125,8 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
     const onMove = (e: React.PointerEvent) => {
         const hit = stickerAt(e.clientX, e.clientY);
         if (hit !== hoverStat) setHoverStat(hit);
+        const overAbout = aboutAt(e.clientX, e.clientY);
+        if (overAbout !== aboutHover) setAboutHover(overAbout);
         if (e.pointerType === "touch" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
         const r = e.currentTarget.getBoundingClientRect();
         const px = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
@@ -119,6 +136,7 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
     };
     const onLeave = () => {
         setHoverStat(-1);
+        setAboutHover(false);
         target.current = { rx: 0, ry: 0, gx: 50, gy: 30 };
         kick();
     };
@@ -149,6 +167,11 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
                 onPointerLeave={onLeave}
                 onClick={(e) => {
                     // A click inside a stamp opens its tag, even if Chrome reports the card as the target
+                    if (aboutAt(e.clientX, e.clientY)) {
+                        e.preventDefault();
+                        goToAbout();
+                        return;
+                    }
                     const hit = stickerAt(e.clientX, e.clientY);
                     if (hit >= 0) {
                         setOpenStat((o) => (o === hit ? null : hit));
@@ -193,8 +216,23 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
                                     </div>
 
                                     <div className="pf-mid">
-                                        {/* Empty top slot keeps the stamps and social icons in place */}
-                                        <div aria-hidden="true" />
+                                        <div className="pf-about-row">
+                                            <a
+                                                ref={aboutRef}
+                                                href="#about"
+                                                className={`pf-about ${aboutHover ? "is-hover" : ""}`}
+                                                tabIndex={back ? -1 : 0}
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation(); // don't flip the card
+                                                    goToAbout();
+                                                }}
+                                                onKeyDown={(e) => e.stopPropagation()}
+                                            >
+                                                <span>About Me</span>
+                                                <ArrowRight className="pf-about-arrow" size={18} strokeWidth={2.5} />
+                                            </a>
+                                        </div>
                                         <div className="pf-stickers">
                                             {statItems.map(({ label, value, stamp }, i) => {
                                                 const open = openStat === i;
@@ -666,6 +704,47 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
                     font-weight: 700;
                     letter-spacing: 1px;
                     text-transform: uppercase;
+                }
+                /* About Me button (top of the middle column) */
+                .pf-about-row {
+                    display: flex;
+                    align-items: flex-start;
+                }
+                .pf-about {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 12px 20px 12px 22px;
+                    border: 2px solid #0d2a42;
+                    border-radius: 12px;
+                    color: #0d2a42;
+                    background: transparent;
+                    font-size: 17px;
+                    font-weight: 700;
+                    letter-spacing: 2px;
+                    text-transform: uppercase;
+                    text-decoration: none;
+                    cursor: pointer;
+                    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.25s ease, transform 0.25s ease;
+                    outline: none;
+                }
+                .pf-about :global(.pf-about-arrow) {
+                    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+                }
+                .pf-about.is-hover,
+                .pf-about:focus-visible {
+                    background: #0d2a42;
+                    color: #e9eef0;
+                    box-shadow: 0 10px 20px -10px rgba(13, 42, 66, 0.7);
+                    transform: translateY(-2px);
+                }
+                .pf-about.is-hover :global(.pf-about-arrow),
+                .pf-about:focus-visible :global(.pf-about-arrow) {
+                    transform: translateX(5px);
+                    color: #46c1e6;
+                }
+                .pf-about:focus-visible {
+                    box-shadow: 0 0 0 3px #46c1e6;
                 }
                 .pf-socials {
                     display: flex;
