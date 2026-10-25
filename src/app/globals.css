@@ -10769,3 +10769,26 @@ html.fvl-loading body {
 @media (prefers-reduced-motion: reduce) {
   .hero-dossier { animation: none; }
 }
+
+/* Spotify headset resting by the pass card's bottom-left corner */
+.hero-headset {
+  position: absolute;
+  left: -122px;
+  bottom: -122px;
+  z-index: 3;
+  transform: rotate(-6deg);
+  animation: hero-headset-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.75s both;
+}
+@keyframes hero-headset-in {
+  from { opacity: 0; transform: translateY(18px) rotate(-12deg); }
+  to { opacity: 1; transform: rotate(-6deg); }
+}
+@media (max-width: 1280px) {
+  .hero-headset { left: -70px; }
+}
+@media (max-width: 1024px) {
+  .hero-headset { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-headset { animation: none; }
+}

@@ -115,6 +115,10 @@ export default function Dossier({ href, date }: { href: string; date?: string })
                     -webkit-tap-highlight-color: transparent;
                     outline: none;
                 }
+                /* the site-wide link hover dims links; this one keeps its full ink */
+                .dossier:hover {
+                    opacity: 1;
+                }
                 .dossier:focus-visible .ds-cover-wrap {
                     outline: 2px dashed var(--accent);
                     outline-offset: 6px;
