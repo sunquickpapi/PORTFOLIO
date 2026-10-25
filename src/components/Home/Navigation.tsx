@@ -27,7 +27,7 @@ function useLoadProgress() {
             window.clearInterval(id);
             setP(100);
             setPhase("done");
-            t = window.setTimeout(() => setPhase("gone"), 1100);
+            t = window.setTimeout(() => setPhase("gone"), 1250);
         });
         return () => {
             window.clearInterval(id);
