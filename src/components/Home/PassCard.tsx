@@ -230,7 +230,7 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                                                 }}
                                                 onKeyDown={(e) => e.stopPropagation()}
                                             >
-                                                <span>About Me</span>
+                                                <span>Who is he ?</span>
                                             </a>
                                         </div>
                                         <div className="pf-stickers">
