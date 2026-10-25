@@ -27,6 +27,8 @@ export default function ProfilePage() {
         logo_url: "",
         hero_bg_url: "",
         resume_url: "",
+        route_from: "MLK",
+        route_to: "KDH",
         tech_learned_count: 0,
         dumbells_lifted_count: 0,
     });
@@ -281,6 +283,28 @@ export default function ProfilePage() {
                                             readOnly={!isEditing}
                                             placeholder="instagram.com/..."
                                             value={formData.instagram_url || ""}
+                                            onChange={handleChange}
+                                        />
+                                    </div>
+                                    <div className="input-group">
+                                        <label>Pass card route: from</label>
+                                        <input
+                                            name="route_from"
+                                            readOnly={!isEditing}
+                                            placeholder="MLK"
+                                            maxLength={10}
+                                            value={formData.route_from || ""}
+                                            onChange={handleChange}
+                                        />
+                                    </div>
+                                    <div className="input-group">
+                                        <label>Pass card route: to</label>
+                                        <input
+                                            name="route_to"
+                                            readOnly={!isEditing}
+                                            placeholder="KDH"
+                                            maxLength={10}
+                                            value={formData.route_to || ""}
                                             onChange={handleChange}
                                         />
                                     </div>

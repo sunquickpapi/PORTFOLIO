@@ -53,8 +53,21 @@ function placeStamp(taken: number[]): StampPos {
  */
 type Socials = { linkedin?: string | null; github?: string | null; instagram?: string | null };
 type Stats = { projects?: string | number | null; years?: string | number | null; coffee?: string | number | null };
+type Route = { from?: string | null; to?: string | null };
 
-export default function PassCard({ socials = {}, stats = {}, onAbout }: { socials?: Socials; stats?: Stats; onAbout?: () => void }) {
+export default function PassCard({
+    socials = {},
+    stats = {},
+    route = {},
+    onAbout,
+}: {
+    socials?: Socials;
+    stats?: Stats;
+    route?: Route;
+    onAbout?: () => void;
+}) {
+    const routeFrom = (route.from ?? "MLK").trim();
+    const routeTo = (route.to ?? "KDH").trim();
     const statItems = [
         { label: "Projects Completed", value: stats.projects || "15", Icon: Trophy, stamp: "trophy" },
         { label: "Years in Coding", value: stats.years || "2", Icon: Zap, stamp: "zap" },
@@ -375,13 +388,20 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                                                     <Icon size={18} strokeWidth={2.25} />
                                                 </a>
                                             ))}
-                                            {/* route postmark: Melaka to Kedah */}
-                                            <span className="pf-route" role="img" aria-label="From Melaka to Kedah">
-                                                <span className="pf-route-top">FROM · TO</span>
-                                                <span className="pf-route-main">
-                                                    MLK <span className="pf-route-arrow">→</span> KDH
+                                            {/* where from, where to (editable in Admin → Profile) */}
+                                            {(routeFrom || routeTo) && (
+                                                <span
+                                                    className="pf-route"
+                                                    role="img"
+                                                    aria-label={`From ${routeFrom} to ${routeTo}`}
+                                                    // longer place names shrink so they never reach the character
+                                                    style={{ fontSize: Math.max(12, Math.min(19, 152 / Math.max(1, routeFrom.length + routeTo.length + 2))) }}
+                                                >
+                                                    {routeFrom && <span>{routeFrom}</span>}
+                                                    {routeFrom && routeTo && <span className="pf-route-arrow">→</span>}
+                                                    {routeTo && <span>{routeTo}</span>}
                                                 </span>
-                                            </span>
+                                            )}
                                         </div>
                                     </div>
 
@@ -872,55 +892,28 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                     align-items: center;
                     gap: 12px;
                 }
-                /* Route postmark, inked like the "Who is he ?" stamp */
+                /* Route line, e.g. "MLK → KDH": bold sans, set apart from the icons */
                 .pf-route {
-                    position: relative;
-                    margin-left: auto;
-                    margin-right: 2px;
+                    margin-left: 26px;
                     display: inline-flex;
-                    flex-direction: column;
                     align-items: center;
-                    gap: 2px;
-                    padding: 6px 12px 7px 14px;
-                    color: #1b4f72;
-                    border: 2.5px solid currentColor;
-                    border-radius: 9px;
-                    outline: 1.2px solid currentColor;
-                    outline-offset: -6px;
-                    opacity: 0.86;
-                    transform: rotate(-4deg);
+                    gap: 7px;
+                    font-family: var(--font-geist-sans), Inter, -apple-system, sans-serif;
+                    font-size: 19px;
+                    font-weight: 600;
+                    letter-spacing: 0.4px;
+                    line-height: 1;
+                    text-transform: uppercase;
+                    white-space: nowrap;
+                    color: #0d2a42;
+                    opacity: 0.88;
                     pointer-events: none;
                     user-select: none;
                 }
-                .pf-route::after {
-                    content: "";
-                    position: absolute;
-                    inset: -4px;
-                    background: url(/assets/passcard/pass-ink-gaps.png) -90px -20px / 160px 160px;
-                    pointer-events: none;
-                }
-                .pf-route-top,
-                .pf-route-main {
-                    position: relative;
-                    z-index: 1;
-                    white-space: nowrap;
-                }
-                .pf-route-top {
-                    font-size: 8px;
-                    font-weight: 700;
-                    letter-spacing: 2px;
-                    padding-left: 2px;
-                    opacity: 0.8;
-                }
-                .pf-route-main {
-                    font-size: 15px;
-                    font-weight: 700;
-                    letter-spacing: 2.5px;
-                    line-height: 1;
-                }
                 .pf-route-arrow {
-                    letter-spacing: 0;
-                    margin: 0 1px;
+                    font-weight: 500;
+                    color: #1b4f72;
+                    transform: translateY(-1px);
                 }
                 .pf-social {
                     width: 42px;

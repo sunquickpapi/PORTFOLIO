@@ -185,6 +185,7 @@ export default function Hero() {
                                 onAbout={toggle}
                                 socials={{ linkedin: profile.linkedin_url, github: profile.github_url, instagram: profile.instagram_url }}
                                 stats={{ projects: profile.projects_count, years: profile.experience_years, coffee: profile.coffee_consumed }}
+                                route={{ from: profile.route_from, to: profile.route_to }}
                             />
                             <div className="hero-earbuds">
                                 <Earbuds />
