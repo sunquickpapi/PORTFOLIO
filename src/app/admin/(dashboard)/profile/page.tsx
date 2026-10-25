@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Save, Info, Camera, BarChart3, Edit3, X } from "lucide-react";
+import { Sparkles, Save, Info, Camera, BarChart3, Edit3, X, ExternalLink } from "lucide-react";
 import FileUploadButton from "@/components/Admin/FileUploadButton";
 
 export default function ProfilePage() {
@@ -26,6 +26,7 @@ export default function ProfilePage() {
         coffee_consumed: 0,
         logo_url: "",
         hero_bg_url: "",
+        resume_url: "",
         tech_learned_count: 0,
         dumbells_lifted_count: 0,
     });
@@ -292,27 +293,56 @@ export default function ProfilePage() {
                                             value={formData.logo_url || ""}
                                             onChange={handleChange}
                                         />
-                                        {isEditing && (
-                                            <FileUploadButton
-                                                previewUrl={formData.logo_url || ""}
-                                                onUploaded={([url]) => setFormData((prev) => ({ ...prev, logo_url: url }))}
-                                            />
-                                        )}
+                                        <FileUploadButton
+                                            previewUrl={formData.logo_url || ""}
+                                            onUploaded={([url]) => {
+                                                setFormData((prev) => ({ ...prev, logo_url: url }));
+                                                setIsEditing(true);
+                                            }}
+                                        />
                                     </div>
                                     <div className="input-group full-width">
-                                        <label>Hero Background URL</label>
+                                        <label>Resume / CV (PDF)</label>
                                         <input
-                                            name="hero_bg_url"
+                                            name="resume_url"
                                             readOnly={!isEditing}
-                                            placeholder="/assets/hero-bg.jpg"
-                                            value={formData.hero_bg_url || ""}
+                                            placeholder="/assets/resume.pdf"
+                                            value={formData.resume_url || ""}
                                             onChange={handleChange}
                                         />
-                                        {isEditing && (
-                                            <FileUploadButton
-                                                previewUrl={formData.hero_bg_url || ""}
-                                                onUploaded={([url]) => setFormData((prev) => ({ ...prev, hero_bg_url: url }))}
-                                            />
+                                        <FileUploadButton
+                                            accept="application/pdf"
+                                            label="Upload resume (PDF)"
+                                            onUploaded={([url]) => {
+                                                setFormData((prev) => ({ ...prev, resume_url: url }));
+                                                setIsEditing(true);
+                                            }}
+                                        />
+                                        {formData.resume_url && (
+                                            <a
+                                                className="resume-preview"
+                                                href={formData.resume_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                title="Open the full résumé"
+                                            >
+                                                <span className="resume-preview-page">
+                                                    {/* first page only: the browser's PDF viewer, chrome hidden, fitted to width */}
+                                                    <iframe
+                                                        key={formData.resume_url}
+                                                        src={`${formData.resume_url}#page=1&toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                                                        title="Résumé, first page preview"
+                                                        tabIndex={-1}
+                                                        loading="lazy"
+                                                    />
+                                                </span>
+                                                <span className="resume-preview-bar">
+                                                    <span>Page 1 preview</span>
+                                                    <span className="resume-preview-open">
+                                                        Open PDF <ExternalLink size={13} />
+                                                    </span>
+                                                </span>
+                                            </a>
                                         )}
                                     </div>
                                 </div>
@@ -399,6 +429,56 @@ export default function ProfilePage() {
             </form>
 
             <style jsx>{`
+                /* Résumé: thumbnail of the first page */
+                .resume-preview {
+                    display: inline-flex;
+                    flex-direction: column;
+                    width: 240px;
+                    margin-top: 0.85rem;
+                    border-radius: 12px;
+                    overflow: hidden;
+                    background: #fff;
+                    border: 1px solid rgba(27, 79, 114, 0.15);
+                    box-shadow: 0 10px 24px -14px rgba(13, 42, 66, 0.45);
+                    text-decoration: none;
+                    transition: transform 0.25s ease, box-shadow 0.25s ease;
+                }
+                .resume-preview:hover {
+                    transform: translateY(-3px);
+                    box-shadow: 0 18px 32px -16px rgba(13, 42, 66, 0.55);
+                }
+                .resume-preview-page {
+                    position: relative;
+                    display: block;
+                    aspect-ratio: 1 / 1.414; /* A4 */
+                    overflow: hidden;
+                    background: #f1f4f6;
+                }
+                .resume-preview-page iframe {
+                    position: absolute;
+                    inset: 0;
+                    width: 100%;
+                    height: 100%;
+                    border: 0;
+                    pointer-events: none; /* the whole card is the link */
+                }
+                .resume-preview-bar {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 0.55rem 0.75rem;
+                    border-top: 1px solid rgba(27, 79, 114, 0.12);
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    color: #5b6b7a;
+                }
+                .resume-preview-open {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4px;
+                    color: #1b4f72;
+                }
+
                 .profile-wrapper {
                     animation: fadeIn 0.8s ease-out;
                     padding: 2rem;
@@ -735,7 +815,8 @@ export default function ProfilePage() {
                     .grid-layout { grid-template-columns: 1fr; }
                     .save-btn { width: 100%; }
                 }
-            `}</style>
+            
+`}</style>
         </div>
     );
 }

@@ -10407,3 +10407,365 @@ html.fvl-loading body {
     transition: opacity 0.2s ease;
   }
 }
+
+/* === DOCK: Hire Me button + dropdown === */
+.dock-group-actions {
+  gap: 0.35rem;
+}
+
+.hire {
+  position: relative;
+}
+
+.hire-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 40px;
+  padding: 0 0.8rem 0 0.9rem;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1B4F72 0%, #2a7aa8 100%);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 4px 14px -4px rgba(27, 79, 114, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: transform 0.2s ease, box-shadow 0.25s ease, filter 0.25s ease;
+}
+
+.hire-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow: 0 8px 20px -6px rgba(27, 79, 114, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.hire-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.hire-btn:focus-visible {
+  outline: 2px solid #3A99C9;
+  outline-offset: 2px;
+}
+
+.hire-chevron {
+  opacity: 0.8;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hire.is-open .hire-chevron {
+  transform: rotate(180deg);
+}
+
+:root.dark .hire-btn {
+  background: linear-gradient(135deg, #2a7aa8 0%, #3A99C9 100%);
+  box-shadow: 0 4px 16px -4px rgba(58, 153, 201, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.hire-menu {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: -0.5rem;
+  width: 248px;
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 18px 40px -12px rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px) scale(0.97);
+  transform-origin: top right;
+  transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 0.28s;
+}
+
+.hire.is-open .hire-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s;
+}
+
+.hire-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 12px;
+  color: var(--color-text-primary);
+  text-decoration: none;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.2s ease, transform 0.25s ease, background 0.2s ease;
+}
+
+.hire.is-open .hire-item {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hire-item:hover,
+.hire-item:focus-visible {
+  background: rgba(58, 153, 201, 0.1);
+  opacity: 1;
+  outline: none;
+}
+
+.hire-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: #1B4F72;
+  background: rgba(58, 153, 201, 0.1);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.hire-item:hover .hire-item-icon {
+  background: #1B4F72;
+  color: #fff;
+}
+
+:root.dark .hire-item-icon {
+  color: #7cc7ea;
+  background: rgba(58, 153, 201, 0.15);
+}
+
+:root.dark .hire-item:hover .hire-item-icon {
+  background: #3A99C9;
+  color: #fff;
+}
+
+.hire-item-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.hire-item-label {
+  font-family: var(--font-display);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.hire-item-hint {
+  font-size: 0.72rem;
+  opacity: 0.6;
+  margin-top: 2px;
+}
+
+.hire-item-arrow {
+  opacity: 0;
+  transform: translate(-4px, 4px);
+  color: #3A99C9;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.hire-item:hover .hire-item-arrow {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hire-menu,
+  .hire-item,
+  .hire-chevron {
+    transition: none !important;
+  }
+}
+
+/* Group dividers are plain space (no line) */
+.dock-separator {
+  width: 0;
+  background: none;
+  margin: 0 1rem;
+}
+
+/* === HERO: clean split layout (text left, FVL card right) === */
+.hero.hero-clean {
+  background-image: none !important;
+  background-attachment: scroll;
+  background-color: var(--portfolio-bg);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Calm background: two soft brand glows + a faint dot grid that fades out */
+.hero-clean .hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 50% 45% at 78% 45%, rgba(58, 153, 201, 0.14), transparent 70%),
+    radial-gradient(ellipse 40% 40% at 10% 90%, rgba(27, 79, 114, 0.07), transparent 70%),
+    radial-gradient(circle, rgba(27, 79, 114, 0.12) 1px, transparent 1.2px) 0 0 / 26px 26px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 75% at 60% 45%, #000 35%, transparent 85%);
+  mask-image: radial-gradient(ellipse 80% 75% at 60% 45%, #000 35%, transparent 85%);
+}
+
+:root.dark .hero-clean .hero-bg {
+  background:
+    radial-gradient(ellipse 50% 45% at 78% 45%, rgba(58, 153, 201, 0.16), transparent 70%),
+    radial-gradient(ellipse 40% 40% at 10% 90%, rgba(58, 153, 201, 0.06), transparent 70%),
+    radial-gradient(circle, rgba(255, 255, 255, 0.09) 1px, transparent 1.2px) 0 0 / 26px 26px;
+}
+
+.hero-clean .hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 5rem);
+  max-width: 1240px;
+  width: 90%;
+  margin: 0 auto;
+  padding-top: 4rem;
+}
+
+
+/* Tablet / phone: stack, card under the text */
+@media (max-width: 1024px) {
+  .hero-clean .hero-grid {
+    grid-template-columns: 1fr;
+    padding-top: 2rem;
+  }
+}
+
+/* Contact Me was white for the old photo background; follow the theme now */
+.hero-clean .btn-contact-minimal {
+  color: var(--color-text-primary);
+}
+.hero-clean .btn-contact-minimal:hover {
+  color: #3A99C9;
+  opacity: 1;
+}
+
+/* No photo: single column, text keeps its comfortable reading width */
+.hero-clean .hero-grid.no-card {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Hero with the Pixel Pass card on the right */
+.hero-clean .hero-grid.has-pass {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  max-width: 1320px;
+  gap: clamp(1.5rem, 4vw, 4rem);
+}
+
+.hero-pass {
+  width: 100%;
+  animation: hero-pass-in 1s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+
+@keyframes hero-pass-in {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1024px) {
+  .hero-clean .hero-grid.has-pass {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hero-pass {
+    max-width: 640px;
+    margin: 1rem auto 0;
+  }
+}
+
+/* Too small to read on phones */
+@media (max-width: 640px) {
+  .hero-pass {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-pass { animation: none; }
+}
+
+/* Keep the three stat cards on one row beside the pass card */
+@media (min-width: 1025px) {
+  .hero-clean .has-pass .hero-stats {
+    flex-wrap: nowrap;
+  }
+  .hero-clean .has-pass .stat-card {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Pass card: softer glare on the dark back face */
+.pass-back .pass-glare {
+  filter: opacity(0.45);
+}
+
+/* ── Hero intro: centred pass card → About Me glides it right and types the intro ── */
+.hero-pass-move {
+  transition: transform 1.1s cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: transform;
+}
+.hero-grid.is-intro .type-rest {
+  visibility: hidden;
+}
+.type-caret {
+  display: inline-block;
+  width: 0.08em;
+  min-width: 2px;
+  height: 0.95em;
+  margin: 0 0.04em -0.12em;
+  background: #3A99C9;
+  border-radius: 1px;
+  animation: type-caret-blink 1s steps(1) infinite;
+}
+.type-caret:not(.is-final) {
+  animation: none; /* solid while typing, blinks once finished */
+}
+@keyframes type-caret-blink {
+  50% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-pass-move { transition: none; }
+  .type-caret { animation: none; }
+}
+
+/* Résumé dossier tucked by the pass card's bottom-right corner */
+.hero-pass-move {
+  position: relative;
+}
+.hero-dossier {
+  position: absolute;
+  right: -112px;
+  bottom: -138px; /* overlaps the card's corner a little */
+  z-index: 3;
+  transform: rotate(4deg);
+  animation: hero-dossier-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.6s both;
+}
+@keyframes hero-dossier-in {
+  from { opacity: 0; transform: translateY(18px) rotate(8deg); }
+  to { opacity: 1; transform: rotate(4deg); }
+}
+@media (max-width: 1280px) {
+  .hero-dossier { right: -60px; }
+}
+@media (max-width: 1024px) {
+  .hero-dossier { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-dossier { animation: none; }
+}

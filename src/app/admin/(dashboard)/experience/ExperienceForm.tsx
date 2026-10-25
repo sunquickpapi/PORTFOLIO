@@ -175,6 +175,7 @@ export default function ExperienceForm({ id }: { id?: string }) {
                             onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
                         />
                         <FileUploadButton
+                            aspect={1}
                             previewUrl={formData.logo_url || ""}
                             onUploaded={([url]) => setFormData((prev) => ({ ...prev, logo_url: url }))}
                         />
