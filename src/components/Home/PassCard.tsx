@@ -15,6 +15,40 @@ const H = 440;
 const FLIP_MS = 800;
 
 /**
+ * Empty spots in the middle panel where the stat stamps can land (centre x/y in px,
+ * measured from the panel's top-left). Three are picked at random on every load and
+ * every time the card turns back to the front, so the stamps never sit the same way twice.
+ */
+const STAMP_SLOTS = [
+    { x: 272, y: 34 }, // beside the "Who is he ?" stamp
+    { x: 80, y: 150 },
+    { x: 196, y: 128 },
+    { x: 128, y: 236 },
+    { x: 252, y: 222 },
+    { x: 250, y: 330 }, // beside the social icons
+];
+type StampPos = { slot: number; x: number; y: number; rot: number; size: number; shown: boolean; tagBelow: boolean; tagAlign: "left" | "center" | "right" };
+const rand = (a: number, b: number) => a + Math.random() * (b - a);
+/** Slow fade, and how long a stamp stays on the card before drifting off to a new spot. */
+const STAMP_FADE_MS = 1800;
+function placeStamp(taken: number[]): StampPos {
+    const free = STAMP_SLOTS.map((_, i) => i).filter((i) => !taken.includes(i));
+    const slot = free[Math.floor(Math.random() * free.length)];
+    const x = STAMP_SLOTS[slot].x + rand(-8, 8);
+    const y = STAMP_SLOTS[slot].y + rand(-6, 6);
+    return {
+        slot,
+        x,
+        y,
+        rot: rand(-18, 18),
+        size: Math.round(rand(76, 92)),
+        shown: false,
+        tagBelow: y < 110, // no room above near the top edge
+        tagAlign: x < 120 ? "left" : x > 228 ? "right" : "center",
+    };
+}
+
+/**
  * "Pixel Pass" ID card for the hero. Floats gently, tilts toward the cursor with a
  * glare highlight on hover, and flips to the back on click / Enter / Space.
  */
@@ -57,13 +91,58 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
         else window.location.hash = "about";
     };
     const stickerRefs = useRef<(HTMLButtonElement | null)[]>([]);
+    // Each stamp loops on its own: fade in slowly at a random free spot, stay a while,
+    // fade out slowly, then come back somewhere else. A stamp being hovered or read stays put.
+    const [stamps, setStamps] = useState<(StampPos | null)[]>([null, null, null]);
+    const stampsRef = useRef(stamps);
+    stampsRef.current = stamps;
+    const pinRef = useRef({ open: null as number | null, hover: -1 });
+    pinRef.current = { open: openStat, hover: hoverStat };
+    useEffect(() => {
+        if (back) return;
+        let alive = true;
+        const timers: number[] = [];
+        const later = (fn: () => void, ms: number) => {
+            timers.push(window.setTimeout(() => alive && fn(), ms));
+        };
+        const update = (i: number, fn: (s: StampPos | null) => StampPos | null) =>
+            setStamps((all) => {
+                const next = [...all];
+                next[i] = fn(all[i]);
+                stampsRef.current = next;
+                return next;
+            });
+        const place = (i: number) => {
+            const taken = stampsRef.current.flatMap((st, j) => (j !== i && st ? [st.slot] : []));
+            update(i, () => placeStamp(taken));
+            later(() => show(i), 80); // let the hidden position land before fading in
+        };
+        const show = (i: number) => {
+            update(i, (st) => st && { ...st, shown: true });
+            later(() => hide(i), STAMP_FADE_MS + rand(3800, 6500));
+        };
+        const hide = (i: number) => {
+            const pin = pinRef.current;
+            if (pin.open === i || pin.hover === i) return later(() => hide(i), 900);
+            update(i, (st) => st && { ...st, shown: false });
+            later(() => place(i), STAMP_FADE_MS + rand(400, 1400));
+        };
+        // first appearance: random order, staggered (after a flip, wait for the front to face us)
+        const start = stampsRef.current.some(Boolean) ? FLIP_MS / 2 + 100 : 400;
+        [0, 1, 2]
+            .sort(() => Math.random() - 0.5)
+            .forEach((i, k) => later(() => place(i), start + k * 700 + rand(0, 400)));
+        return () => {
+            alive = false;
+            timers.forEach(clearTimeout);
+            setStamps((all) => all.map((st) => st && { ...st, shown: false }));
+        };
+    }, [back]);
 
-    // Chrome's own hover/click hit-testing flickers on elements inside the tilted 3D card,
-    // so stamps are hit-tested by position: is the pointer inside a stamp's circle?
     const stickerAt = (x: number, y: number) => {
         if (back) return -1;
-        return stickerRefs.current.findIndex((el) => {
-            if (!el) return false;
+        return stickerRefs.current.findIndex((el, i) => {
+            if (!el || !stampsRef.current[i]?.shown) return false; // faded-out stamps can't be hit
             const r = el.getBoundingClientRect();
             const cx = r.left + r.width / 2;
             const cy = r.top + r.height / 2;
@@ -236,8 +315,21 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                                         <div className="pf-stickers">
                                             {statItems.map(({ label, value, stamp }, i) => {
                                                 const open = openStat === i;
+                                                const pos = stamps[i];
+                                                if (!pos) return null;
                                                 return (
-                                                    <div key={label} className={`pf-sticker-wrap pf-sticker-${i} ${open ? "is-open" : ""} ${hoverStat === i ? "is-hover" : ""}`}>
+                                                    <div
+                                                        key={label}
+                                                        className={`pf-sticker-wrap pf-sticker-${i} tag-${pos.tagAlign} ${pos.shown ? "is-shown" : ""} ${pos.tagBelow ? "tag-below" : ""} ${open ? "is-open" : ""} ${hoverStat === i ? "is-hover" : ""}`}
+                                                        style={
+                                                            {
+                                                                left: pos.x - pos.size / 2,
+                                                                top: pos.y - pos.size / 2,
+                                                                "--size": `${pos.size}px`,
+                                                                "--rot": `${pos.rot.toFixed(1)}deg`,
+                                                            } as React.CSSProperties
+                                                        }
+                                                    >
                                                         <button
                                                             type="button"
                                                             ref={(el) => {
@@ -558,6 +650,7 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                     border-radius: 2px;
                 }
                 .pf-mid {
+                    position: relative;
                     border-left: 2px dashed #1b4f72;
                     padding-left: 22px;
                     display: flex;
@@ -576,17 +669,24 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                     letter-spacing: 1px;
                     margin-top: 4px;
                 }
-                /* Stats as postmark ink stamps; tap one to reveal its tag */
+                /* Stats as ink stamps scattered over the empty space; tap one to reveal its tag */
                 .pf-stickers {
-                    display: flex;
-                    align-items: center;
-                    padding: 44px 0 4px 0; /* room above for the tags */
+                    position: absolute;
+                    inset: 0;
+                    pointer-events: none;
                 }
                 .pf-sticker-wrap {
-                    position: relative;
+                    position: absolute;
+                    opacity: 0;
+                    transform: scale(0.94);
+                    pointer-events: none;
+                    transition: opacity 1.8s ease-in-out, transform 2.4s cubic-bezier(0.2, 0.7, 0.2, 1);
                 }
-                .pf-sticker-wrap + .pf-sticker-wrap {
-                    margin-left: 10px; /* shape-cut stamps sit side by side */
+                /* Slow-motion fade in, and the same slow fade back out */
+                .pf-sticker-wrap.is-shown {
+                    opacity: 1;
+                    transform: scale(1);
+                    pointer-events: auto;
                 }
                 .pf-sticker-wrap.is-hover,
                 .pf-sticker-wrap.is-open {
@@ -594,8 +694,8 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                 }
                 .pf-sticker {
                     display: block;
-                    width: 86px;
-                    height: 86px;
+                    width: var(--size, 86px);
+                    height: var(--size, 86px);
                     padding: 0;
                     border: none;
                     border-radius: 50%;
@@ -612,28 +712,8 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                     opacity: 0.85;
                     user-select: none;
                     pointer-events: none;
+                    transform: rotate(var(--rot, 0deg));
                     transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
-                }
-                /* Each stamp: its own ink shade and angle */
-                .pf-sticker-0 .pf-sticker {
-                    color: #1b4f72;
-                }
-                .pf-sticker-0 .pf-stamp-img {
-                    transform: rotate(-14deg);
-                }
-                .pf-sticker-1 .pf-sticker {
-                    color: #0d2a42;
-                    transform: translateY(10px);
-                }
-                .pf-sticker-1 .pf-stamp-img {
-                    transform: rotate(10deg);
-                }
-                .pf-sticker-2 .pf-sticker {
-                    color: #2a7aa8;
-                    transform: translateY(-4px);
-                }
-                .pf-sticker-2 .pf-stamp-img {
-                    transform: rotate(-5deg);
                 }
                 .is-hover .pf-sticker .pf-stamp-img,
                 .pf-sticker:focus-visible .pf-stamp-img,
@@ -676,21 +756,46 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                     border: 7px solid transparent;
                     border-top-color: #0d2a42;
                 }
-                /* Keep the outer tags inside the card */
-                .pf-sticker-0 .pf-tag {
-                    left: -4px;
-                    transform: translate(0, 8px) scale(0.85);
-                    transform-origin: bottom left;
-                }
-                .pf-sticker-0 .pf-tag::after {
-                    left: 43px;
-                }
                 .is-open .pf-tag {
                     opacity: 1;
                     transform: translate(-50%, 0) scale(1);
                 }
-                .pf-sticker-0.is-open .pf-tag {
+                /* Tags hug whichever side keeps them inside the card */
+                .tag-left .pf-tag {
+                    left: -4px;
+                    transform: translate(0, 8px) scale(0.85);
+                    transform-origin: bottom left;
+                }
+                .tag-left .pf-tag::after {
+                    left: calc(var(--size) / 2 + 4px);
+                }
+                .tag-left.is-open .pf-tag {
                     transform: translate(0, 0) scale(1);
+                }
+                .tag-right .pf-tag {
+                    left: auto;
+                    right: -4px;
+                    transform: translate(0, 8px) scale(0.85);
+                    transform-origin: bottom right;
+                }
+                .tag-right .pf-tag::after {
+                    left: auto;
+                    right: calc(var(--size) / 2 - 3px);
+                    transform: none;
+                }
+                .tag-right.is-open .pf-tag {
+                    transform: translate(0, 0) scale(1);
+                }
+                .tag-below .pf-tag {
+                    bottom: auto;
+                    top: calc(100% + 12px);
+                    transform-origin: top center;
+                }
+                .tag-below .pf-tag::after {
+                    top: auto;
+                    bottom: 100%;
+                    border-top-color: transparent;
+                    border-bottom-color: #0d2a42;
                 }
                 .pf-tag-value {
                     font-size: 26px;
@@ -921,6 +1026,10 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                 @media (prefers-reduced-motion: reduce) {
                     .pass-float {
                         animation: none;
+                    }
+                    .pf-sticker-wrap {
+                        transform: none;
+                        transition: opacity 0.6s ease;
                     }
                     .pass-lift,
                     .pass-stage:hover .pass-lift {
