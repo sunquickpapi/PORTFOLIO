@@ -11002,14 +11002,15 @@ html.fvl-loading body {
 .dock-liquid-num {
   position: absolute;
   top: 50%;
-  left: max(84px, calc(var(--p) * 1%));
-  transform: translate(calc(-100% - 22px), -50%);
+  left: max(120px, calc(var(--p) * 1%));
+  transform: translate(calc(-100% - 20px), -50%);
   font-family: var(--font-geist-sans), Inter, -apple-system, sans-serif !important;
-  font-size: 22px;
+  font-size: 76px; /* figures stand ~54px tall in the 66px bar */
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.05em;
   font-variant-numeric: tabular-nums;
-  line-height: 1;
+  line-height: 0.72;
+  padding-top: 0.02em;
   color: #fff;
   text-shadow: 0 1px 2px rgba(13, 42, 66, 0.45);
   white-space: nowrap;

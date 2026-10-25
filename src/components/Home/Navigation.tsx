@@ -288,7 +288,7 @@ export default function Navigation() {
                             <span className="dock-liquid-fill">
                                 <span className="dock-liquid-wave" />
                             </span>
-                            <span className={`dock-liquid-num ${courier.className}`}>{String(Math.round(load.p)).padStart(2, "0")}%</span>
+                            <span className={`dock-liquid-num ${courier.className}`}>{String(Math.round(load.p)).padStart(2, "0")}</span>
                         </div>
                     )}
                     {/* Logo */}
