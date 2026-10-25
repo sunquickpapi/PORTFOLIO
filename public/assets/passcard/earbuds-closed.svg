@@ -26,13 +26,24 @@
   <radialGradient id="tip" cx=".4" cy=".35" r=".8">
     <stop offset="0" stop-color="#f3f5f7"/><stop offset=".6" stop-color="#d4dadf"/><stop offset="1" stop-color="#9ea8b1"/>
   </radialGradient>
+  <clipPath id="caseClip"><rect x="26" y="62" width="148" height="120" rx="36"/></clipPath>
+  <linearGradient id="lidLight" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".55" stop-color="#fff" stop-opacity=".25"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+  </linearGradient>
+  <linearGradient id="seamShade" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#8d98a3" stop-opacity="0"/><stop offset="1" stop-color="#8d98a3" stop-opacity=".18"/>
+  </linearGradient>
+  <filter id="blurS" x="-20%" y="-100%" width="140%" height="300%"><feGaussianBlur stdDeviation="2.5"/></filter>
 </defs>
   <rect x="26" y="62" width="148" height="120" rx="36" fill="url(#body)"/>
   <rect x="26" y="62" width="148" height="120" rx="36" fill="url(#bodyV)"/>
   <rect x="26.5" y="62.5" width="147" height="119" rx="35.5" fill="none" stroke="#8d98a3" stroke-opacity=".45" stroke-width="1.2"/>
-  <!-- top sheen -->
-  <path d="M46 66 Q100 58 154 66" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" opacity=".9"/>
-  <path d="M30 96 Q31 76 46 66" stroke="#9aa4ad" stroke-width="1.2" fill="none" opacity=".5"/>
+  <!-- lid: soft top-light, kept inside the case outline -->
+  <g clip-path="url(#caseClip)">
+    <rect x="26" y="62" width="148" height="42" fill="url(#lidLight)"/>
+    <ellipse cx="100" cy="66" rx="58" ry="7" fill="#fff" opacity=".85" filter="url(#blurS)"/>
+    <rect x="26" y="96" width="148" height="8" fill="url(#seamShade)"/>
+  </g>
   <!-- lid seam -->
   <path d="M27 104 H173" stroke="#a8b1b9" stroke-width="1.2"/>
   <path d="M27 105.5 H173" stroke="#fff" stroke-width="1"/>
