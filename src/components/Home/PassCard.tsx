@@ -21,7 +21,7 @@ const FLIP_MS = 800;
 type Socials = { linkedin?: string | null; github?: string | null; instagram?: string | null };
 type Stats = { projects?: string | number | null; years?: string | number | null; coffee?: string | number | null };
 
-export default function PassCard({ socials = {}, stats = {} }: { socials?: Socials; stats?: Stats }) {
+export default function PassCard({ socials = {}, stats = {}, onAbout }: { socials?: Socials; stats?: Stats; onAbout?: () => void }) {
     const statItems = [
         { label: "Projects Completed", value: stats.projects || "15", Icon: Trophy, stamp: "trophy" },
         { label: "Years in Coding", value: stats.years || "2", Icon: Zap, stamp: "zap" },
@@ -51,6 +51,7 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
         return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
     };
     const goToAbout = () => {
+        if (onAbout) return onAbout();
         const target = document.getElementById("about");
         if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
         else window.location.hash = "about";

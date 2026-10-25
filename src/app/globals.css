@@ -10714,3 +10714,32 @@ html.fvl-loading body {
 .pass-back .pass-glare {
   filter: opacity(0.45);
 }
+
+/* ── Hero intro: centred pass card → About Me glides it right and types the intro ── */
+.hero-pass-move {
+  transition: transform 1.1s cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: transform;
+}
+.hero-grid.is-intro .type-rest {
+  visibility: hidden;
+}
+.type-caret {
+  display: inline-block;
+  width: 0.08em;
+  min-width: 2px;
+  height: 0.95em;
+  margin: 0 0.04em -0.12em;
+  background: #3A99C9;
+  border-radius: 1px;
+  animation: type-caret-blink 1s steps(1) infinite;
+}
+.type-caret:not(.is-final) {
+  animation: none; /* solid while typing, blinks once finished */
+}
+@keyframes type-caret-blink {
+  50% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-pass-move { transition: none; }
+  .type-caret { animation: none; }
+}
