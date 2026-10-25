@@ -192,7 +192,7 @@ export default function LoginView() {
                             <HomeIcon size={20} />
                             <span className="dock-tooltip">Home</span>
                         </a>
-                        <a href="/#about" className="dock-item" data-label="About">
+                        <a href="/about" className="dock-item" data-label="About">
                             <User size={20} />
                             <span className="dock-tooltip">About</span>
                         </a>

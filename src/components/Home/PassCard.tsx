@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Courier_Prime, Black_Ops_One, JetBrains_Mono } from "next/font/google";
-import { Coffee, Github, Instagram, Linkedin, Trophy, Zap } from "lucide-react";
+import { Coffee, Github, Instagram, Linkedin, Trophy, X, Zap } from "lucide-react";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
 const blackOps = Black_Ops_One({ subsets: ["latin"], weight: "400", display: "swap" });
@@ -25,7 +25,6 @@ const STAMP_SLOTS = [
     { x: 196, y: 128 },
     { x: 128, y: 236 },
     { x: 252, y: 222 },
-    { x: 250, y: 330 }, // beside the social icons
 ];
 type StampPos = { slot: number; x: number; y: number; rot: number; size: number; shown: boolean; tagBelow: boolean; tagAlign: "left" | "center" | "right" };
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -54,8 +53,21 @@ function placeStamp(taken: number[]): StampPos {
  */
 type Socials = { linkedin?: string | null; github?: string | null; instagram?: string | null };
 type Stats = { projects?: string | number | null; years?: string | number | null; coffee?: string | number | null };
+type Route = { from?: string | null; to?: string | null };
 
-export default function PassCard({ socials = {}, stats = {}, onAbout }: { socials?: Socials; stats?: Stats; onAbout?: () => void }) {
+export default function PassCard({
+    socials = {},
+    stats = {},
+    route = {},
+    onAbout,
+}: {
+    socials?: Socials;
+    stats?: Stats;
+    route?: Route;
+    onAbout?: () => void;
+}) {
+    const routeFrom = (route.from ?? "MLK").trim();
+    const routeTo = (route.to ?? "KDH").trim();
     const statItems = [
         { label: "Projects Completed", value: stats.projects || "15", Icon: Trophy, stamp: "trophy" },
         { label: "Years in Coding", value: stats.years || "2", Icon: Zap, stamp: "zap" },
@@ -76,19 +88,23 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
     const [hoverStat, setHoverStat] = useState(-1);
     const [aboutHover, setAboutHover] = useState(false);
     const aboutRef = useRef<HTMLAnchorElement>(null);
+    // Stat zoom: the clicked stamp grows into a panel over the whole front face
+    const frontRef = useRef<HTMLDivElement>(null);
+    const closeRef = useRef<HTMLButtonElement>(null);
+    const [zoomIdx, setZoomIdx] = useState(0); // last opened stat (kept while zooming out)
+    const [zoomOrigin, setZoomOrigin] = useState({ x: 450, y: 220 });
+    const [closeHover, setCloseHover] = useState(false);
 
     // Same position-based hit test as the stamps (reliable inside the tilted card)
     const aboutAt = (x: number, y: number) => {
         const el = aboutRef.current;
-        if (back || !el) return false;
+        if (back || !el || openStat !== null) return false;
         const r = el.getBoundingClientRect();
         return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
     };
     const goToAbout = () => {
         if (onAbout) return onAbout();
-        const target = document.getElementById("about");
-        if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
-        else window.location.hash = "about";
+        window.location.assign("/about");
     };
     const stickerRefs = useRef<(HTMLButtonElement | null)[]>([]);
     // Each stamp loops on its own: fade in slowly at a random free spot, stay a while,
@@ -140,7 +156,7 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
     }, [back]);
 
     const stickerAt = (x: number, y: number) => {
-        if (back) return -1;
+        if (back || openStat !== null) return -1;
         return stickerRefs.current.findIndex((el, i) => {
             if (!el || !stampsRef.current[i]?.shown) return false; // faded-out stamps can't be hit
             const r = el.getBoundingClientRect();
@@ -151,10 +167,38 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
         });
     };
 
-    // Escape closes an open sticker tag
+    const closeAt = (x: number, y: number) => {
+        const el = closeRef.current;
+        if (openStat === null || !el) return false;
+        const r = el.getBoundingClientRect();
+        return x >= r.left - 6 && x <= r.right + 6 && y >= r.top - 6 && y <= r.bottom + 6;
+    };
+    // Open the zoom from the stamp's own position on the face (offsets ignore the 3D tilt)
+    const openZoom = (i: number) => {
+        let el: HTMLElement | null = stickerRefs.current[i];
+        const face = frontRef.current;
+        if (el && face) {
+            let x = el.offsetWidth / 2;
+            let y = el.offsetHeight / 2;
+            while (el && el !== face) {
+                x += el.offsetLeft;
+                y += el.offsetTop;
+                el = el.offsetParent as HTMLElement | null;
+            }
+            setZoomOrigin({ x, y });
+        }
+        setZoomIdx(i);
+        setOpenStat(i);
+    };
+    const closeZoom = () => {
+        setOpenStat(null);
+        setCloseHover(false);
+    };
+
+    // Escape zooms back out
     useEffect(() => {
         if (openStat === null) return;
-        const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenStat(null);
+        const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeZoom();
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
     }, [openStat]);
@@ -207,6 +251,8 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
         if (hit !== hoverStat) setHoverStat(hit);
         const overAbout = aboutAt(e.clientX, e.clientY);
         if (overAbout !== aboutHover) setAboutHover(overAbout);
+        const overClose = closeAt(e.clientX, e.clientY);
+        if (overClose !== closeHover) setCloseHover(overClose);
         if (e.pointerType === "touch" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
         const r = e.currentTarget.getBoundingClientRect();
         const px = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
@@ -217,6 +263,7 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
     const onLeave = () => {
         setHoverStat(-1);
         setAboutHover(false);
+        setCloseHover(false);
         target.current = { rx: 0, ry: 0, gx: 50, gy: 30 };
         kick();
     };
@@ -246,7 +293,12 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                 onPointerMove={onMove}
                 onPointerLeave={onLeave}
                 onClick={(e) => {
-                    // A click inside a stamp opens its tag, even if Chrome reports the card as the target
+                    // While a stat is zoomed in, only the ✕ does anything (no flipping underneath)
+                    if (openStat !== null) {
+                        if (closeAt(e.clientX, e.clientY)) closeZoom();
+                        return;
+                    }
+                    // A click inside a stamp zooms into it, even if Chrome reports the card as the target
                     if (aboutAt(e.clientX, e.clientY)) {
                         e.preventDefault();
                         goToAbout();
@@ -254,7 +306,7 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                     }
                     const hit = stickerAt(e.clientX, e.clientY);
                     if (hit >= 0) {
-                        setOpenStat((o) => (o === hit ? null : hit));
+                        openZoom(hit);
                         return;
                     }
                     flip();
@@ -262,7 +314,8 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                 onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        flip();
+                        if (openStat !== null) closeZoom();
+                        else flip();
                     }
                 }}
             >
@@ -273,7 +326,7 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                             <div className={`pass-depth ${bounce ? `depth-${bounce}` : ""}`}>
                             <div className={`pass-flip ${back ? "is-back" : ""}`}>
                                 {/* FRONT */}
-                                <div className="pass-face pass-front" aria-hidden={back}>
+                                <div ref={frontRef} className="pass-face pass-front" aria-hidden={back}>
                                     <div className="pf-left">
                                         <div className="pf-stamp-shadow">
                                             <div className="pf-stamp">
@@ -341,7 +394,8 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                                                             tabIndex={back ? -1 : 0}
                                                             onClick={(e) => {
                                                                 e.stopPropagation(); // don't flip the card
-                                                                setOpenStat(open ? null : i);
+                                                                if (open) closeZoom();
+                                                                else openZoom(i);
                                                             }}
                                                             onKeyDown={(e) => e.stopPropagation()}
                                                         >
@@ -349,10 +403,6 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                                                             {/* eslint-disable-next-line @next/next/no-img-element */}
                                                             <img className="pf-stamp-img" src={`/assets/passcard/pass-stamp-${stamp}.png`} alt="" draggable={false} />
                                                         </button>
-                                                        <div className="pf-tag" role="status" aria-hidden={!open}>
-                                                            <span className="pf-tag-value">{value}+</span>
-                                                            <span className="pf-tag-label">{label}</span>
-                                                        </div>
                                                     </div>
                                                 );
                                             })}
@@ -376,12 +426,61 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                                                     <Icon size={18} strokeWidth={2.25} />
                                                 </a>
                                             ))}
+                                            {/* where from, where to (editable in Admin → Profile) */}
+                                            {(routeFrom || routeTo) && (
+                                                <span
+                                                    className="pf-route"
+                                                    role="img"
+                                                    aria-label={`From ${routeFrom} to ${routeTo}`}
+                                                    // longer place names shrink so they never reach the character
+                                                    style={{ fontSize: Math.max(12, Math.min(19, 152 / Math.max(1, routeFrom.length + routeTo.length + 2))) }}
+                                                >
+                                                    {routeFrom && <span>{routeFrom}</span>}
+                                                    {routeFrom && routeTo && <span className="pf-route-arrow">→</span>}
+                                                    {routeTo && <span>{routeTo}</span>}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
 
                                     <div className="pf-right">
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img className="pf-sprite" src="/assets/passcard/pass-sprite.webp" alt="" draggable={false} />
+                                    </div>
+
+                                    {/* Stat zoom: icon on the left, number and label on the right */}
+                                    <div
+                                        className={`pf-zoom ${openStat !== null ? "is-open" : ""}`}
+                                        style={{ transformOrigin: `${zoomOrigin.x}px ${zoomOrigin.y}px` }}
+                                        role="dialog"
+                                        aria-modal="false"
+                                        aria-hidden={openStat === null}
+                                        aria-label={`${statItems[zoomIdx].label}: ${statItems[zoomIdx].value}+`}
+                                    >
+                                        <div className="pf-zoom-icon">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={`/assets/passcard/pass-stamp-${statItems[zoomIdx].stamp}.png`} alt="" draggable={false} />
+                                        </div>
+                                        <div className="pf-zoom-text">
+                                            <span className="pf-zoom-kicker">STAT N°0{zoomIdx + 1}</span>
+                                            <span className="pf-zoom-value">{statItems[zoomIdx].value}+</span>
+                                            <span className="pf-zoom-rule" />
+                                            <span className="pf-zoom-label">{statItems[zoomIdx].label}</span>
+                                        </div>
+                                        <button
+                                            ref={closeRef}
+                                            type="button"
+                                            className={`pf-zoom-close ${closeHover ? "is-hover" : ""}`}
+                                            aria-label="Close"
+                                            tabIndex={openStat !== null ? 0 : -1}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                closeZoom();
+                                            }}
+                                            onKeyDown={(e) => e.stopPropagation()}
+                                        >
+                                            <X size={24} strokeWidth={2.4} />
+                                        </button>
                                     </div>
 
                                     <div className="pass-glare" />
@@ -726,89 +825,134 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                     outline-offset: 2px;
                 }
 
-                /* Tag that pops out above a sticker */
-                .pf-tag {
+                /* Stat zoom panel: grows out of the clicked stamp to fill the front face */
+                .pf-zoom {
                     position: absolute;
-                    bottom: calc(100% + 12px);
-                    left: 50%;
+                    inset: 0;
+                    z-index: 5;
                     display: flex;
-                    flex-direction: column;
-                    gap: 3px;
-                    padding: 9px 13px 10px;
-                    background: #0d2a42;
-                    color: #e9eef0;
-                    border-radius: 10px;
-                    white-space: nowrap;
-                    box-shadow: 0 10px 22px -8px rgba(13, 42, 66, 0.55);
-                    pointer-events: none;
+                    align-items: center;
+                    gap: 64px;
+                    padding: 0 110px 0 96px;
+                    border-radius: inherit;
+                    background: radial-gradient(120% 90% at 22% 50%, #f4f7f8 0%, #e9eef0 55%, #e1e8eb 100%);
                     opacity: 0;
-                    transform: translate(-50%, 8px) scale(0.85);
-                    transform-origin: bottom center;
-                    transition: opacity 0.18s ease, transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
-                    z-index: 2;
+                    transform: scale(0.1);
+                    pointer-events: none;
+                    /* zooming out: shrink back into the stamp, fading only at the very end */
+                    transition: transform 0.55s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.18s ease 0.4s;
                 }
-                .pf-tag::after {
+                .pf-zoom.is-open {
+                    opacity: 1;
+                    transform: scale(1);
+                    pointer-events: auto;
+                    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.16s ease;
+                }
+                /* faint dashed frame, like the card's postmark lines */
+                .pf-zoom::before {
                     content: "";
                     position: absolute;
-                    top: 100%;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    border: 7px solid transparent;
-                    border-top-color: #0d2a42;
+                    inset: 22px;
+                    border: 2px dashed rgba(27, 79, 114, 0.22);
+                    border-radius: 20px;
+                    pointer-events: none;
                 }
-                .is-open .pf-tag {
+                .pf-zoom-icon {
+                    flex: none;
+                    width: 250px;
+                    height: 250px;
+                    transform: scale(0.8) rotate(-14deg);
+                    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+                }
+                .pf-zoom.is-open .pf-zoom-icon {
+                    transform: scale(1) rotate(-6deg);
+                    transition-delay: 0.08s;
+                }
+                .pf-zoom-icon img {
+                    display: block;
+                    width: 100%;
+                    height: 100%;
+                    user-select: none;
+                    pointer-events: none;
+                }
+                .pf-zoom-text {
+                    display: flex;
+                    flex-direction: column;
+                    color: #0d2a42;
+                    opacity: 0;
+                    transform: translateX(-18px);
+                    transition: opacity 0.2s ease, transform 0.4s ease;
+                }
+                .pf-zoom.is-open .pf-zoom-text {
                     opacity: 1;
-                    transform: translate(-50%, 0) scale(1);
-                }
-                /* Tags hug whichever side keeps them inside the card */
-                .tag-left .pf-tag {
-                    left: -4px;
-                    transform: translate(0, 8px) scale(0.85);
-                    transform-origin: bottom left;
-                }
-                .tag-left .pf-tag::after {
-                    left: calc(var(--size) / 2 + 4px);
-                }
-                .tag-left.is-open .pf-tag {
-                    transform: translate(0, 0) scale(1);
-                }
-                .tag-right .pf-tag {
-                    left: auto;
-                    right: -4px;
-                    transform: translate(0, 8px) scale(0.85);
-                    transform-origin: bottom right;
-                }
-                .tag-right .pf-tag::after {
-                    left: auto;
-                    right: calc(var(--size) / 2 - 3px);
                     transform: none;
+                    transition: opacity 0.4s ease 0.28s, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.26s;
                 }
-                .tag-right.is-open .pf-tag {
-                    transform: translate(0, 0) scale(1);
-                }
-                .tag-below .pf-tag {
-                    bottom: auto;
-                    top: calc(100% + 12px);
-                    transform-origin: top center;
-                }
-                .tag-below .pf-tag::after {
-                    top: auto;
-                    bottom: 100%;
-                    border-top-color: transparent;
-                    border-bottom-color: #0d2a42;
-                }
-                .pf-tag-value {
-                    font-size: 26px;
+                .pf-zoom-kicker {
+                    font-size: 15px;
                     font-weight: 700;
-                    letter-spacing: 1px;
-                    line-height: 1;
-                    color: #46c1e6;
+                    letter-spacing: 4px;
+                    color: #3a7ca5;
                 }
-                .pf-tag-label {
-                    font-size: 11px;
+                .pf-zoom-value {
+                    margin-top: 6px;
+                    font-size: 112px;
                     font-weight: 700;
-                    letter-spacing: 1px;
+                    line-height: 0.95;
+                    letter-spacing: -2px;
+                    color: #0d2a42;
+                }
+                .pf-zoom-rule {
+                    width: 72px;
+                    height: 0;
+                    margin: 18px 0 16px;
+                    border-top: 3px dashed #1b4f72;
+                    opacity: 0.6;
+                }
+                .pf-zoom-label {
+                    font-size: 24px;
+                    font-weight: 700;
+                    letter-spacing: 4px;
                     text-transform: uppercase;
+                    color: #1b4f72;
+                    max-width: 340px;
+                    line-height: 1.25;
+                }
+                .pf-zoom-close {
+                    position: absolute;
+                    top: 40px;
+                    right: 44px;
+                    width: 56px;
+                    height: 56px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0;
+                    border-radius: 50%;
+                    border: 2.5px solid #0d2a42;
+                    background: transparent;
+                    color: #0d2a42;
+                    cursor: pointer;
+                    opacity: 0;
+                    transform: scale(0.7) rotate(-90deg);
+                    transition: transform 0.35s ease, opacity 0.15s ease, background 0.2s ease, color 0.2s ease;
+                }
+                .pf-zoom.is-open .pf-zoom-close {
+                    opacity: 1;
+                    transform: none;
+                    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s, opacity 0.3s ease 0.35s, background 0.2s ease,
+                        color 0.2s ease;
+                }
+                .pf-zoom.is-open .pf-zoom-close.is-hover,
+                .pf-zoom.is-open .pf-zoom-close:focus-visible {
+                    background: #0d2a42;
+                    color: #e9eef0;
+                    transform: rotate(90deg);
+                    transition-delay: 0s;
+                }
+                .pf-zoom-close:focus-visible {
+                    outline: 2px dashed #46c1e6;
+                    outline-offset: 3px;
                 }
                 /* About Me button, styled as an inked rubber stamp (matches the postmarks) */
                 .pf-about-row {
@@ -865,6 +1009,29 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                     display: flex;
                     align-items: center;
                     gap: 12px;
+                }
+                /* Route line, e.g. "MLK → KDH": bold sans, set apart from the icons */
+                .pf-route {
+                    margin-left: 26px;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 7px;
+                    font-family: var(--font-geist-sans), Inter, -apple-system, sans-serif;
+                    font-size: 19px;
+                    font-weight: 600;
+                    letter-spacing: 0.4px;
+                    line-height: 1;
+                    text-transform: uppercase;
+                    white-space: nowrap;
+                    color: #0d2a42;
+                    opacity: 0.88;
+                    pointer-events: none;
+                    user-select: none;
+                }
+                .pf-route-arrow {
+                    font-weight: 500;
+                    color: #1b4f72;
+                    transform: translateY(-1px);
                 }
                 .pf-social {
                     width: 42px;
@@ -1030,6 +1197,14 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                     .pf-sticker-wrap {
                         transform: none;
                         transition: opacity 0.6s ease;
+                    }
+                    .pf-zoom,
+                    .pf-zoom.is-open,
+                    .pf-zoom-icon,
+                    .pf-zoom-text,
+                    .pf-zoom-close {
+                        transition-duration: 0.01ms !important;
+                        transition-delay: 0s !important;
                     }
                     .pass-lift,
                     .pass-stage:hover .pass-lift {

@@ -26,11 +26,16 @@
   <radialGradient id="tip" cx=".4" cy=".35" r=".8">
     <stop offset="0" stop-color="#f3f5f7"/><stop offset=".6" stop-color="#d4dadf"/><stop offset="1" stop-color="#9ea8b1"/>
   </radialGradient>
+  <clipPath id="headClip"><path d="M10 30 C8 12 22 4 38 6 C54 8 62 20 58 34 C55 46 44 50 34 48 C22 47 12 42 10 30 Z"/></clipPath>
+  <filter id="budBlur" x="-50%" y="-100%" width="200%" height="300%"><feGaussianBlur stdDeviation="2"/></filter>
+  <linearGradient id="cap" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#9aa4ad"/><stop offset=".45" stop-color="#e2e6ea"/><stop offset="1" stop-color="#8f99a3"/>
+  </linearGradient>
 </defs>
   <!-- stem -->
   <path d="M30 40 L24 108 Q24 114 30 114 L36 114 Q42 114 41 108 L45 42 Z" fill="url(#stem)"/>
-  <rect x="25" y="108" width="15" height="6" rx="3" fill="#b5bec6"/>
-  <ellipse cx="32.5" cy="110" rx="4" ry="2" fill="#6c7782"/>
+  <path d="M24.6 106 H41.2 L41 109 Q40.6 114.5 35 114.6 H30.4 Q24.6 114.4 24.4 109 Z" fill="url(#cap)"/>
+  <path d="M26.5 108 H39" stroke="#fff" stroke-opacity=".7" stroke-width=".8"/>
   <!-- head -->
   <path d="M10 30 C8 12 22 4 38 6 C54 8 62 20 58 34 C55 46 44 50 34 48 C22 47 12 42 10 30 Z" fill="url(#budHead)"/>
   <!-- ear tip -->
@@ -39,6 +44,9 @@
   <!-- sensor + mesh -->
   <ellipse cx="22" cy="20" rx="5" ry="3.4" fill="#2a2f35" transform="rotate(-20 22 20)"/>
   <ellipse cx="30" cy="38" rx="3" ry="2" fill="#2a2f35"/>
-  <path d="M16 12 Q24 7 34 8" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- soft top-light, kept inside the head -->
+  <g clip-path="url(#headClip)">
+    <ellipse cx="28" cy="13" rx="15" ry="6" fill="#fff" opacity=".9" filter="url(#budBlur)" transform="rotate(-12 28 13)"/>
+  </g>
   <rect x="34" y="50" width="3" height="40" rx="1.5" fill="#fff" opacity=".85" transform="rotate(4 35 70)"/>
 </svg>

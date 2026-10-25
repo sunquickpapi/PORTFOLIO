@@ -144,7 +144,6 @@ export default function Earbuds() {
                 ) : (
                     <span className="hs-empty">{np === null ? "Tuning in…" : "Nothing playing right now."}</span>
                 )}
-                {hasTrack && <span className="hs-cta">Listen on Spotify ↗</span>}
             </a>
 
             <style jsx>{`
@@ -437,13 +436,6 @@ export default function Earbuds() {
                     font-family: var(--font-geist-sans), Inter, -apple-system, sans-serif;
                     font-size: 13px;
                     color: #5b6b7a;
-                }
-                .hs-cta {
-                    font-size: 9px;
-                    font-weight: 700;
-                    letter-spacing: 1.4px;
-                    text-transform: uppercase;
-                    color: var(--accent);
                 }
 
                 @media (prefers-reduced-motion: reduce) {

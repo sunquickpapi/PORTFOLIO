@@ -1,9 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Courier_Prime } from "next/font/google";
 import PassCard from "./PassCard";
+import { markPageReady } from "@/lib/pageReady";
 import Dossier from "./Dossier";
 import Earbuds from "./Earbuds";
+
+const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
 
 /*
  * Desktop intro: the pass card starts centred and the text is hidden.
@@ -62,17 +68,33 @@ export default function Hero() {
     const [shift, setShift] = useState(0);
     const passRef = useRef<HTMLDivElement>(null);
 
+    // Load the profile, quietly retrying a couple of times if the first request fails
     useEffect(() => {
-        fetch("/api/profile")
-            .then((res) => {
+        let cancelled = false;
+        const load = async (attempt: number) => {
+            try {
+                const res = await fetch("/api/profile");
                 if (!res.ok) throw new Error(`API error: ${res.status}`);
-                return res.json();
-            })
-            .then((data) => {
-                if (data && !data.error) setProfile(data);
-            })
-            .catch((err) => console.error("Error fetching profile:", err));
+                const data = await res.json();
+                if (data?.error) throw new Error(data.error);
+                if (!cancelled) setProfile(data || {});
+            } catch (err) {
+                if (cancelled) return;
+                if (attempt < 3) window.setTimeout(() => load(attempt + 1), 900 * attempt);
+                else {
+                    console.error("Error fetching profile:", err);
+                    setProfile({}); // fall back to the built-in defaults rather than stay blank
+                }
+            }
+        };
+        load(1);
+        return () => {
+            cancelled = true;
+        };
     }, []);
+    useEffect(() => {
+        if (profile) markPageReady(); // the nav bar's liquid fill finishes and drains away
+    }, [profile]);
 
     useEffect(() => {
         const wide = window.matchMedia("(min-width: 1025px)");
@@ -108,7 +130,7 @@ export default function Hero() {
     const bio = profile?.tagline || profile?.bio || "A passionate Intelligent System Engineer crafting smart solutions.";
 
     const segs: Seg[] = [
-        { key: "h1a", text: "Hello Everyone,", speed: SPEED.h1 },
+        { key: "h1a", text: (profile?.hero_greeting ?? "Hello Everyone,").trim() || "Hello Everyone,", speed: SPEED.h1 },
         { key: "h1b", text: "I'm ", speed: SPEED.h1 },
         { key: "name", text: name, speed: SPEED.h1, gradient: true },
         { key: "subtitle", text: role, speed: SPEED.subtitle },
@@ -144,22 +166,22 @@ export default function Hero() {
     };
     const done = typing && count >= total;
 
+    const router = useRouter();
     const toggle = useCallback(() => {
+        // tablets/phones show the intro already, so the card's button goes to the About page
         if (!intro) {
-            const target = document.getElementById("about");
-            if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+            router.push("/about");
             return;
         }
         setRevealed((r) => !r);
-    }, [intro]);
+    }, [intro, router]);
 
     return (
         <section id="home" className="hero hero-clean">
             <div className="hero-bg" aria-hidden="true" />
             {!profile ? (
-                <div className="container" style={{ minHeight: "600px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <div className="animate-pulse text-[var(--color-text-muted)] text-2xl font-bold tracking-tighter">Initializing Portfolio...</div>
-                </div>
+                // the nav bar shows the loading progress; keep the hero's space meanwhile
+                <div className="container" style={{ minHeight: "600px" }} aria-busy="true" />
             ) : (
                 <div className={`container hero-grid has-pass ${intro ? "is-intro" : ""} ${revealed ? "is-revealed" : ""} ${done ? "is-typed" : ""}`}>
                     <div className="hero-content text-left">
@@ -174,6 +196,19 @@ export default function Hero() {
                             {part("bio")}
                             {done && <span className="type-caret is-final" aria-hidden="true" />}
                         </p>
+                        {/* paper slip from the same file as the résumé dossier */}
+                        <Link href="/about" className="hero-journey" tabIndex={intro && !done ? -1 : undefined}>
+                            <span className="hj-page" aria-hidden="true" />
+                            <span className="hj-slip">
+                                <span className="hj-text">
+                                    <span className={`hj-kicker ${courier.className}`}>FILE:: N°02</span>
+                                    <span className="hj-title">More About My Journey</span>
+                                </span>
+                                <span className={`hj-chip ${courier.className}`}>
+                                    READ <span className="hj-arrow" aria-hidden="true">→</span>
+                                </span>
+                            </span>
+                        </Link>
                     </div>
 
                     <div className="hero-pass" ref={passRef}>
@@ -185,6 +220,7 @@ export default function Hero() {
                                 onAbout={toggle}
                                 socials={{ linkedin: profile.linkedin_url, github: profile.github_url, instagram: profile.instagram_url }}
                                 stats={{ projects: profile.projects_count, years: profile.experience_years, coffee: profile.coffee_consumed }}
+                                route={{ from: profile.route_from, to: profile.route_to }}
                             />
                             <div className="hero-earbuds">
                                 <Earbuds />

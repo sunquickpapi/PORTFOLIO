@@ -1,6 +1,5 @@
 import Navigation from "@/components/Home/Navigation";
 import Hero from "@/components/Home/Hero";
-import About from "@/components/Home/About";
 import Services from "@/components/Home/Services";
 import TechStack from "@/components/Home/TechStack";
 import Projects from "@/components/Home/Projects";
@@ -16,7 +15,6 @@ export default function Home() {
     <main className="min-h-screen portfolio-main">
       <Navigation />
       <Hero />
-      <About />
       <Services />
       <TechStack />
       <Projects />

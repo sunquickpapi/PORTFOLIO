@@ -80,7 +80,7 @@ export default function AboutPage() {
 
     const handleBackToHome = (e: React.MouseEvent) => {
         e.preventDefault();
-        router.push('/#about');
+        router.push('/');
     };
 
     if (!profile) return <div className="min-h-screen bg-[var(--portfolio-bg)] flex items-center justify-center text-[var(--color-text-primary)] font-bold animate-pulse text-2xl">Loading Your Story...</div>;
@@ -103,7 +103,7 @@ export default function AboutPage() {
             }}>
                 {/* Unique Portal Back Button - Absolute Inline Layout */}
                 <Link
-                    href="/#about"
+                    href="/"
                     className="unq-portal-link unq-portal-fixed"
                     onClick={handleBackToHome}
                 >

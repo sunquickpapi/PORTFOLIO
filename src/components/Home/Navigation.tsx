@@ -1,8 +1,42 @@
 "use client";
 
-import { Home, User, Code, Layout, MessageSquare, BookOpen, Mail, Github, Linkedin, FileText, Sun, Moon, Menu, X, ChevronUp, ChevronDown, FileCode, Briefcase, ArrowUpRight, Download } from "lucide-react";
+import { Home, Code, Layout, MessageSquare, BookOpen, Mail, Github, Linkedin, FileText, Sun, Moon, Menu, X, ChevronUp, ChevronDown, FileCode, Briefcase, ArrowUpRight, Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
+import { Courier_Prime } from "next/font/google";
+import { isPageReady, onPageReady } from "@/lib/pageReady";
+
+const courier = Courier_Prime({ subsets: ["latin"], weight: ["700"], display: "swap" });
+
+/** Liquid fill in the nav bar while the home page content loads (eases toward 90%, then 100% on ready). */
+function useLoadProgress() {
+    const [p, setP] = useState(0);
+    const [phase, setPhase] = useState<"run" | "done" | "gone">("run");
+    useEffect(() => {
+        if (isPageReady()) {
+            setPhase("gone");
+            return;
+        }
+        let cur = 0;
+        const id = window.setInterval(() => {
+            cur = Math.min(90, cur + (90 - cur) * 0.035 + 0.12);
+            setP(cur);
+        }, 60);
+        let t: number | undefined;
+        const off = onPageReady(() => {
+            window.clearInterval(id);
+            setP(100);
+            setPhase("done");
+            t = window.setTimeout(() => setPhase("gone"), 1250);
+        });
+        return () => {
+            window.clearInterval(id);
+            if (t) window.clearTimeout(t);
+            off();
+        };
+    }, []);
+    return { p, phase };
+}
 
 export default function Navigation() {
     const { theme, toggleTheme } = useTheme();
@@ -14,6 +48,7 @@ export default function Navigation() {
     const [atTop, setAtTop] = useState(true);
     const [hireOpen, setHireOpen] = useState(false);
     const hireRef = useRef<HTMLDivElement>(null);
+    const load = useLoadProgress();
 
     // Close the Hire Me menu on outside click or Escape
     useEffect(() => {
@@ -55,7 +90,7 @@ export default function Navigation() {
         const observer = new IntersectionObserver(observerCallback, observerOptions);
 
         // Sections to observe
-        const sections = ["home", "about", "tech-stack", "projects", "snippets", "testimonials", "blog-latest", "contact"];
+        const sections = ["home", "tech-stack", "projects", "snippets", "testimonials", "blog-latest", "contact"];
         sections.forEach((id) => {
             const el = document.getElementById(id);
             if (el) observer.observe(el);
@@ -118,9 +153,8 @@ export default function Navigation() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const navItems: { id: string; label: string; short?: string; icon: typeof Home }[] = [
+    const navItems: { id: string; label: string; short?: string; icon: typeof Home; href?: string }[] = [
         { id: "home", label: "Home", icon: Home },
-        { id: "about", label: "About Me", short: "About", icon: User },
         { id: "tech-stack", label: "TechStack", short: "Stack", icon: Code },
         { id: "projects", label: "Project", short: "Projects", icon: Layout },
         { id: "snippets", label: "Snippets", icon: FileCode },
@@ -155,7 +189,7 @@ export default function Navigation() {
                                 return (
                                     <a
                                         key={item.id}
-                                        href={`#${item.id}`}
+                                        href={item.href || `#${item.id}`}
                                         className={`drawer-link ${activeSection === item.id ? "active" : ""}`}
                                         onClick={() => {
                                             setActiveSection(item.id);
@@ -240,7 +274,23 @@ export default function Navigation() {
             </div>
 
             <nav className={`dock-wrapper ${atTop ? "is-expanded" : ""}`}>
-                <div className="dock">
+                <div className={`dock ${load.phase === "run" ? "is-loading" : ""}`}>
+                    {load.phase !== "gone" && (
+                        <div
+                            className={`dock-liquid ${load.phase === "done" ? "is-done" : ""}`}
+                            style={{ "--p": load.p } as React.CSSProperties}
+                            role="progressbar"
+                            aria-label="Loading"
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={Math.round(load.p)}
+                        >
+                            <span className="dock-liquid-fill">
+                                <span className="dock-liquid-wave" />
+                            </span>
+                            <span className={`dock-liquid-num ${courier.className}`}>{String(Math.round(load.p)).padStart(2, "0")}</span>
+                        </div>
+                    )}
                     {/* Logo */}
                     <div className="dock-group">
                         <a href="/admin/login" className="dock-item dock-item-logo" data-label="Admin" aria-label="Admin">
@@ -262,7 +312,7 @@ export default function Navigation() {
                             return (
                                 <a
                                     key={item.id}
-                                    href={`#${item.id}`}
+                                    href={item.href || `#${item.id}`}
                                     className={`dock-item dock-item-nav ${activeSection === item.id ? "active" : ""}`}
                                     data-label={item.label}
                                     aria-label={item.label}
