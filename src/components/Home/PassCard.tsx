@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Courier_Prime, Black_Ops_One, JetBrains_Mono } from "next/font/google";
-import { ArrowRight, Coffee, Github, Instagram, Linkedin, Trophy, Zap } from "lucide-react";
+import { Coffee, Github, Instagram, Linkedin, Trophy, Zap } from "lucide-react";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
 const blackOps = Black_Ops_One({ subsets: ["latin"], weight: "400", display: "swap" });
@@ -230,7 +230,6 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
                                                 onKeyDown={(e) => e.stopPropagation()}
                                             >
                                                 <span>About Me</span>
-                                                <ArrowRight className="pf-about-arrow" size={18} strokeWidth={2.5} />
                                             </a>
                                         </div>
                                         <div className="pf-stickers">
@@ -705,46 +704,51 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
                     letter-spacing: 1px;
                     text-transform: uppercase;
                 }
-                /* About Me button (top of the middle column) */
+                /* About Me button, styled as an inked rubber stamp (matches the postmarks) */
                 .pf-about-row {
                     display: flex;
                     align-items: flex-start;
+                    padding: 4px 0 0 4px;
                 }
                 .pf-about {
+                    position: relative;
                     display: inline-flex;
                     align-items: center;
                     gap: 12px;
-                    padding: 12px 20px 12px 22px;
-                    border: 2px solid #0d2a42;
-                    border-radius: 12px;
-                    color: #0d2a42;
+                    padding: 13px 24px 13px 27px; /* extra left offsets the trailing letter-spacing */
+                    color: #1b4f72;
                     background: transparent;
+                    /* double ring like the postmarks */
+                    border: 3px solid currentColor;
+                    border-radius: 10px;
+                    outline: 1.5px solid currentColor;
+                    outline-offset: -8px;
                     font-size: 17px;
                     font-weight: 700;
-                    letter-spacing: 2px;
+                    letter-spacing: 3px;
                     text-transform: uppercase;
                     text-decoration: none;
                     cursor: pointer;
-                    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.25s ease, transform 0.25s ease;
-                    outline: none;
+                    opacity: 0.88;
+                    transform: rotate(-2.5deg);
+                    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease, background 0.2s ease,
+                        opacity 0.2s ease;
                 }
-                .pf-about :global(.pf-about-arrow) {
-                    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+                /* Worn ink: paper-coloured speckles from a fixed texture (no live filters) */
+                .pf-about::after {
+                    content: "";
+                    position: absolute;
+                    inset: -4px;
+                    background: url(/assets/passcard/pass-ink-gaps.png) -40px -70px / 160px 160px;
+                    pointer-events: none;
                 }
+                /* Hover: "pressed harder" - darker ink, straightened, faint ink wash */
                 .pf-about.is-hover,
                 .pf-about:focus-visible {
-                    background: #0d2a42;
-                    color: #e9eef0;
-                    box-shadow: 0 10px 20px -10px rgba(13, 42, 66, 0.7);
-                    transform: translateY(-2px);
-                }
-                .pf-about.is-hover :global(.pf-about-arrow),
-                .pf-about:focus-visible :global(.pf-about-arrow) {
-                    transform: translateX(5px);
-                    color: #46c1e6;
-                }
-                .pf-about:focus-visible {
-                    box-shadow: 0 0 0 3px #46c1e6;
+                    color: #0d2a42;
+                    opacity: 1;
+                    background: rgba(27, 79, 114, 0.08);
+                    transform: rotate(0deg) scale(1.04);
                 }
                 .pf-socials {
                     display: flex;
