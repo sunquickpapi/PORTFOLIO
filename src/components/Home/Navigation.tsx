@@ -3,6 +3,40 @@
 import { Home, Code, Layout, MessageSquare, BookOpen, Mail, Github, Linkedin, FileText, Sun, Moon, Menu, X, ChevronUp, ChevronDown, FileCode, Briefcase, ArrowUpRight, Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
+import { Courier_Prime } from "next/font/google";
+import { isPageReady, onPageReady } from "@/lib/pageReady";
+
+const courier = Courier_Prime({ subsets: ["latin"], weight: ["700"], display: "swap" });
+
+/** Liquid fill in the nav bar while the home page content loads (eases toward 90%, then 100% on ready). */
+function useLoadProgress() {
+    const [p, setP] = useState(0);
+    const [phase, setPhase] = useState<"run" | "done" | "gone">("run");
+    useEffect(() => {
+        if (isPageReady()) {
+            setPhase("gone");
+            return;
+        }
+        let cur = 0;
+        const id = window.setInterval(() => {
+            cur = Math.min(90, cur + (90 - cur) * 0.035 + 0.12);
+            setP(cur);
+        }, 60);
+        let t: number | undefined;
+        const off = onPageReady(() => {
+            window.clearInterval(id);
+            setP(100);
+            setPhase("done");
+            t = window.setTimeout(() => setPhase("gone"), 1100);
+        });
+        return () => {
+            window.clearInterval(id);
+            if (t) window.clearTimeout(t);
+            off();
+        };
+    }, []);
+    return { p, phase };
+}
 
 export default function Navigation() {
     const { theme, toggleTheme } = useTheme();
@@ -14,6 +48,7 @@ export default function Navigation() {
     const [atTop, setAtTop] = useState(true);
     const [hireOpen, setHireOpen] = useState(false);
     const hireRef = useRef<HTMLDivElement>(null);
+    const load = useLoadProgress();
 
     // Close the Hire Me menu on outside click or Escape
     useEffect(() => {
@@ -239,7 +274,23 @@ export default function Navigation() {
             </div>
 
             <nav className={`dock-wrapper ${atTop ? "is-expanded" : ""}`}>
-                <div className="dock">
+                <div className={`dock ${load.phase === "run" ? "is-loading" : ""}`}>
+                    {load.phase !== "gone" && (
+                        <div
+                            className={`dock-liquid ${load.phase === "done" ? "is-done" : ""}`}
+                            style={{ "--p": load.p } as React.CSSProperties}
+                            role="progressbar"
+                            aria-label="Loading"
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={Math.round(load.p)}
+                        >
+                            <span className="dock-liquid-fill">
+                                <span className="dock-liquid-wave" />
+                            </span>
+                            <span className={`dock-liquid-num ${courier.className}`}>{String(Math.round(load.p)).padStart(2, "0")}%</span>
+                        </div>
+                    )}
                     {/* Logo */}
                     <div className="dock-group">
                         <a href="/admin/login" className="dock-item dock-item-logo" data-label="Admin" aria-label="Admin">

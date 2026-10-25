@@ -10925,3 +10925,101 @@ html.fvl-loading body {
     min-width: 168px;
   }
 }
+
+/* Nav bar loading: liquid fills the dock left → right with a count, then drains away */
+.dock {
+  position: relative;
+}
+.dock > .dock-group,
+.dock > .dock-separator {
+  position: relative;
+  z-index: 1;
+  transition: opacity 0.5s ease;
+}
+.dock.is-loading > .dock-group,
+.dock.is-loading > .dock-separator {
+  opacity: 0.16;
+}
+.dock-liquid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 0.6s ease 0.35s;
+}
+.dock-liquid.is-done {
+  opacity: 0;
+}
+.dock-liquid-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(var(--p) * 1%);
+  background: linear-gradient(90deg, rgba(117, 194, 230, 0.16), rgba(58, 153, 201, 0.3) 70%, rgba(58, 153, 201, 0.42));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dock-liquid.is-done .dock-liquid-fill {
+  transition: width 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+}
+/* shimmer travelling through the liquid */
+.dock-liquid-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.35) 45%, transparent 70%);
+  background-size: 220px 100%;
+  background-repeat: no-repeat;
+  animation: dock-shimmer 1.8s ease-in-out infinite;
+}
+@keyframes dock-shimmer {
+  from { background-position: -220px 0; }
+  to { background-position: calc(100% + 220px) 0; }
+}
+/* rippling front edge */
+.dock-liquid-wave {
+  position: absolute;
+  top: -40px;
+  bottom: -40px;
+  right: -14px;
+  width: 28px;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 40'><path d='M0 0H14C24 5 24 15 14 20C4 25 4 35 14 40H0Z' fill='%233a99c9' fill-opacity='.42'/></svg>") repeat-y;
+  background-size: 28px 40px;
+  animation: dock-wave 1.1s linear infinite;
+}
+@keyframes dock-wave {
+  to { background-position: 0 40px; }
+}
+/* the count rides just behind the liquid's edge */
+.dock-liquid-num {
+  position: absolute;
+  top: 50%;
+  left: max(70px, calc(var(--p) * 1%));
+  transform: translate(calc(-100% - 22px), -50%);
+  padding: 4px 9px 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(27, 79, 114, 0.12), 0 4px 10px -4px rgba(13, 42, 66, 0.35);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #1b4f72;
+  white-space: nowrap;
+  transition: left 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+}
+.dock-liquid.is-done .dock-liquid-num {
+  opacity: 0;
+}
+:root.dark .dock-liquid-num {
+  color: #9fd3ee;
+  background: rgba(13, 30, 46, 0.9);
+}
+@media (prefers-reduced-motion: reduce) {
+  .dock-liquid-wave,
+  .dock-liquid-fill::after {
+    animation: none;
+  }
+}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Courier_Prime } from "next/font/google";
 import PassCard from "./PassCard";
+import { markPageReady } from "@/lib/pageReady";
 import Dossier from "./Dossier";
 import Earbuds from "./Earbuds";
 
@@ -67,17 +68,33 @@ export default function Hero() {
     const [shift, setShift] = useState(0);
     const passRef = useRef<HTMLDivElement>(null);
 
+    // Load the profile, quietly retrying a couple of times if the first request fails
     useEffect(() => {
-        fetch("/api/profile")
-            .then((res) => {
+        let cancelled = false;
+        const load = async (attempt: number) => {
+            try {
+                const res = await fetch("/api/profile");
                 if (!res.ok) throw new Error(`API error: ${res.status}`);
-                return res.json();
-            })
-            .then((data) => {
-                if (data && !data.error) setProfile(data);
-            })
-            .catch((err) => console.error("Error fetching profile:", err));
+                const data = await res.json();
+                if (data?.error) throw new Error(data.error);
+                if (!cancelled) setProfile(data || {});
+            } catch (err) {
+                if (cancelled) return;
+                if (attempt < 3) window.setTimeout(() => load(attempt + 1), 900 * attempt);
+                else {
+                    console.error("Error fetching profile:", err);
+                    setProfile({}); // fall back to the built-in defaults rather than stay blank
+                }
+            }
+        };
+        load(1);
+        return () => {
+            cancelled = true;
+        };
     }, []);
+    useEffect(() => {
+        if (profile) markPageReady(); // the nav bar's liquid fill finishes and drains away
+    }, [profile]);
 
     useEffect(() => {
         const wide = window.matchMedia("(min-width: 1025px)");
@@ -163,9 +180,8 @@ export default function Hero() {
         <section id="home" className="hero hero-clean">
             <div className="hero-bg" aria-hidden="true" />
             {!profile ? (
-                <div className="container" style={{ minHeight: "600px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <div className="animate-pulse text-[var(--color-text-muted)] text-2xl font-bold tracking-tighter">Initializing Portfolio...</div>
-                </div>
+                // the nav bar shows the loading progress; keep the hero's space meanwhile
+                <div className="container" style={{ minHeight: "600px" }} aria-busy="true" />
             ) : (
                 <div className={`container hero-grid has-pass ${intro ? "is-intro" : ""} ${revealed ? "is-revealed" : ""} ${done ? "is-typed" : ""}`}>
                     <div className="hero-content text-left">
