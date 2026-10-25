@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, Mail, ChevronDown, Trophy, Coffee, Zap } from "lucide-react";
+import { Download, Mail, ChevronDown } from "lucide-react";
 import PassCard from "./PassCard";
 
 export default function Hero() {
@@ -38,29 +38,6 @@ export default function Hero() {
                             {profile.tagline || profile.bio || "A passionate Intelligent System Engineer crafting smart solutions."}
                         </p>
 
-                        <div className="hero-stats flex flex-wrap gap-4 my-8">
-                            <div className="stat-card">
-                                <Trophy className="stat-icon" />
-                                <div className="stat-info">
-                                    <h3>{profile.projects_count || "15"}+</h3>
-                                    <p>Projects Completed</p>
-                                </div>
-                            </div>
-                            <div className="stat-card">
-                                <Zap className="stat-icon" />
-                                <div className="stat-info">
-                                    <h3>{profile.experience_years || "2"}+</h3>
-                                    <p>Years in coding</p>
-                                </div>
-                            </div>
-                            <div className="stat-card coffee-card">
-                                <Coffee className="stat-icon" />
-                                <div className="stat-info">
-                                    <h3>{profile.coffee_consumed || "900"}+</h3>
-                                    <p>Coffee Consumed</p>
-                                </div>
-                            </div>
-                        </div>
 
                         <div className="cta-buttons flex gap-6">
                             <a href="#projects" className="btn btn-work group">
@@ -79,7 +56,10 @@ export default function Hero() {
                     </div>
 
                     <div className="hero-pass">
-                        <PassCard socials={{ linkedin: profile.linkedin_url, github: profile.github_url, instagram: profile.instagram_url }} />
+                        <PassCard
+                            socials={{ linkedin: profile.linkedin_url, github: profile.github_url, instagram: profile.instagram_url }}
+                            stats={{ projects: profile.projects_count, years: profile.experience_years, coffee: profile.coffee_consumed }}
+                        />
                     </div>
                 </div>
             )}

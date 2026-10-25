@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Courier_Prime, Black_Ops_One, JetBrains_Mono } from "next/font/google";
-import { Github, Instagram, Linkedin } from "lucide-react";
+import { Coffee, Github, Instagram, Linkedin, Trophy, Zap } from "lucide-react";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
 const blackOps = Black_Ops_One({ subsets: ["latin"], weight: "400", display: "swap" });
@@ -19,8 +19,14 @@ const FLIP_MS = 800;
  * glare highlight on hover, and flips to the back on click / Enter / Space.
  */
 type Socials = { linkedin?: string | null; github?: string | null; instagram?: string | null };
+type Stats = { projects?: string | number | null; years?: string | number | null; coffee?: string | number | null };
 
-export default function PassCard({ socials = {} }: { socials?: Socials }) {
+export default function PassCard({ socials = {}, stats = {} }: { socials?: Socials; stats?: Stats }) {
+    const statItems = [
+        { label: "Projects Completed", value: stats.projects || "15", Icon: Trophy },
+        { label: "Years in Coding", value: stats.years || "2", Icon: Zap },
+        { label: "Coffee Consumed", value: stats.coffee || "900", Icon: Coffee },
+    ];
     const links = [
         { label: "LinkedIn", href: socials.linkedin || "https://www.linkedin.com/in/muhammad-naufal-bin-mohd-nizam-0603b2279", Icon: Linkedin },
         { label: "GitHub", href: socials.github || "https://github.com/sunquickpapi", Icon: Github },
@@ -153,6 +159,15 @@ export default function PassCard({ socials = {} }: { socials?: Socials }) {
                                         <div>
                                             <div className="pf-title">PASS CARD</div>
                                             <div className="pf-code">CARD CODE: PX2026-08/FW &nbsp;CODE · FOCUS · CRAFT</div>
+                                        </div>
+                                        <div className="pf-stats">
+                                            {statItems.map(({ label, value, Icon }) => (
+                                                <div key={label} className="pf-stat">
+                                                    <Icon className="pf-stat-icon" size={16} strokeWidth={2.5} />
+                                                    <div className="pf-stat-value">{value}+</div>
+                                                    <div className="pf-stat-label">{label}</div>
+                                                </div>
+                                            ))}
                                         </div>
                                         <div className="pf-socials">
                                             {links.map(({ label, href, Icon }, i) => (
@@ -457,6 +472,39 @@ export default function PassCard({ socials = {} }: { socials?: Socials }) {
                     font-weight: 700;
                     letter-spacing: 1px;
                     margin-top: 4px;
+                }
+                /* Stats: same language as the ISSUED / VALID THRU boxes on the back */
+                .pf-stats {
+                    display: grid;
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                    gap: 10px;
+                }
+                .pf-stat {
+                    border: 1.5px solid rgba(27, 79, 114, 0.35);
+                    padding: 10px 11px 11px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 5px;
+                    box-sizing: border-box;
+                }
+                .pf-stat :global(.pf-stat-icon) {
+                    color: #46c1e6;
+                    margin-bottom: 2px;
+                }
+                .pf-stat-value {
+                    font-size: 30px;
+                    font-weight: 700;
+                    letter-spacing: 1px;
+                    line-height: 1;
+                    color: #0d2a42;
+                }
+                .pf-stat-label {
+                    font-size: 11px;
+                    font-weight: 700;
+                    letter-spacing: 0.5px;
+                    line-height: 1.2;
+                    text-transform: uppercase;
+                    color: #1b4f72;
                 }
                 .pf-socials {
                     display: flex;
