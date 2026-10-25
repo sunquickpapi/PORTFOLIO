@@ -10950,6 +10950,11 @@ html.fvl-loading body {
   border-radius: inherit;
   overflow: hidden;
   pointer-events: none;
+  transition: opacity 0.7s ease 0.2s;
+}
+/* finished: the full bar of liquid fades away as the menu fades in */
+.dock-liquid.is-done {
+  opacity: 0;
 }
 .dock-liquid-fill {
   position: absolute;
@@ -10962,10 +10967,8 @@ html.fvl-loading body {
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.28), inset 0 -3px 6px rgba(13, 42, 66, 0.35);
   transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
-/* finished: the full bar of liquid slides off to the right, revealing the menu */
 .dock-liquid.is-done .dock-liquid-fill {
-  transform: translateX(calc(100% + 30px));
-  transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1), transform 0.75s cubic-bezier(0.65, 0, 0.35, 1) 0.3s;
+  transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 /* shimmer travelling through the liquid */
 .dock-liquid-fill::after {
@@ -10995,29 +10998,22 @@ html.fvl-loading body {
 @keyframes dock-wave {
   to { background-position: 0 40px; }
 }
-/* the count rides just behind the liquid's edge */
+/* the count rides just behind the liquid's edge: big, heavy, white */
 .dock-liquid-num {
   position: absolute;
   top: 50%;
-  left: max(70px, calc(var(--p) * 1%));
+  left: max(84px, calc(var(--p) * 1%));
   transform: translate(calc(-100% - 22px), -50%);
-  padding: 4px 9px 4px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4), 0 4px 10px -4px rgba(13, 42, 66, 0.5);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: #1b4f72;
+  font-family: var(--font-geist-sans), Inter, -apple-system, sans-serif !important;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(13, 42, 66, 0.45);
   white-space: nowrap;
-  transition: left 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
-}
-.dock-liquid.is-done .dock-liquid-num {
-  opacity: 0;
-}
-:root.dark .dock-liquid-num {
-  color: #9fd3ee;
-  background: rgba(13, 30, 46, 0.9);
+  transition: left 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 @media (prefers-reduced-motion: reduce) {
   .dock-liquid-wave,
