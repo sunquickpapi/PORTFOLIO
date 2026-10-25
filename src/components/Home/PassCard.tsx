@@ -23,9 +23,9 @@ type Stats = { projects?: string | number | null; years?: string | number | null
 
 export default function PassCard({ socials = {}, stats = {} }: { socials?: Socials; stats?: Stats }) {
     const statItems = [
-        { label: "Projects Completed", value: stats.projects || "15", Icon: Trophy },
-        { label: "Years in Coding", value: stats.years || "2", Icon: Zap },
-        { label: "Coffee Consumed", value: stats.coffee || "900", Icon: Coffee },
+        { label: "Projects Completed", value: stats.projects || "15", Icon: Trophy, stamp: "trophy" },
+        { label: "Years in Coding", value: stats.years || "2", Icon: Zap, stamp: "zap" },
+        { label: "Coffee Consumed", value: stats.coffee || "900", Icon: Coffee, stamp: "coffee" },
     ];
     const links = [
         { label: "LinkedIn", href: socials.linkedin || "https://www.linkedin.com/in/muhammad-naufal-bin-mohd-nizam-0603b2279", Icon: Linkedin },
@@ -39,6 +39,22 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
     const [back, setBack] = useState(false);
     const [bounce, setBounce] = useState<"" | "a" | "b">("");
     const [openStat, setOpenStat] = useState<number | null>(null);
+    const [hoverStat, setHoverStat] = useState(-1);
+    const stickerRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+    // Chrome's own hover/click hit-testing flickers on elements inside the tilted 3D card,
+    // so stamps are hit-tested by position: is the pointer inside a stamp's circle?
+    const stickerAt = (x: number, y: number) => {
+        if (back) return -1;
+        return stickerRefs.current.findIndex((el) => {
+            if (!el) return false;
+            const r = el.getBoundingClientRect();
+            const cx = r.left + r.width / 2;
+            const cy = r.top + r.height / 2;
+            const rad = Math.min(r.width, r.height) / 2;
+            return (x - cx) ** 2 + (y - cy) ** 2 <= rad * rad;
+        });
+    };
 
     // Escape closes an open sticker tag
     useEffect(() => {
@@ -92,6 +108,8 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
 
     // Pointer is tracked on the stage, which never moves, so hover can't flicker
     const onMove = (e: React.PointerEvent) => {
+        const hit = stickerAt(e.clientX, e.clientY);
+        if (hit !== hoverStat) setHoverStat(hit);
         if (e.pointerType === "touch" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
         const r = e.currentTarget.getBoundingClientRect();
         const px = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
@@ -100,6 +118,7 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
         kick();
     };
     const onLeave = () => {
+        setHoverStat(-1);
         target.current = { rx: 0, ry: 0, gx: 50, gy: 30 };
         kick();
     };
@@ -128,7 +147,15 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
                 aria-label={back ? "Pass card, back side. Press to flip to the front." : "Pass card, front side. Press to flip to the back."}
                 onPointerMove={onMove}
                 onPointerLeave={onLeave}
-                onClick={flip}
+                onClick={(e) => {
+                    // A click inside a stamp opens its tag, even if Chrome reports the card as the target
+                    const hit = stickerAt(e.clientX, e.clientY);
+                    if (hit >= 0) {
+                        setOpenStat((o) => (o === hit ? null : hit));
+                        return;
+                    }
+                    flip();
+                }}
                 onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
@@ -171,12 +198,15 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
                                             <div className="pf-code">CARD CODE: PX2026-08/FW &nbsp;CODE · FOCUS · CRAFT</div>
                                         </div>
                                         <div className="pf-stickers">
-                                            {statItems.map(({ label, value, Icon }, i) => {
+                                            {statItems.map(({ label, value, stamp }, i) => {
                                                 const open = openStat === i;
                                                 return (
-                                                    <div key={label} className={`pf-sticker-wrap pf-sticker-${i} ${open ? "is-open" : ""}`}>
+                                                    <div key={label} className={`pf-sticker-wrap pf-sticker-${i} ${open ? "is-open" : ""} ${hoverStat === i ? "is-hover" : ""}`}>
                                                         <button
                                                             type="button"
+                                                            ref={(el) => {
+                                                                stickerRefs.current[i] = el;
+                                                            }}
                                                             className="pf-sticker"
                                                             aria-expanded={open}
                                                             aria-label={`${label}: ${value}+`}
@@ -187,7 +217,9 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
                                                             }}
                                                             onKeyDown={(e) => e.stopPropagation()}
                                                         >
-                                                            <Icon size={26} strokeWidth={2.4} />
+                                                            {/* Postmark ink stamp, pre-rendered as an image so it stays crisp and stable while the card moves */}
+                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                            <img className="pf-stamp-img" src={`/assets/passcard/pass-stamp-${stamp}.png`} alt="" draggable={false} />
                                                         </button>
                                                         <div className="pf-tag" role="status" aria-hidden={!open}>
                                                             <span className="pf-tag-value">{value}+</span>
@@ -387,6 +419,15 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
                 .pass-flip.is-back .pass-back {
                     opacity: 1;
                 }
+                /* Only the face you're looking at can receive clicks
+                   (the hidden face sits in the same spot and could otherwise catch them) */
+                .pass-back,
+                .pass-flip.is-back .pass-front {
+                    pointer-events: none;
+                }
+                .pass-flip.is-back .pass-back {
+                    pointer-events: auto;
+                }
 
                 /* Glare that follows the cursor */
                 .pass-glare {
@@ -499,54 +540,74 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
                     letter-spacing: 1px;
                     margin-top: 4px;
                 }
-                /* Stats as stickers slapped on the card; tap one to reveal its tag */
+                /* Stats as postmark ink stamps; tap one to reveal its tag */
                 .pf-stickers {
                     display: flex;
                     align-items: center;
-                    gap: 26px;
-                    padding: 46px 0 6px 6px; /* room above for the tags */
+                    padding: 44px 0 4px 0; /* room above for the tags */
                 }
                 .pf-sticker-wrap {
                     position: relative;
                 }
-                .pf-sticker {
-                    width: 66px;
-                    height: 66px;
-                    border-radius: 50%;
-                    border: 5px solid #fff;
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    padding: 0;
-                    box-shadow: 0 1px 1px rgba(13, 42, 66, 0.15), 0 6px 12px -4px rgba(13, 42, 66, 0.45);
-                    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
-                    outline: none;
+                .pf-sticker-wrap + .pf-sticker-wrap {
+                    margin-left: -8px; /* stamps overlap a little, like a postcard */
                 }
-                /* Each sticker has its own colour and a slightly different tilt */
+                .pf-sticker-wrap.is-hover,
+                .pf-sticker-wrap.is-open {
+                    z-index: 2;
+                }
+                .pf-sticker {
+                    display: block;
+                    width: 86px;
+                    height: 86px;
+                    padding: 0;
+                    border: none;
+                    border-radius: 50%;
+                    background: none;
+                    cursor: pointer;
+                    outline: none;
+                    -webkit-tap-highlight-color: transparent;
+                }
+                /* The button never moves (stable hover); only the stamp picture inside does */
+                .pf-stamp-img {
+                    display: block;
+                    width: 100%;
+                    height: 100%;
+                    opacity: 0.85;
+                    user-select: none;
+                    pointer-events: none;
+                    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+                }
+                /* Each stamp: its own ink shade and angle */
                 .pf-sticker-0 .pf-sticker {
-                    background: #46c1e6;
-                    color: #0d2a42;
-                    transform: rotate(-9deg);
+                    color: #1b4f72;
+                }
+                .pf-sticker-0 .pf-stamp-img {
+                    transform: rotate(-14deg);
                 }
                 .pf-sticker-1 .pf-sticker {
-                    background: #0d2a42;
-                    color: #46c1e6;
-                    transform: rotate(6deg) translateY(6px);
+                    color: #0d2a42;
+                    transform: translateY(10px);
+                }
+                .pf-sticker-1 .pf-stamp-img {
+                    transform: rotate(10deg);
                 }
                 .pf-sticker-2 .pf-sticker {
-                    background: #f4d35e;
-                    color: #0d2a42;
-                    transform: rotate(-4deg) translateY(-3px);
+                    color: #2a7aa8;
+                    transform: translateY(-4px);
                 }
-                .pf-sticker:hover,
-                .pf-sticker:focus-visible,
-                .is-open .pf-sticker {
-                    transform: rotate(0deg) translateY(-3px) scale(1.08) !important;
-                    box-shadow: 0 1px 1px rgba(13, 42, 66, 0.15), 0 12px 18px -6px rgba(13, 42, 66, 0.5);
+                .pf-sticker-2 .pf-stamp-img {
+                    transform: rotate(-5deg);
+                }
+                .is-hover .pf-sticker .pf-stamp-img,
+                .pf-sticker:focus-visible .pf-stamp-img,
+                .is-open .pf-sticker .pf-stamp-img {
+                    opacity: 1;
+                    transform: rotate(0deg) scale(1.07);
                 }
                 .pf-sticker:focus-visible {
-                    box-shadow: 0 0 0 3px #46c1e6, 0 12px 18px -6px rgba(13, 42, 66, 0.5);
+                    outline: 2px dashed #46c1e6;
+                    outline-offset: 2px;
                 }
 
                 /* Tag that pops out above a sticker */
@@ -586,7 +647,7 @@ export default function PassCard({ socials = {}, stats = {} }: { socials?: Socia
                     transform-origin: bottom left;
                 }
                 .pf-sticker-0 .pf-tag::after {
-                    left: 37px;
+                    left: 43px;
                 }
                 .is-open .pf-tag {
                     opacity: 1;

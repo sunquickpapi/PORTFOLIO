@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, Mail, ChevronDown } from "lucide-react";
 import PassCard from "./PassCard";
 
 export default function Hero() {
@@ -37,22 +36,6 @@ export default function Hero() {
                         <p className="value-prop">
                             {profile.tagline || profile.bio || "A passionate Intelligent System Engineer crafting smart solutions."}
                         </p>
-
-
-                        <div className="cta-buttons flex gap-6">
-                            <a href="#projects" className="btn btn-work group">
-                                View Work
-                                <ChevronDown className="w-4 h-4 transition-transform group-hover:translate-y-1" />
-                            </a>
-                            <a href={profile.resume_url || "#"} className="btn btn-cv-dark" download>
-                                <Download className="w-4 h-4" />
-                                Download CV
-                            </a>
-                            <a href="#contact" className="btn btn-contact-minimal">
-                                <Mail className="w-4 h-4" />
-                                Contact Me
-                            </a>
-                        </div>
                     </div>
 
                     <div className="hero-pass">
