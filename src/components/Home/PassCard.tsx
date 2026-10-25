@@ -25,7 +25,6 @@ const STAMP_SLOTS = [
     { x: 196, y: 128 },
     { x: 128, y: 236 },
     { x: 252, y: 222 },
-    { x: 250, y: 330 }, // beside the social icons
 ];
 type StampPos = { slot: number; x: number; y: number; rot: number; size: number; shown: boolean; tagBelow: boolean; tagAlign: "left" | "center" | "right" };
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -376,6 +375,13 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                                                     <Icon size={18} strokeWidth={2.25} />
                                                 </a>
                                             ))}
+                                            {/* route postmark: Melaka to Kedah */}
+                                            <span className="pf-route" role="img" aria-label="From Melaka to Kedah">
+                                                <span className="pf-route-top">FROM · TO</span>
+                                                <span className="pf-route-main">
+                                                    MLK <span className="pf-route-arrow">→</span> KDH
+                                                </span>
+                                            </span>
                                         </div>
                                     </div>
 
@@ -865,6 +871,56 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                     display: flex;
                     align-items: center;
                     gap: 12px;
+                }
+                /* Route postmark, inked like the "Who is he ?" stamp */
+                .pf-route {
+                    position: relative;
+                    margin-left: auto;
+                    margin-right: 2px;
+                    display: inline-flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 2px;
+                    padding: 6px 12px 7px 14px;
+                    color: #1b4f72;
+                    border: 2.5px solid currentColor;
+                    border-radius: 9px;
+                    outline: 1.2px solid currentColor;
+                    outline-offset: -6px;
+                    opacity: 0.86;
+                    transform: rotate(-4deg);
+                    pointer-events: none;
+                    user-select: none;
+                }
+                .pf-route::after {
+                    content: "";
+                    position: absolute;
+                    inset: -4px;
+                    background: url(/assets/passcard/pass-ink-gaps.png) -90px -20px / 160px 160px;
+                    pointer-events: none;
+                }
+                .pf-route-top,
+                .pf-route-main {
+                    position: relative;
+                    z-index: 1;
+                    white-space: nowrap;
+                }
+                .pf-route-top {
+                    font-size: 8px;
+                    font-weight: 700;
+                    letter-spacing: 2px;
+                    padding-left: 2px;
+                    opacity: 0.8;
+                }
+                .pf-route-main {
+                    font-size: 15px;
+                    font-weight: 700;
+                    letter-spacing: 2.5px;
+                    line-height: 1;
+                }
+                .pf-route-arrow {
+                    letter-spacing: 0;
+                    margin: 0 1px;
                 }
                 .pf-social {
                     width: 42px;
