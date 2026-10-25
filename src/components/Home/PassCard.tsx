@@ -586,7 +586,7 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                     position: relative;
                 }
                 .pf-sticker-wrap + .pf-sticker-wrap {
-                    margin-left: -8px; /* stamps overlap a little, like a postcard */
+                    margin-left: 10px; /* shape-cut stamps sit side by side */
                 }
                 .pf-sticker-wrap.is-hover,
                 .pf-sticker-wrap.is-open {
