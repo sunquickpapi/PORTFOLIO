@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Courier_Prime } from "next/font/google";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
@@ -7,7 +8,7 @@ const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], disp
 /**
  * Little paper dossier that sits by the pass card. Textured cover with a wavy cut-out,
  * pages showing behind it, soft contact shadow. On hover the cover eases open and a
- * sheet slides out; clicking opens the résumé.
+ * sheet slides out: the résumé's actual first page, rendered with PDF.js. Click opens the PDF.
  */
 const PAPER =
     "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9 0.35' numOctaves='3' seed='7'/><feColorMatrix values='0 0 0 0 0.05  0 0 0 0 0.16  0 0 0 0 0.26  0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")";
@@ -15,7 +16,47 @@ const PAPER =
 const COVER_MASK =
     "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 214'><path d='M16 0H134A26 26 0 0 1 160 26V80C160 96 143 98 143 116C143 134 160 136 160 152V198A16 16 0 0 1 144 214H16A16 16 0 0 1 0 198V16A16 16 0 0 1 16 0Z'/></svg>\")";
 
+/** Render page 1 of the PDF to a small image, once the browser is idle. */
+function useFirstPage(url: string) {
+    const [img, setImg] = useState<string | null>(null);
+    useEffect(() => {
+        let cancelled = false;
+        setImg(null);
+        const run = async () => {
+            try {
+                const pdfjs = await import("pdfjs-dist");
+                // served as a plain static file so it works with any bundler (copied from pdfjs-dist; keep versions in step)
+                pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+                const doc = await pdfjs.getDocument({ url }).promise;
+                const page = await doc.getPage(1);
+                const base = page.getViewport({ scale: 1 });
+                const viewport = page.getViewport({ scale: 440 / base.width }); // ~3x the shown size, stays crisp
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.round(viewport.width);
+                canvas.height = Math.round(viewport.height);
+                const ctx = canvas.getContext("2d");
+                if (!ctx) return;
+                ctx.fillStyle = "#fff";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                await page.render({ canvas, canvasContext: ctx, viewport }).promise;
+                if (!cancelled) setImg(canvas.toDataURL("image/jpeg", 0.88));
+                doc.destroy();
+            } catch (err) {
+                console.warn("Résumé preview unavailable:", err);
+            }
+        };
+        const w = window as Window & { requestIdleCallback?: (cb: () => void) => number };
+        if (w.requestIdleCallback) w.requestIdleCallback(run);
+        else window.setTimeout(run, 900);
+        return () => {
+            cancelled = true;
+        };
+    }, [url]);
+    return img;
+}
+
 export default function Dossier({ href, date }: { href: string; date?: string }) {
+    const firstPage = useFirstPage(href);
     return (
         <a className={`dossier ${courier.className}`} href={href} target="_blank" rel="noopener noreferrer" aria-label="Open my résumé (PDF)">
             <span className="ds-shadow" aria-hidden="true" />
@@ -31,13 +72,18 @@ export default function Dossier({ href, date }: { href: string; date?: string })
                 </span>
             </span>
 
-            {/* the sheet that slides out on hover */}
+            {/* the résumé's first page slides out on hover */}
             <span className="ds-sheet" aria-hidden="true">
-                <span className="ds-sheet-no">N°01 / CV</span>
-                <span className="ds-sheet-text">
-                    Intelligent System Engineer. Projects, skills &amp; experience, all on one page.
-                </span>
-                <span className="ds-sheet-cta">OPEN FILE ↗</span>
+                {firstPage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img className="ds-sheet-img" src={firstPage} alt="" draggable={false} />
+                ) : (
+                    <span className="ds-sheet-skeleton">
+                        {Array.from({ length: 12 }).map((_, i) => (
+                            <i key={i} style={{ width: `${[40, 70, 92, 85, 60, 94, 88, 72, 90, 66, 84, 50][i]}%` }} />
+                        ))}
+                    </span>
+                )}
             </span>
 
             {/* front cover */}
@@ -131,40 +177,51 @@ export default function Dossier({ href, date }: { href: string; date?: string })
                     background: rgba(13, 42, 66, 0.28);
                 }
 
-                /* sliding sheet */
+                /* sliding sheet: an A4 page */
                 .ds-sheet {
                     position: absolute;
-                    top: 62px;
-                    left: 36px;
-                    width: 150px;
-                    padding: 11px 13px 12px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 7px;
-                    background: ${PAPER}, linear-gradient(180deg, #fbfcfd, #eef3f6);
-                    border-radius: 3px;
-                    box-shadow: 0 1px 0 #fff inset, 0 18px 30px -14px rgba(13, 42, 66, 0.55), 0 2px 6px -2px rgba(13, 42, 66, 0.25);
+                    top: 14px;
+                    left: 26px;
+                    width: 134px;
+                    aspect-ratio: 1 / 1.414;
+                    overflow: hidden;
+                    background: #fff;
+                    border-radius: 2px;
+                    box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.08), 0 22px 34px -16px rgba(13, 42, 66, 0.55),
+                        0 3px 8px -3px rgba(13, 42, 66, 0.28);
                     opacity: 0;
                     transform: translate(0, 6px) rotate(0deg);
                     transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
                 }
-                .ds-sheet-no {
-                    font-size: 8px;
-                    letter-spacing: 1px;
-                    color: rgba(13, 42, 66, 0.55);
+                .ds-sheet-img {
+                    display: block;
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    object-position: top;
+                    user-select: none;
                 }
-                .ds-sheet-text {
-                    font-family: var(--font-geist-sans), Inter, -apple-system, sans-serif;
-                    font-size: 11.5px;
-                    line-height: 1.38;
-                    font-weight: 500;
-                    color: var(--ink);
+                /* placeholder lines while the page renders */
+                .ds-sheet-skeleton {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                    padding: 14px 12px;
                 }
-                .ds-sheet-cta {
-                    font-size: 9px;
-                    font-weight: 700;
-                    letter-spacing: 1.5px;
-                    color: var(--accent);
+                .ds-sheet-skeleton i {
+                    display: block;
+                    height: 3px;
+                    border-radius: 2px;
+                    background: rgba(13, 42, 66, 0.12);
+                }
+                /* paper sheen on the page */
+                .ds-sheet::after {
+                    content: "";
+                    position: absolute;
+                    inset: 0;
+                    background: linear-gradient(120deg, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.35) 55%, rgba(255, 255, 255, 0) 70%),
+                        linear-gradient(90deg, rgba(13, 42, 66, 0.06), rgba(13, 42, 66, 0) 18%);
+                    pointer-events: none;
                 }
 
                 /* cover */
@@ -284,7 +341,7 @@ export default function Dossier({ href, date }: { href: string; date?: string })
                 .dossier:hover .ds-sheet,
                 .dossier:focus-visible .ds-sheet {
                     opacity: 1;
-                    transform: translate(104px, -14px) rotate(4deg);
+                    transform: translate(112px, -26px) rotate(5deg);
                 }
                 .dossier:hover .ds-shadow {
                     transform: scaleX(1.12) translateX(10px);
