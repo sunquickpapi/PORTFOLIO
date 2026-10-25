@@ -744,6 +744,11 @@ export default function PassCard({ socials = {}, stats = {}, onAbout }: { social
                     pointer-events: none;
                 }
                 /* Hover: "pressed harder" - darker ink, straightened, faint ink wash */
+                /* Keep the lettering clear: the worn-ink texture only scuffs the frame */
+                .pf-about > span {
+                    position: relative;
+                    z-index: 1;
+                }
                 .pf-about.is-hover,
                 .pf-about:focus-visible {
                     color: #0d2a42;
