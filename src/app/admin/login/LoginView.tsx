@@ -46,7 +46,14 @@ export default function LoginView() {
                 setError(errorMap[res.error] || "Authentication failed.");
                 setLoading(false);
             } else {
-                router.push("/admin");
+                // return to where sign-in was asked for (same-site paths only), e.g. the Spotify connect link
+                const next = new URLSearchParams(window.location.search).get("callbackUrl");
+                const safe = next && next.startsWith("/") && !next.startsWith("//") ? next : "/admin";
+                if (safe.startsWith("/api/")) {
+                    window.location.assign(safe); // API routes need a full page load, not client navigation
+                    return;
+                }
+                router.push(safe);
                 router.refresh();
             }
         } catch (err) {

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><defs>
+  <linearGradient id="body" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#cfd5da"/><stop offset=".12" stop-color="#f4f6f8"/><stop offset=".5" stop-color="#ffffff"/><stop offset=".86" stop-color="#eef1f4"/><stop offset="1" stop-color="#b9c1c8"/>
+  </linearGradient>
+  <linearGradient id="bodyV" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".7" stop-color="#9aa4ad" stop-opacity=".0"/><stop offset="1" stop-color="#7d8892" stop-opacity=".45"/>
+  </linearGradient>
+  <linearGradient id="lidTop" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#8f99a3"/><stop offset=".35" stop-color="#e9edf0"/><stop offset="1" stop-color="#ffffff"/>
+  </linearGradient>
+  <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#e7ebee"/><stop offset="1" stop-color="#c3cad0"/>
+  </linearGradient>
+  <radialGradient id="cav" cx=".5" cy=".35" r=".7">
+    <stop offset="0" stop-color="#9da6ae"/><stop offset=".7" stop-color="#bfc6cc"/><stop offset="1" stop-color="#d9dee2"/>
+  </radialGradient>
+  <linearGradient id="inner" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#dfe4e8"/><stop offset="1" stop-color="#c9d0d6"/>
+  </linearGradient>
+  <radialGradient id="budHead" cx=".38" cy=".3" r=".8">
+    <stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#eef1f4"/><stop offset="1" stop-color="#a9b2ba"/>
+  </radialGradient>
+  <linearGradient id="stem" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#c3cad1"/><stop offset=".35" stop-color="#ffffff"/><stop offset=".75" stop-color="#eef1f4"/><stop offset="1" stop-color="#aab3bb"/>
+  </linearGradient>
+  <radialGradient id="tip" cx=".4" cy=".35" r=".8">
+    <stop offset="0" stop-color="#f3f5f7"/><stop offset=".6" stop-color="#d4dadf"/><stop offset="1" stop-color="#9ea8b1"/>
+  </radialGradient>
+</defs>
+  <!-- lid standing up behind the base, inner face toward us -->
+  <rect x="30" y="34" width="140" height="62" rx="26" fill="url(#body)"/>
+  <rect x="30.5" y="34.5" width="139" height="61" rx="25.5" fill="none" stroke="#8d98a3" stroke-opacity=".4" stroke-width="1.2"/>
+  <rect x="36" y="40" width="128" height="50" rx="21" fill="url(#inner)"/>
+  <ellipse cx="72" cy="66" rx="24" ry="14" fill="#cdd3d9"/>
+  <ellipse cx="128" cy="66" rx="24" ry="14" fill="#cdd3d9"/>
+  <ellipse cx="72" cy="63" rx="20" ry="10" fill="#d9dee2"/>
+  <ellipse cx="128" cy="63" rx="20" ry="10" fill="#d9dee2"/>
+  <!-- hinge -->
+  <rect x="88" y="88" width="24" height="7" rx="2" fill="#aeb6bd"/>
+  <rect x="88" y="88" width="24" height="2" rx="1" fill="#e9edf0"/>
+</svg>
