@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import PassCard from "./PassCard";
 import Dossier from "./Dossier";
-import Headset from "./Headset";
+import Earbuds from "./Earbuds";
 
 /*
  * Desktop intro: the pass card starts centred and the text is hidden.
@@ -186,8 +186,8 @@ export default function Hero() {
                                 socials={{ linkedin: profile.linkedin_url, github: profile.github_url, instagram: profile.instagram_url }}
                                 stats={{ projects: profile.projects_count, years: profile.experience_years, coffee: profile.coffee_consumed }}
                             />
-                            <div className="hero-headset">
-                                <Headset />
+                            <div className="hero-earbuds">
+                                <Earbuds />
                             </div>
                             <div className="hero-dossier">
                                 <Dossier href={profile.resume_url || "/assets/resume.pdf"} />

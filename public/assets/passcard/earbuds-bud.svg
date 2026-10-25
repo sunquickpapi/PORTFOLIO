@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 120"><defs>
+  <linearGradient id="body" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#cfd5da"/><stop offset=".12" stop-color="#f4f6f8"/><stop offset=".5" stop-color="#ffffff"/><stop offset=".86" stop-color="#eef1f4"/><stop offset="1" stop-color="#b9c1c8"/>
+  </linearGradient>
+  <linearGradient id="bodyV" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".7" stop-color="#9aa4ad" stop-opacity=".0"/><stop offset="1" stop-color="#7d8892" stop-opacity=".45"/>
+  </linearGradient>
+  <linearGradient id="lidTop" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#8f99a3"/><stop offset=".35" stop-color="#e9edf0"/><stop offset="1" stop-color="#ffffff"/>
+  </linearGradient>
+  <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#e7ebee"/><stop offset="1" stop-color="#c3cad0"/>
+  </linearGradient>
+  <radialGradient id="cav" cx=".5" cy=".35" r=".7">
+    <stop offset="0" stop-color="#9da6ae"/><stop offset=".7" stop-color="#bfc6cc"/><stop offset="1" stop-color="#d9dee2"/>
+  </radialGradient>
+  <linearGradient id="inner" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#dfe4e8"/><stop offset="1" stop-color="#c9d0d6"/>
+  </linearGradient>
+  <radialGradient id="budHead" cx=".38" cy=".3" r=".8">
+    <stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#eef1f4"/><stop offset="1" stop-color="#a9b2ba"/>
+  </radialGradient>
+  <linearGradient id="stem" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#c3cad1"/><stop offset=".35" stop-color="#ffffff"/><stop offset=".75" stop-color="#eef1f4"/><stop offset="1" stop-color="#aab3bb"/>
+  </linearGradient>
+  <radialGradient id="tip" cx=".4" cy=".35" r=".8">
+    <stop offset="0" stop-color="#f3f5f7"/><stop offset=".6" stop-color="#d4dadf"/><stop offset="1" stop-color="#9ea8b1"/>
+  </radialGradient>
+</defs>
+  <!-- stem -->
+  <path d="M30 40 L24 108 Q24 114 30 114 L36 114 Q42 114 41 108 L45 42 Z" fill="url(#stem)"/>
+  <rect x="25" y="108" width="15" height="6" rx="3" fill="#b5bec6"/>
+  <ellipse cx="32.5" cy="110" rx="4" ry="2" fill="#6c7782"/>
+  <!-- head -->
+  <path d="M10 30 C8 12 22 4 38 6 C54 8 62 20 58 34 C55 46 44 50 34 48 C22 47 12 42 10 30 Z" fill="url(#budHead)"/>
+  <!-- ear tip -->
+  <ellipse cx="54" cy="24" rx="12" ry="14" fill="url(#tip)" transform="rotate(-15 54 24)"/>
+  <ellipse cx="57" cy="23" rx="5" ry="6.5" fill="#8b959f" transform="rotate(-15 57 23)"/>
+  <!-- sensor + mesh -->
+  <ellipse cx="22" cy="20" rx="5" ry="3.4" fill="#2a2f35" transform="rotate(-20 22 20)"/>
+  <ellipse cx="30" cy="38" rx="3" ry="2" fill="#2a2f35"/>
+  <path d="M16 12 Q24 7 34 8" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <rect x="34" y="50" width="3" height="40" rx="1.5" fill="#fff" opacity=".85" transform="rotate(4 35 70)"/>
+</svg>

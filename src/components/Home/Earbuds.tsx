@@ -17,6 +17,7 @@ type NowPlaying = {
 };
 
 const POLL_MS = 30_000;
+const A = "/assets/passcard/earbuds-";
 
 function ago(iso?: string) {
     if (!iso) return "";
@@ -28,12 +29,14 @@ function ago(iso?: string) {
 }
 
 /**
- * Black over-ear headset by the pass card. Hover (or focus) shows a paper "now playing"
- * ticket with what's on Spotify right now, or the last track played.
+ * White earbud case by the pass card. Click: the lid flips open, both buds pop out and
+ * float, and a paper ticket shows what's on Spotify (or the last track). Click again to close.
  */
-export default function Headset() {
+export default function Earbuds() {
+    const [open, setOpen] = useState(false);
     const [np, setNp] = useState<NowPlaying | null>(null);
     const fetchedAt = useRef(0);
+    const rootRef = useRef<HTMLDivElement>(null);
 
     const load = useCallback(async () => {
         fetchedAt.current = Date.now();
@@ -45,7 +48,6 @@ export default function Headset() {
         }
     }, []);
 
-    // poll gently while the tab is visible
     useEffect(() => {
         load();
         const id = window.setInterval(() => {
@@ -54,37 +56,65 @@ export default function Headset() {
         return () => window.clearInterval(id);
     }, [load]);
 
-    const refreshIfStale = () => {
-        if (Date.now() - fetchedAt.current > 12_000) load();
+    // close on Escape or a click elsewhere on the page
+    useEffect(() => {
+        if (!open) return;
+        const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+        const onDown = (e: PointerEvent) => {
+            if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+        };
+        window.addEventListener("keydown", onKey);
+        window.addEventListener("pointerdown", onDown);
+        return () => {
+            window.removeEventListener("keydown", onKey);
+            window.removeEventListener("pointerdown", onDown);
+        };
+    }, [open]);
+
+    const toggle = () => {
+        setOpen((o) => {
+            if (!o && Date.now() - fetchedAt.current > 12_000) load();
+            return !o;
+        });
     };
 
     const hasTrack = !!np?.title;
     const playing = !!np?.isPlaying && hasTrack;
-    const href = np?.url;
     const label = playing ? "Now playing" : hasTrack ? `Last played · ${ago(np?.playedAt)}` : "Spotify";
 
-    const Tag = href ? "a" : "div";
     return (
-        <Tag
-            className={`headset ${courier.className} ${playing ? "is-playing" : ""}`}
-            {...(href ? { href, target: "_blank", rel: "noopener noreferrer" } : { tabIndex: 0 })}
-            aria-label={hasTrack ? `${label}: ${np?.title} by ${np?.artist}. Open on Spotify.` : "What I'm listening to on Spotify"}
-            onMouseEnter={refreshIfStale}
-            onFocus={refreshIfStale}
-        >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="hs-img" src="/assets/passcard/headset.svg" alt="" draggable={false} />
-
-            {/* little notes drifting up while music is playing */}
-            {playing && (
-                <span className="hs-notes" aria-hidden="true">
-                    <i>♪</i>
-                    <i>♫</i>
-                    <i>♪</i>
+        <div ref={rootRef} className={`earbuds ${courier.className} ${open ? "is-open" : ""} ${playing ? "is-playing" : ""}`}>
+            <button
+                type="button"
+                className="ap-case"
+                aria-expanded={open}
+                aria-label={open ? "Close the earbud case" : "Open the earbud case to see what I'm listening to"}
+                onClick={toggle}
+            >
+                <span className="ap-shadow" aria-hidden="true" />
+                {/* eslint-disable @next/next/no-img-element */}
+                <img className="ap-lid-open" src={`${A}lid-open.svg`} alt="" draggable={false} />
+                <img className="ap-base-back" src={`${A}base-back.svg`} alt="" draggable={false} />
+                <span className="ap-bud ap-bud-l" aria-hidden="true">
+                    <img src={`${A}bud.svg`} alt="" draggable={false} />
                 </span>
-            )}
+                <span className="ap-bud ap-bud-r" aria-hidden="true">
+                    <img src={`${A}bud.svg`} alt="" draggable={false} />
+                </span>
+                <img className="ap-base-front" src={`${A}base-front.svg`} alt="" draggable={false} />
+                <img className="ap-closed" src={`${A}closed.svg`} alt="" draggable={false} />
+                {/* eslint-enable @next/next/no-img-element */}
+            </button>
 
-            <span className="hs-ticket" aria-hidden="true">
+            <a
+                className="ap-ticket"
+                href={np?.url || "https://open.spotify.com"}
+                target="_blank"
+                rel="noopener noreferrer"
+                tabIndex={open && hasTrack ? 0 : -1}
+                aria-hidden={!open}
+                onClick={(e) => !hasTrack && e.preventDefault()}
+            >
                 <span className="hs-head">
                     {playing ? (
                         <span className="hs-eq">
@@ -115,104 +145,171 @@ export default function Headset() {
                     <span className="hs-empty">{np === null ? "Tuning in…" : "Nothing playing right now."}</span>
                 )}
                 {hasTrack && <span className="hs-cta">Listen on Spotify ↗</span>}
-            </span>
+            </a>
 
             <style jsx>{`
-                .headset {
+                .earbuds {
                     --ink: #0d2a42;
                     --ink-2: #1b4f72;
                     --accent: #3a99c9;
+                    --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
                     position: relative;
-                    display: block;
-                    width: 192px;
-                    height: 209px;
-                    text-decoration: none;
+                    width: 176px;
+                    height: 176px;
                     color: var(--ink);
+                }
+                .ap-case {
+                    position: absolute;
+                    inset: 0;
+                    padding: 0;
+                    border: 0;
+                    background: none;
                     cursor: pointer;
                     outline: none;
                     -webkit-tap-highlight-color: transparent;
+                    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
                 }
-                .hs-img {
-                    display: block;
+                .ap-case:hover {
+                    transform: translateY(-4px) rotate(-2deg);
+                }
+                .ap-case:focus-visible {
+                    outline: 2px dashed var(--accent);
+                    outline-offset: 2px;
+                    border-radius: 24px;
+                }
+                .ap-case img,
+                .ap-bud {
+                    position: absolute;
+                    user-select: none;
+                    pointer-events: none;
+                }
+                .ap-case > img {
+                    inset: 0;
                     width: 100%;
                     height: 100%;
-                    user-select: none;
-                    transform-origin: 50% 85%;
-                    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
                 }
-                .headset:hover .hs-img,
-                /* the site-wide link hover dims links; this one keeps its full ink */
-                .headset:hover {
+                .ap-shadow {
+                    position: absolute;
+                    left: 14%;
+                    right: 14%;
+                    bottom: 4%;
+                    height: 14%;
+                    border-radius: 50%;
+                    background: radial-gradient(closest-side, rgba(13, 42, 66, 0.42), rgba(13, 42, 66, 0));
+                    filter: blur(5px);
+                    transition: transform 0.5s ease, opacity 0.5s ease;
+                }
+                .ap-case:hover .ap-shadow {
+                    transform: scale(0.94);
+                    opacity: 0.8;
+                }
+
+                /* lid: the closed shell squashes up toward the hinge, then the open lid unfolds behind */
+                .ap-closed {
+                    transform-origin: 50% 46%;
+                    transition: transform 0.25s ease-out 0.42s, opacity 0.06s linear 0.42s;
+                }
+                .ap-lid-open {
+                    opacity: 0;
+                    transform: scaleY(0.15);
+                    transform-origin: 50% 47%;
+                    transition: transform 0.26s ease-in 0.2s, opacity 0.06s linear 0.44s;
+                }
+                .ap-base-back,
+                .ap-base-front {
+                    opacity: 0;
+                    transition: opacity 0.01s linear 0.46s;
+                }
+                .is-open .ap-closed {
+                    opacity: 0;
+                    transform: scaleY(0.7) translateY(-6px);
+                    transition: transform 0.2s ease-in, opacity 0.08s linear 0.1s;
+                }
+                .is-open .ap-lid-open {
                     opacity: 1;
+                    transform: scaleY(1);
+                    transition: opacity 0.05s linear 0.12s, transform 0.42s var(--spring) 0.12s;
                 }
-                .headset:focus-visible .hs-img {
-                    transform: translateY(-6px) rotate(-4deg) scale(1.03);
+                .is-open .ap-base-back,
+                .is-open .ap-base-front {
+                    opacity: 1;
+                    transition-delay: 0.1s;
                 }
-                .headset.is-playing .hs-img {
-                    animation: hs-bob 1.6s ease-in-out infinite;
+
+                /* buds sit hidden in the case, then pop out and hover */
+                .ap-bud {
+                    top: 30%;
+                    width: 37%;
+                    opacity: 0;
+                    transition: transform 0.35s ease-in, opacity 0.2s linear 0.15s;
                 }
-                .headset.is-playing:hover .hs-img {
-                    animation: none;
+                .ap-bud img {
+                    position: static;
+                    display: block;
+                    width: 100%;
+                    filter: drop-shadow(0 8px 8px rgba(13, 42, 66, 0.22));
                 }
-                @keyframes hs-bob {
+                .ap-bud-l {
+                    left: 18%;
+                    transform: translateY(18%) rotate(-6deg);
+                }
+                .ap-bud-r {
+                    left: 47%;
+                    transform: translateY(18%) rotate(6deg);
+                }
+                .ap-bud-r img {
+                    transform: scaleX(-1);
+                }
+                .is-open .ap-bud {
+                    opacity: 1;
+                    transition: transform 0.75s var(--spring), opacity 0.15s linear;
+                }
+                .is-open .ap-bud-l {
+                    transform: translate(-30%, -68%) rotate(-24deg);
+                    transition-delay: 0.38s;
+                }
+                .is-open .ap-bud-r {
+                    transform: translate(32%, -80%) rotate(18deg);
+                    transition-delay: 0.5s;
+                }
+                .is-open .ap-bud img {
+                    animation: ap-float 3.2s ease-in-out 1.3s infinite;
+                }
+                .is-open .ap-bud-r img {
+                    animation-name: ap-float-r;
+                    animation-delay: 1.6s;
+                }
+                @keyframes ap-float {
                     0%,
                     100% {
                         transform: translateY(0) rotate(0);
                     }
                     50% {
-                        transform: translateY(-3px) rotate(-1.2deg);
+                        transform: translateY(-5px) rotate(-3deg);
                     }
                 }
-                .headset:focus-visible {
-                    outline: 2px dashed var(--accent);
-                    outline-offset: 4px;
-                    border-radius: 14px;
-                }
-
-                /* music notes */
-                .hs-notes i {
-                    position: absolute;
-                    top: 34%;
-                    left: 18%;
-                    font-style: normal;
-                    font-size: 15px;
-                    color: var(--ink-2);
-                    opacity: 0;
-                    animation: hs-note 3.6s ease-out infinite;
-                }
-                .hs-notes i:nth-child(2) {
-                    left: 6%;
-                    font-size: 12px;
-                    animation-delay: 1.2s;
-                }
-                .hs-notes i:nth-child(3) {
-                    left: 28%;
-                    animation-delay: 2.4s;
-                }
-                @keyframes hs-note {
-                    0% {
-                        opacity: 0;
-                        transform: translate(0, 0) rotate(-8deg);
-                    }
-                    20% {
-                        opacity: 0.8;
-                    }
+                @keyframes ap-float-r {
+                    0%,
                     100% {
-                        opacity: 0;
-                        transform: translate(-22px, -58px) rotate(10deg);
+                        transform: scaleX(-1) translateY(0) rotate(0);
+                    }
+                    50% {
+                        transform: scaleX(-1) translateY(-6px) rotate(-3deg);
                     }
                 }
 
                 /* paper ticket */
-                .hs-ticket {
+                .ap-ticket {
                     position: absolute;
-                    left: -224px;
-                    bottom: 58%;
+                    left: -232px;
+                    bottom: 46%;
                     width: 236px;
                     padding: 11px 12px 12px;
                     display: flex;
                     flex-direction: column;
                     gap: 9px;
+                    text-decoration: none;
+                    color: var(--ink);
                     background: linear-gradient(180deg, #fbfcfd, #eef3f6);
                     border-radius: 6px;
                     box-shadow: 0 1px 0 #fff inset, 0 0 0 1px rgba(13, 42, 66, 0.07), 0 22px 34px -16px rgba(13, 42, 66, 0.5),
@@ -221,11 +318,13 @@ export default function Headset() {
                     transform: translate(18px, 10px) rotate(-3deg) scale(0.96);
                     transform-origin: 90% 100%;
                     pointer-events: none;
-                    transition: opacity 0.3s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+                    transition: opacity 0.25s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
                     z-index: 4;
                 }
-                /* perforated tear line along the top, like a ticket stub */
-                .hs-ticket::before {
+                .ap-ticket:hover {
+                    opacity: 1;
+                }
+                .ap-ticket::before {
                     content: "";
                     position: absolute;
                     left: 10px;
@@ -233,10 +332,11 @@ export default function Headset() {
                     top: 31px;
                     border-top: 1.5px dashed rgba(13, 42, 66, 0.18);
                 }
-                .headset:hover .hs-ticket,
-                .headset:focus-visible .hs-ticket {
+                .is-open .ap-ticket {
                     opacity: 1;
                     transform: translate(0, 0) rotate(-2deg) scale(1);
+                    pointer-events: auto;
+                    transition-delay: 0.55s;
                 }
                 .hs-head {
                     display: flex;
@@ -319,7 +419,6 @@ export default function Headset() {
                     font-weight: 700;
                     letter-spacing: -0.2px;
                     line-height: 1.2;
-                    color: var(--ink);
                     display: -webkit-box;
                     -webkit-line-clamp: 2;
                     -webkit-box-orient: vertical;
@@ -348,20 +447,19 @@ export default function Headset() {
                 }
 
                 @media (prefers-reduced-motion: reduce) {
-                    .headset.is-playing .hs-img,
-                    .hs-eq i,
-                    .hs-notes i {
+                    .ap-case,
+                    .ap-case img,
+                    .ap-bud,
+                    .ap-ticket {
+                        transition-duration: 0.01ms !important;
+                        transition-delay: 0s !important;
+                    }
+                    .is-open .ap-bud img,
+                    .hs-eq i {
                         animation: none;
-                    }
-                    .hs-notes {
-                        display: none;
-                    }
-                    .hs-img,
-                    .hs-ticket {
-                        transition-duration: 0.01ms;
                     }
                 }
             `}</style>
-        </Tag>
+        </div>
     );
 }

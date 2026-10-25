@@ -10770,25 +10770,25 @@ html.fvl-loading body {
   .hero-dossier { animation: none; }
 }
 
-/* Spotify headset resting by the pass card's bottom-left corner */
-.hero-headset {
+/* Earbud case (Spotify) resting by the pass card's bottom-left corner */
+.hero-earbuds {
   position: absolute;
-  left: -122px;
-  bottom: -122px;
+  left: -112px;
+  bottom: -104px;
   z-index: 3;
-  transform: rotate(-6deg);
-  animation: hero-headset-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.75s both;
+  transform: rotate(-5deg);
+  animation: hero-earbuds-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.75s both;
 }
-@keyframes hero-headset-in {
-  from { opacity: 0; transform: translateY(18px) rotate(-12deg); }
-  to { opacity: 1; transform: rotate(-6deg); }
+@keyframes hero-earbuds-in {
+  from { opacity: 0; transform: translateY(18px) rotate(-11deg); }
+  to { opacity: 1; transform: rotate(-5deg); }
 }
 @media (max-width: 1280px) {
-  .hero-headset { left: -70px; }
+  .hero-earbuds { left: -64px; }
 }
 @media (max-width: 1024px) {
-  .hero-headset { display: none; }
+  .hero-earbuds { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hero-headset { animation: none; }
+  .hero-earbuds { animation: none; }
 }
