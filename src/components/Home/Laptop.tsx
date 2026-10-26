@@ -1,14 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
-import LaptopShowcase, { prefetchProjects } from "./LaptopShowcase";
+import { useRouter } from "next/navigation";
 
 /**
  * Sky-blue laptop by the pass card's top-right corner, built from real 3D planes.
  * At rest: closed, seen from above (embossed FVL on the lid).
  * On hover / focus: the lid swings open on its hinge, then the laptop tilts back so the
- * screen faces you ("Stacks & Projects"). Leaving reverses it. Click opens the
- * Stacks & Projects showcase (LaptopShowcase). No brand marks.
+ * screen faces you ("Checkout my projects"). Leaving reverses it. Click opens the
+ * Projects page. No brand marks.
  *
  * Geometry: base and lid are W×D planes hinged on their top edge. Opening the lid by
  * LID° and tilting the whole laptop by (180 − LID)° puts the screen flat toward the viewer.
@@ -29,26 +28,17 @@ const RIBBONS = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 110" p
 </svg>`;
 
 export default function Laptop() {
-    const ref = useRef<HTMLAnchorElement>(null);
-    const [from, setFrom] = useState<DOMRect | null>(null);
+    const router = useRouter();
     return (
-        <>
         <a
-            ref={ref}
-            className={`laptop ${from ? "is-active" : ""}`}
-            href="#projects"
-            aria-label="Stacks & Projects: open the project showcase"
-            aria-haspopup="dialog"
-            onMouseEnter={() => prefetchProjects()}
-            onFocus={() => prefetchProjects()}
+            className="laptop"
+            href="/projects"
+            aria-label="Checkout my projects"
+            onMouseEnter={() => router.prefetch("/projects")}
             onClick={(e) => {
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
                 e.preventDefault();
-                if (from) {
-                    setFrom(null); // second click closes
-                    return;
-                }
-                const r = ref.current?.getBoundingClientRect();
-                if (r) setFrom(r);
+                router.push("/projects");
             }}
         >
             <span className="lp-shadow" aria-hidden="true" />
@@ -71,9 +61,9 @@ export default function Laptop() {
                             <span className="lp-display">
                                 <span className="lp-ribbons" dangerouslySetInnerHTML={{ __html: RIBBONS }} />
                                 <span className="lp-title">
-                                    Stacks &amp;
+                                    Checkout
                                     <br />
-                                    Projects
+                                    my projects
                                 </span>
                                 <span className="lp-underline" />
                             </span>
@@ -136,8 +126,7 @@ export default function Laptop() {
                     transition: transform 0.6s var(--ease) 0s;
                 }
                 .laptop:hover .lp-obj,
-                .laptop:focus-visible .lp-obj,
-                .laptop.is-active .lp-obj {
+                .laptop:focus-visible .lp-obj {
                     /* move the hinge down so the open laptop stays centred, then tilt */
                     transform: translateY(${D - 18}px) rotateX(${TILT}deg);
                     transition: transform 0.65s var(--ease) 0.32s;
@@ -199,8 +188,7 @@ export default function Laptop() {
                     transition: transform 0.55s var(--ease) 0.5s;
                 }
                 .laptop:hover .lp-lid,
-                .laptop:focus-visible .lp-lid,
-                .laptop.is-active .lp-lid {
+                .laptop:focus-visible .lp-lid {
                     transform: translateZ(3px) rotateX(${LID}deg);
                     transition: transform 0.6s var(--ease) 0s;
                 }
@@ -304,7 +292,7 @@ export default function Laptop() {
                     transition: transform 0.65s var(--ease) 0.2s, opacity 0.65s ease 0.2s;
                 }
                 .laptop:hover .lp-shadow,
-                .laptop.is-active .lp-shadow {
+                .laptop:focus-visible .lp-shadow {
                     transform: scaleX(0.9);
                     opacity: 0.85;
                 }
@@ -326,13 +314,7 @@ export default function Laptop() {
                         transition-delay: 0s;
                     }
                 }
-                /* stays open, facing you, while its showcase is out */
-                .laptop.is-active {
-                    z-index: 30;
-                }
             `}</style>
         </a>
-        {from && <LaptopShowcase from={from} anchor={ref} onClose={() => setFrom(null)} />}
-        </>
     );
 }
