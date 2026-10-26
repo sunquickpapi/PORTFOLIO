@@ -11023,21 +11023,60 @@ html.fvl-loading body {
   }
 }
 
-/* Laptop ("Stacks & Projects") resting by the pass card's top-right corner */
+/* Laptop ("Checkout my projects") resting right of the AirPods case, tucked just under it */
 .hero-laptop {
   position: absolute;
-  right: -170px;
-  top: -176px;
-  z-index: 3;
-  transform: rotate(4deg);
+  left: 14px;
+  bottom: -178px;
+  z-index: 2; /* the AirPods case (z 3) overlaps its left edge a little */
+  transform: rotate(-2deg);
   animation: hero-laptop-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.9s both;
 }
 @keyframes hero-laptop-in {
-  from { opacity: 0; transform: translateY(-16px) rotate(9deg); }
-  to { opacity: 1; transform: rotate(4deg); }
+  from { opacity: 0; transform: translateY(18px) rotate(-6deg); }
+  to { opacity: 1; transform: rotate(-2deg); }
 }
 @media (max-width: 1280px) {
-  .hero-laptop { right: -96px; }
+  .hero-laptop { left: 62px; }
+}
+
+/* Card, AirPods, laptop and file make room for whichever one is hovered.
+   Uses the separate `translate` property so it never fights their rotate/entry animations. */
+.hero-pass-move > .pass,
+.hero-earbuds,
+.hero-laptop,
+.hero-dossier {
+  translate: 0 0;
+  transition: translate 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hero-earbuds:hover,
+.hero-laptop:hover,
+.hero-dossier:hover,
+.hero-laptop:focus-within,
+.hero-dossier:focus-within {
+  z-index: 6;
+}
+/* hovering the card: the three objects ease outward */
+.hero-pass-move:has(> .pass:hover) .hero-earbuds { translate: -16px 14px; }
+.hero-pass-move:has(> .pass:hover) .hero-laptop { translate: 0 18px; }
+.hero-pass-move:has(> .pass:hover) .hero-dossier { translate: 16px 14px; }
+/* hovering the AirPods */
+.hero-pass-move:has(.hero-earbuds:hover) > .pass { translate: 8px -8px; }
+.hero-pass-move:has(.hero-earbuds:hover) .hero-laptop { translate: 30px 6px; }
+.hero-pass-move:has(.hero-earbuds:hover) .hero-dossier { translate: 12px 0; }
+/* hovering the laptop (it opens up toward the card) */
+.hero-pass-move:has(.hero-laptop:hover, .hero-laptop:focus-within) > .pass { translate: 0 -14px; }
+.hero-pass-move:has(.hero-laptop:hover, .hero-laptop:focus-within) .hero-earbuds { translate: -30px 6px; }
+.hero-pass-move:has(.hero-laptop:hover, .hero-laptop:focus-within) .hero-dossier { translate: 24px 6px; }
+/* hovering the file */
+.hero-pass-move:has(.hero-dossier:hover) > .pass { translate: -10px -8px; }
+.hero-pass-move:has(.hero-dossier:hover) .hero-laptop { translate: -18px 6px; }
+.hero-pass-move:has(.hero-dossier:hover) .hero-earbuds { translate: -10px 4px; }
+@media (prefers-reduced-motion: reduce) {
+  .hero-pass-move > .pass,
+  .hero-earbuds,
+  .hero-laptop,
+  .hero-dossier { transition: none; }
 }
 @media (max-width: 1024px) {
   .hero-laptop { display: none; }
