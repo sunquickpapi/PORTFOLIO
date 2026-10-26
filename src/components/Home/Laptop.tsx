@@ -35,7 +35,7 @@ export default function Laptop() {
         <>
         <a
             ref={ref}
-            className={`laptop ${from ? "is-away" : ""}`}
+            className={`laptop ${from ? "is-active" : ""}`}
             href="#projects"
             aria-label="Stacks & Projects: open the project showcase"
             aria-haspopup="dialog"
@@ -43,7 +43,11 @@ export default function Laptop() {
             onFocus={() => prefetchProjects()}
             onClick={(e) => {
                 e.preventDefault();
-                const r = ref.current?.querySelector(".lp-lid")?.getBoundingClientRect() || ref.current?.getBoundingClientRect();
+                if (from) {
+                    setFrom(null); // second click closes
+                    return;
+                }
+                const r = ref.current?.getBoundingClientRect();
                 if (r) setFrom(r);
             }}
         >
@@ -132,7 +136,8 @@ export default function Laptop() {
                     transition: transform 0.6s var(--ease) 0s;
                 }
                 .laptop:hover .lp-obj,
-                .laptop:focus-visible .lp-obj {
+                .laptop:focus-visible .lp-obj,
+                .laptop.is-active .lp-obj {
                     /* move the hinge down so the open laptop stays centred, then tilt */
                     transform: translateY(${D - 18}px) rotateX(${TILT}deg);
                     transition: transform 0.65s var(--ease) 0.32s;
@@ -194,7 +199,8 @@ export default function Laptop() {
                     transition: transform 0.55s var(--ease) 0.5s;
                 }
                 .laptop:hover .lp-lid,
-                .laptop:focus-visible .lp-lid {
+                .laptop:focus-visible .lp-lid,
+                .laptop.is-active .lp-lid {
                     transform: translateZ(3px) rotateX(${LID}deg);
                     transition: transform 0.6s var(--ease) 0s;
                 }
@@ -297,7 +303,8 @@ export default function Laptop() {
                     filter: blur(6px);
                     transition: transform 0.65s var(--ease) 0.2s, opacity 0.65s ease 0.2s;
                 }
-                .laptop:hover .lp-shadow {
+                .laptop:hover .lp-shadow,
+                .laptop.is-active .lp-shadow {
                     transform: scaleX(0.9);
                     opacity: 0.85;
                 }
@@ -319,15 +326,13 @@ export default function Laptop() {
                         transition-delay: 0s;
                     }
                 }
-                /* hidden while its enlarged copy is on screen */
-                .laptop.is-away {
-                    opacity: 0;
-                    pointer-events: none;
-                    transition: opacity 0.15s ease;
+                /* stays open, facing you, while its showcase is out */
+                .laptop.is-active {
+                    z-index: 30;
                 }
             `}</style>
         </a>
-        {from && <LaptopShowcase from={from} onClose={() => setFrom(null)} />}
+        {from && <LaptopShowcase from={from} anchor={ref} onClose={() => setFrom(null)} />}
         </>
     );
 }

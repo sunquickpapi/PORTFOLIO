@@ -1,25 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Courier_Prime } from "next/font/google";
-import { X } from "lucide-react";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
 
-type Project = { id: string; title: string; image_url?: string | null; tech_stack?: string[] | null };
+type Project = { id: string; title: string; image_url?: string | null; tech_stack?: string[] | null; category?: string | null };
 
 let cache: Project[] | null = null;
 let loading: Promise<Project[]> | null = null;
 
-/** Fetch the projects once (called on hover, so the showcase opens instantly). */
+/** Projects only (photography left out for now). Fetched once, on hover. */
 export function prefetchProjects(): Promise<Project[]> {
     if (cache) return Promise.resolve(cache);
     if (!loading) {
         loading = fetch("/api/projects")
             .then((r) => r.json())
             .then((d) => {
-                cache = Array.isArray(d) ? d.filter((p: Project) => p.image_url || p.tech_stack?.length) : [];
+                cache = Array.isArray(d)
+                    ? d.filter((p: Project) => (p.category || "").toLowerCase() !== "photography" && (p.image_url || p.tech_stack?.length))
+                    : [];
                 return cache;
             })
             .catch(() => {
@@ -41,7 +42,6 @@ const LOGOS: Record<string, string> = {
     sqlite: "sqlite",
     "hugging face transformers": "huggingface",
     "hugging face": "huggingface",
-    clip: "openai",
     leaflet: "leaflet",
     openstreetmap: "openstreetmap",
     swiftui: "swift",
@@ -67,7 +67,6 @@ const LOGOS: Record<string, string> = {
     laravel: "laravel",
     flutter: "flutter",
     kotlin: "kotlin",
-    java: "openjdk",
     git: "git",
     github: "github",
     vercel: "vercel",
@@ -88,7 +87,6 @@ const monogram = (t: string) =>
         .join("")
         .toUpperCase();
 
-/** Folder colours: soft paper-blues in the site's palette. */
 const FOLDERS = [
     ["#e6f2f9", "#c4e2f3"],
     ["#d3eaf6", "#a6d1ec"],
@@ -117,15 +115,35 @@ function TechCase({ name }: { name: string }) {
     );
 }
 
+// sizes
+const CASE = 76;
+const CELL = 84;
+const PILE_W = 300;
+const FOLDER_H = 212;
+const PEEK = 18;
+const FRONT_GAP = 14;
+
 /**
- * Stacks & Projects, opened from the hero laptop. Left: a 3D row of tech cases (logo +
- * name). Right: a pile of project folders (name on the tab, main image inside). Pick a
- * folder and it is pulled up out of the pile while its tech cases slide out of the row.
+ * Stacks & Projects, laid out around the hero laptop (no zoom, no overlay).
+ * Left of the laptop: a row of tech cases. Right of it (or below, if there's no room):
+ * a pile of project folders. Picking a folder lays it in front with its main image and
+ * pops that project's tech cases out of the row into a tidy grid.
  */
-export default function LaptopShowcase({ onClose }: { from?: DOMRect; onClose: () => void }) {
+export default function LaptopShowcase({
+    from,
+    anchor,
+    onClose,
+}: {
+    from: DOMRect;
+    anchor: React.RefObject<HTMLElement | null>;
+    onClose: () => void;
+}) {
     const [projects, setProjects] = useState<Project[] | null>(cache);
     const [sel, setSel] = useState(0);
     const [shown, setShown] = useState(false);
+    const [rect, setRect] = useState(from);
+    const casesRef = useRef<HTMLDivElement>(null);
+    const pileRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!cache) prefetchProjects().then(setProjects);
@@ -135,104 +153,130 @@ export default function LaptopShowcase({ onClose }: { from?: DOMRect; onClose: (
 
     const close = useCallback(() => {
         setShown(false);
-        window.setTimeout(onClose, 450);
+        window.setTimeout(onClose, 380);
     }, [onClose]);
 
     const list = projects || [];
     const n = list.length;
 
+    // close on Esc, a click elsewhere or scrolling; follow the laptop on resize
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key === "Escape") close();
             if (e.key === "ArrowDown" || e.key === "ArrowRight") setSel((i) => (n ? (i + 1) % n : 0));
             if (e.key === "ArrowUp" || e.key === "ArrowLeft") setSel((i) => (n ? (i - 1 + n) % n : 0));
         };
+        const onDown = (e: PointerEvent) => {
+            const t = e.target as Node;
+            if (casesRef.current?.contains(t) || pileRef.current?.contains(t) || anchor.current?.contains(t)) return;
+            close();
+        };
+        const onScroll = () => close();
+        const onResize = () => anchor.current && setRect(anchor.current.getBoundingClientRect());
         window.addEventListener("keydown", onKey);
-        const prev = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
+        window.addEventListener("pointerdown", onDown);
+        window.addEventListener("scroll", onScroll, { passive: true });
+        window.addEventListener("resize", onResize);
         return () => {
             window.removeEventListener("keydown", onKey);
-            document.body.style.overflow = prev;
+            window.removeEventListener("pointerdown", onDown);
+            window.removeEventListener("scroll", onScroll);
+            window.removeEventListener("resize", onResize);
         };
-    }, [close, n]);
+    }, [close, n, anchor]);
 
-    // every technology once, in the order projects list them
+    // keep following the laptop if it moves (e.g. its float or a layout change)
+    useLayoutEffect(() => {
+        if (anchor.current) setRect(anchor.current.getBoundingClientRect());
+    }, [anchor]);
+
     const techs = useMemo(() => {
         const seen = new Map<string, string>();
         list.forEach((p) => (p.tech_stack || []).forEach((t) => t && !seen.has(t.toLowerCase()) && seen.set(t.toLowerCase(), t)));
         return [...seen.values()];
     }, [list]);
-    const active = useMemo(
-        () => new Set((list[sel]?.tech_stack || []).map((t) => t.toLowerCase())),
-        [list, sel]
-    );
+    const maxActive = useMemo(() => list.reduce((m, p) => Math.max(m, p.tech_stack?.length || 0), 0), [list]);
     const activeOrder = useMemo(() => (list[sel]?.tech_stack || []).map((t) => t.toLowerCase()), [list, sel]);
     const project = list[sel];
 
-    // row geometry: cases recede up and to the right
-    const STEP_X = 24;
-    const STEP_Y = -13;
-    const STEP_Z = -38;
-    // pile geometry: the picked folder sits in front, the others peek out above it as tabs
-    const PEEK = 22;
-    const FRONT_GAP = 18;
+    // ----- placement around the laptop -----
+    const vw = typeof window !== "undefined" ? window.innerWidth : 1440;
+    const top = Math.max(92, rect.top - 40);
+    // tech panel lives in the empty space left of the pass card, so nothing covers the card
+    const card = anchor.current?.closest(".hero-pass-move")?.getBoundingClientRect();
+    const buds = anchor.current?.closest(".hero-pass-move")?.querySelector(".hero-earbuds")?.getBoundingClientRect();
+    const leftEdge = Math.min(card ? card.left : rect.left, buds && buds.width ? buds.left : Infinity);
+    const casesW = Math.max(300, Math.min(460, leftEdge - 24 - 16));
+    const casesLeft = Math.max(16, leftEdge - 24 - casesW);
+    const cols = Math.max(3, Math.floor((casesW - 36) / CELL));
+    const rows = Math.max(1, Math.ceil(maxActive / cols));
+    const RAIL = 112; // space for the stacked row at the bottom
+    const casesH = 70 + rows * CELL + RAIL;
+    const casesTop = card ? Math.max(92, card.top + card.height / 2 - casesH / 2) : top;
+    const step = techs.length > 1 ? Math.min(14, (casesW - 44 - CASE - 30) / (techs.length - 1)) : 0;
+    const roomRight = vw - rect.right - 18 - 16;
+    const pileOnRight = roomRight >= 260;
+    const pileW = pileOnRight ? Math.min(PILE_W, roomRight) : PILE_W;
+    const pileLeft = pileOnRight ? rect.right + 18 : Math.min(vw - 16 - PILE_W, rect.left + rect.width / 2 - PILE_W / 2);
+    const pileTop = pileOnRight ? top : rect.bottom + 14;
+    const pileH = Math.max(0, n - 2) * PEEK + FRONT_GAP + FOLDER_H;
 
     return createPortal(
-        <div className={`scs ${shown ? "is-in" : ""}`} role="dialog" aria-modal="true" aria-label="Stacks and projects">
-            <div className="scs-backdrop" onClick={close} />
-
-            <header className="scs-head">
-                <span className={`scs-kicker ${courier.className}`}>STACKS &amp; PROJECTS</span>
-                <span className="scs-title">{project ? project.title : "Loading…"}</span>
-                {project && (
-                    <span className={`scs-count ${courier.className}`}>
-                        N°{String(sel + 1).padStart(2, "0")} / {String(n).padStart(2, "0")} · {project.tech_stack?.length || 0} in the stack
-                    </span>
-                )}
-            </header>
-
-            {/* LEFT: tech cases in a row */}
-            <section className="scs-stack" aria-label="Tech stack">
-                <div className="scs-rail">
-                    {techs.map((t, i) => {
-                        const on = active.has(t.toLowerCase());
-                        // where this case lands when it pops out: a tidy 4-column grid beside the row
-                        const k = on ? activeOrder.indexOf(t.toLowerCase()) : 0;
-                        const gc = k % 4;
-                        const gr = Math.floor(k / 4);
-                        return (
-                            <div
-                                key={t}
-                                className={`tc ${on ? "is-on" : ""}`}
-                                style={
-                                    {
-                                        "--x": `${i * STEP_X}px`,
-                                        "--y": `${i * STEP_Y}px`,
-                                        "--z": `${i * STEP_Z}px`,
-                                        "--d": `${i * 25}ms`,
-                                        "--gx": `${300 + gc * 128 + (gr % 2) * 30}px`,
-                                        "--gy": `${-gr * 132}px`,
-                                        "--pd": `${k * 45}ms`,
-                                        zIndex: on ? 200 + k : techs.length - i,
-                                    } as React.CSSProperties
-                                }
-                                title={t}
-                            >
-                                <TechCase name={t} />
-                            </div>
-                        );
-                    })}
+        <div className={`scs ${shown ? "is-in" : ""}`}>
+            {/* LEFT of the laptop: tech cases */}
+            <div ref={casesRef} className="scs-panel scs-cases" style={{ left: casesLeft, top: casesTop, width: casesW, height: casesH }}>
+                <div className="scs-head">
+                    <span className={`scs-kicker ${courier.className}`}>TECH STACK</span>
+                    <span className="scs-title">{project ? project.title : "Loading…"}</span>
                 </div>
-            </section>
+                <div className="scs-stage">
+                    <div className="scs-rail">
+                        {techs.map((t, i) => {
+                            const k = activeOrder.indexOf(t.toLowerCase());
+                            const on = k >= 0;
+                            const gc = on ? k % cols : 0;
+                            const gr = on ? Math.floor(k / cols) : 0;
+                            return (
+                                <div
+                                    key={t}
+                                    className={`tc ${on ? "is-on" : ""}`}
+                                    style={
+                                        {
+                                            "--x": `${i * step}px`,
+                                            "--y": `${-i * 2}px`,
+                                            "--z": `${-i * 24}px`,
+                                            "--gx": `${gc * CELL}px`,
+                                            "--gy": `${-(casesH - 22 - 66 - CASE - gr * CELL)}px`,
+                                            "--d": `${i * 18}ms`,
+                                            "--pd": `${Math.max(0, k) * 40}ms`,
+                                            zIndex: on ? 200 + k : techs.length - i,
+                                        } as React.CSSProperties
+                                    }
+                                    title={t}
+                                >
+                                    <TechCase name={t} />
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
 
-            {/* RIGHT: pile of project folders */}
-            <section className="scs-pile" aria-label="Projects">
-                <div className="scs-files" style={{ height: Math.max(0, n - 2) * PEEK + FRONT_GAP + 300 }}>
+            {/* RIGHT of the laptop: project folders */}
+            <div
+                ref={pileRef}
+                className="scs-panel scs-pile"
+                style={{ left: pileLeft, top: pileTop, width: pileW, height: pileH + 62 }}
+            >
+                <span className={`scs-kicker scs-pile-kicker ${courier.className}`}>
+                    PROJECTS · {String(sel + 1).padStart(2, "0")}/{String(n).padStart(2, "0")}
+                </span>
+                <div className="scs-files" style={{ height: pileH }}>
                     {list.map((p, i) => {
                         const [c1, c2] = FOLDERS[i % FOLDERS.length];
                         const on = i === sel;
-                        const rank = i < sel ? i : i - 1; // order among the folders left in the pile
-                        const top = on ? Math.max(0, n - 2) * PEEK + FRONT_GAP : rank * PEEK;
+                        const rank = i < sel ? i : i - 1;
+                        const t = on ? Math.max(0, n - 2) * PEEK + FRONT_GAP : rank * PEEK;
                         return (
                             <button
                                 key={p.id}
@@ -240,12 +284,13 @@ export default function LaptopShowcase({ onClose }: { from?: DOMRect; onClose: (
                                 className={`fd ${on ? "is-on" : ""}`}
                                 style={
                                     {
-                                        top,
+                                        top: t,
+                                        height: FOLDER_H,
                                         zIndex: on ? 100 : rank + 1,
                                         "--c1": c1,
                                         "--c2": c2,
-                                        "--tab": `${[4, 36, 66][i % 3]}%`,
-                                        "--d": `${120 + i * 40}ms`,
+                                        "--tab": `${[2, 33, 64][i % 3]}%`,
+                                        "--d": `${80 + i * 35}ms`,
                                     } as React.CSSProperties
                                 }
                                 onClick={() => setSel(i)}
@@ -265,111 +310,103 @@ export default function LaptopShowcase({ onClose }: { from?: DOMRect; onClose: (
                         );
                     })}
                 </div>
-            </section>
-
-            <button type="button" className="scs-close" onClick={close} aria-label="Close">
-                <X size={22} strokeWidth={2.4} />
-            </button>
+            </div>
 
             <style jsx>{`
                 .scs {
                     position: fixed;
                     inset: 0;
-                    z-index: 5000;
+                    z-index: 1500; /* under the nav bar, over the page */
+                    pointer-events: none;
                     --ease: cubic-bezier(0.22, 1, 0.36, 1);
                     --ink: #0d2a42;
+                }
+                /* frosted paper panels, like a desk mat under each group */
+                .scs-panel {
+                    position: absolute;
+                    pointer-events: auto;
+                    border-radius: 18px;
+                    background: rgba(246, 249, 251, 0.82);
+                    backdrop-filter: blur(14px);
+                    -webkit-backdrop-filter: blur(14px);
+                    box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.08), 0 24px 44px -22px rgba(13, 42, 66, 0.4);
+                    opacity: 0;
+                    transition: opacity 0.35s ease, transform 0.5s var(--ease);
+                }
+                .scs-cases {
+                    transform: translateX(16px) scale(0.98);
+                    transform-origin: right center;
                     overflow: hidden;
                 }
-                .scs-backdrop {
-                    position: absolute;
-                    inset: 0;
-                    background: rgba(233, 238, 241, 0.8);
-                    backdrop-filter: blur(12px) saturate(0.9);
-                    -webkit-backdrop-filter: blur(12px) saturate(0.9);
-                    opacity: 0;
-                    transition: opacity 0.45s ease;
+                .scs-pile {
+                    transform: translateX(-16px) scale(0.98);
+                    transform-origin: left center;
                 }
-                .scs.is-in .scs-backdrop {
+                .scs.is-in .scs-panel {
                     opacity: 1;
+                    transform: none;
                 }
-
                 .scs-head {
                     position: absolute;
-                    top: 30px;
-                    left: 50%;
-                    width: min(640px, 60vw);
-                    transform: translate(-50%, -10px);
+                    top: 14px;
+                    left: 18px;
+                    right: 18px;
                     display: flex;
                     flex-direction: column;
-                    align-items: center;
-                    gap: 6px;
-                    text-align: center;
-                    opacity: 0;
-                    transition: opacity 0.4s ease 0.1s, transform 0.5s var(--ease) 0.1s;
-                    pointer-events: none;
-                }
-                .scs.is-in .scs-head {
-                    opacity: 1;
-                    transform: translate(-50%, 0);
+                    gap: 3px;
                 }
                 .scs-kicker {
-                    font-size: 12px;
+                    font-size: 10.5px;
                     font-weight: 700;
-                    letter-spacing: 0.3em;
+                    letter-spacing: 0.24em;
                     color: #3a7ca5;
                 }
                 .scs-title {
                     font-family: var(--font-geist-sans), Inter, -apple-system, sans-serif;
-                    font-size: 26px;
+                    font-size: 17px;
                     font-weight: 800;
-                    letter-spacing: -0.02em;
+                    letter-spacing: -0.01em;
                     color: var(--ink);
-                }
-                .scs-count {
-                    font-size: 11px;
-                    font-weight: 700;
-                    letter-spacing: 0.12em;
-                    color: #5b6b7a;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
                 }
 
-                /* ---------- LEFT: the row of tech cases ---------- */
-                .scs-stack {
+                /* ---- tech cases ---- */
+                .scs-stage {
                     position: absolute;
-                    left: 4vw;
-                    top: 150px;
-                    bottom: 40px;
-                    width: 46vw;
-                    perspective: 1300px;
-                    perspective-origin: 20% 10%;
+                    inset: 0;
+                    perspective: 1100px;
+                    perspective-origin: 60% 30%;
                 }
                 .scs-rail {
                     position: absolute;
-                    left: 4%;
-                    bottom: 12%;
+                    left: 18px;
+                    bottom: 22px;
                     transform-style: preserve-3d;
                 }
                 .tc {
                     position: absolute;
                     left: 0;
                     bottom: 0;
-                    width: 132px;
-                    height: 132px;
+                    width: ${CASE}px;
+                    height: ${CASE}px;
                     transform-style: preserve-3d;
-                    transform: translate3d(calc(var(--x) - 120px), var(--y), var(--z)) rotateY(38deg);
                     opacity: 0;
-                    transition: transform 0.6s var(--ease), opacity 0.4s ease, filter 0.4s ease;
-                    filter: saturate(0.55) brightness(1.02);
+                    transform: translate3d(calc(var(--x) + 40px), var(--y), var(--z)) rotateY(38deg);
+                    filter: saturate(0.5);
+                    transition: transform 0.55s var(--ease), opacity 0.35s ease, filter 0.35s ease;
                 }
                 .scs.is-in .tc {
                     opacity: 1;
                     transform: translate3d(var(--x), var(--y), var(--z)) rotateY(38deg);
                     transition-delay: var(--d), var(--d), 0s;
                 }
-                /* the project's tech pops out of the row and lands in front, facing you */
+                /* the project's tech pops out of the row into a neat grid */
                 .scs.is-in .tc.is-on {
-                    transform: translate3d(var(--gx), var(--gy), 180px) rotateY(14deg) scale(0.86);
+                    transform: translate3d(var(--gx), var(--gy), 0) rotateY(0deg);
                     filter: none;
-                    transition: transform 0.65s cubic-bezier(0.34, 1.3, 0.64, 1), opacity 0.4s ease, filter 0.4s ease;
+                    transition: transform 0.6s cubic-bezier(0.34, 1.25, 0.64, 1), opacity 0.35s ease, filter 0.35s ease;
                     transition-delay: var(--pd);
                 }
                 .tc :global(.tc-face) {
@@ -379,61 +416,57 @@ export default function LaptopShowcase({ onClose }: { from?: DOMRect; onClose: (
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    gap: 10px;
-                    padding: 12px;
-                    border-radius: 6px;
+                    gap: 6px;
+                    padding: 8px 6px;
+                    border-radius: 5px;
                     background: linear-gradient(160deg, #ffffff 0%, #f1f5f8 60%, #e2eaef 100%);
-                    box-shadow: inset 0 0 0 1px rgba(13, 42, 66, 0.12), inset 0 1px 0 #fff, 0 10px 22px -12px rgba(13, 42, 66, 0.45);
+                    box-shadow: inset 0 0 0 1px rgba(13, 42, 66, 0.12), inset 0 1px 0 #fff, 0 8px 16px -10px rgba(13, 42, 66, 0.45);
                     backface-visibility: hidden;
                 }
-                /* jewel-case hinge strip */
                 .tc :global(.tc-face)::before {
                     content: "";
                     position: absolute;
                     top: 0;
                     bottom: 0;
-                    left: 7px;
-                    width: 1.5px;
+                    left: 5px;
+                    width: 1px;
                     background: rgba(13, 42, 66, 0.12);
-                    box-shadow: 1px 0 0 #fff;
                 }
                 .tc :global(.tc-spine) {
                     position: absolute;
                     top: 0;
                     bottom: 0;
                     left: 0;
-                    width: 14px;
+                    width: 9px;
                     background: linear-gradient(90deg, #c9d4db, #e6ecf0);
                     transform-origin: 0 50%;
                     transform: rotateY(90deg);
                     border-radius: 2px;
                 }
                 .tc :global(.tc-logo) {
-                    width: 54px;
-                    height: 54px;
+                    width: 30px;
+                    height: 30px;
                     object-fit: contain;
                     user-select: none;
                 }
                 .tc :global(.tc-mono) {
-                    width: 54px;
-                    height: 54px;
+                    width: 30px;
+                    height: 30px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     border-radius: 50%;
-                    border: 2.5px solid #1b4f72;
-                    outline: 1px solid #1b4f72;
-                    outline-offset: -7px;
+                    border: 2px solid #1b4f72;
                     font-family: var(--font-geist-sans), Inter, -apple-system, sans-serif;
-                    font-size: 17px;
+                    font-size: 11px;
                     font-weight: 800;
                     color: #1b4f72;
                 }
                 .tc :global(.tc-name) {
                     max-width: 100%;
-                    font-size: 10.5px;
+                    font-size: 8px;
                     font-weight: 700;
-                    letter-spacing: 0.06em;
+                    letter-spacing: 0.04em;
                     text-transform: uppercase;
                     color: var(--ink);
                     text-align: center;
@@ -444,57 +477,47 @@ export default function LaptopShowcase({ onClose }: { from?: DOMRect; onClose: (
                     -webkit-box-orient: vertical;
                 }
 
-                /* ---------- RIGHT: the pile of project folders ---------- */
-                .scs-pile {
+                /* ---- project folders ---- */
+                .scs-pile-kicker {
                     position: absolute;
-                    right: 5vw;
-                    top: 140px;
-                    bottom: 36px;
-                    width: min(470px, 38vw);
-                    display: flex;
-                    align-items: flex-end;
-                    justify-content: center;
+                    top: 12px;
+                    left: 16px;
                 }
                 .scs-files {
-                    position: relative;
-                    width: 100%;
-                    max-height: 100%;
+                    position: absolute;
+                    left: 12px;
+                    right: 12px;
+                    bottom: 12px;
                 }
                 .fd {
                     position: absolute;
                     left: 0;
                     right: 0;
-                    height: 300px;
                     padding: 0;
                     border: none;
                     background: none;
                     cursor: pointer;
                     text-align: left;
                     opacity: 0;
-                    transform: translateY(60px);
-                    transition: top 0.6s var(--ease), transform 0.55s var(--ease), opacity 0.4s ease;
+                    transform: translateY(30px);
+                    transition: top 0.55s var(--ease), transform 0.5s var(--ease), opacity 0.35s ease;
                     -webkit-tap-highlight-color: transparent;
                 }
                 .scs.is-in .fd {
                     opacity: 1;
-                    transform: translateY(0);
-                    transition-delay: var(--d), var(--d);
-                }
-                .scs.is-in .fd:hover {
-                    transform: translateY(-10px);
-                    transition-delay: 0s;
-                }
-                /* picked: pulled out of the pile and laid in front, image showing */
-                .scs.is-in .fd.is-on {
-                    animation: fd-pull 0.6s var(--ease);
-                    transition-delay: 0s;
-                }
-                .scs.is-in .fd.is-on:hover {
                     transform: none;
+                    transition-delay: 0s, var(--d), var(--d);
+                }
+                .scs.is-in .fd:not(.is-on):hover {
+                    transform: translateY(-6px);
+                    transition-delay: 0s;
+                }
+                .scs.is-in .fd.is-on {
+                    animation: fd-pull 0.55s var(--ease);
                 }
                 @keyframes fd-pull {
                     0% {
-                        transform: translateY(-70px) rotate(-1.5deg);
+                        transform: translateY(-46px) rotate(-1.2deg);
                     }
                     100% {
                         transform: none;
@@ -502,53 +525,52 @@ export default function LaptopShowcase({ onClose }: { from?: DOMRect; onClose: (
                 }
                 .fd-tab {
                     position: absolute;
-                    top: -22px;
+                    top: -17px;
                     left: var(--tab);
-                    max-width: 44%;
-                    height: 24px;
-                    padding: 5px 14px 0;
-                    border-radius: 9px 9px 0 0;
+                    max-width: 35%;
+                    height: 19px;
+                    padding: 4px 10px 0;
+                    border-radius: 7px 7px 0 0;
                     background: var(--c1);
                     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 0 0 1px rgba(13, 42, 66, 0.1);
-                    font-size: 10.5px;
+                    font-size: 8.5px;
                     font-weight: 700;
-                    letter-spacing: 0.06em;
+                    letter-spacing: 0.05em;
                     text-transform: uppercase;
                     color: var(--ink);
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
                 }
-                .fd-body {
-                    position: absolute;
-                    inset: 0;
-                    border-radius: 4px 12px 12px 12px;
-                    background: linear-gradient(180deg, var(--c1) 0%, var(--c2) 100%);
-                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 0 0 1px rgba(13, 42, 66, 0.1),
-                        0 -6px 14px -8px rgba(13, 42, 66, 0.3);
-                    padding: 14px;
-                }
                 .fd.is-on .fd-tab {
                     color: #fff;
                     background: #1b4f72;
                 }
+                .fd-body {
+                    position: absolute;
+                    inset: 0;
+                    border-radius: 3px 10px 10px 10px;
+                    background: linear-gradient(180deg, var(--c1) 0%, var(--c2) 100%);
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 0 0 1px rgba(13, 42, 66, 0.1),
+                        0 -5px 12px -8px rgba(13, 42, 66, 0.3);
+                    padding: 10px;
+                }
                 .fd-img {
                     display: block;
                     width: 100%;
-                    height: 228px;
-                    border-radius: 6px;
+                    height: ${FOLDER_H - 20}px;
+                    border-radius: 5px;
                     object-fit: cover;
                     object-position: top center;
-                    box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.12), 0 8px 18px -10px rgba(13, 42, 66, 0.5);
+                    box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.12);
                     user-select: none;
                     pointer-events: none;
                     opacity: 0;
-                    transition: opacity 0.35s ease;
+                    transition: opacity 0.3s ease;
                 }
-                /* only the folder in front shows its picture; the pile stays clean */
                 .fd.is-on .fd-img {
                     opacity: 1;
-                    transition-delay: 0.15s;
+                    transition-delay: 0.12s;
                 }
                 .fd-noimg {
                     background: linear-gradient(135deg, #1b4f72, #0d2a42);
@@ -560,42 +582,13 @@ export default function LaptopShowcase({ onClose }: { from?: DOMRect; onClose: (
                     outline: 2px dashed #3a99c9;
                     outline-offset: 2px;
                 }
-
-                .scs-close {
-                    position: absolute;
-                    top: 28px;
-                    right: 32px;
-                    width: 52px;
-                    height: 52px;
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    border-radius: 50%;
-                    border: 2px solid var(--ink);
-                    background: rgba(255, 255, 255, 0.7);
-                    color: var(--ink);
-                    cursor: pointer;
-                    opacity: 0;
-                    transform: scale(0.7) rotate(-90deg);
-                    transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease,
-                        color 0.2s ease;
-                }
-                .scs.is-in .scs-close {
-                    opacity: 1;
-                    transform: none;
-                }
-                .scs.is-in .scs-close:hover,
-                .scs-close:focus-visible {
-                    background: var(--ink);
-                    color: #e9eef0;
-                    transform: rotate(90deg);
-                    outline: none;
-                }
                 @media (prefers-reduced-motion: reduce) {
                     .tc,
-                    .fd {
+                    .fd,
+                    .scs-panel {
                         transition-duration: 0.01ms !important;
                         transition-delay: 0s !important;
+                        animation: none !important;
                     }
                 }
             `}</style>
