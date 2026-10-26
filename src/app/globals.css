@@ -11026,8 +11026,8 @@ html.fvl-loading body {
 /* Laptop ("Stacks & Projects") resting by the pass card's top-right corner */
 .hero-laptop {
   position: absolute;
-  right: -178px;
-  top: -150px;
+  right: -170px;
+  top: -176px;
   z-index: 3;
   transform: rotate(4deg);
   animation: hero-laptop-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.9s both;
