@@ -1,89 +1,115 @@
 "use client";
 
 /**
- * Silver laptop resting by the pass card's top-right corner, screen reading
- * "Stacks & Projects". Floats gently; hover lifts it; click jumps to the Stack section.
- * Drawn as inline SVG (same white/silver shading as the earbud case) so the screen text
- * uses the site font.
+ * Navy laptop by the pass card's top-right corner. At rest it shows the back of the lid
+ * (embossed FVL mark); on hover / focus it turns around to face you, screen reading
+ * "Stacks & Projects". Click jumps to the Stack section. Drawn as inline SVG so the
+ * text uses the site font; no brand marks.
  */
-const SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 240 210\">\n  <defs>\n    <linearGradient id=\"lpLid\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n      <stop offset=\"0\" stop-color=\"#eef1f4\"/><stop offset=\".5\" stop-color=\"#d6dce1\"/><stop offset=\"1\" stop-color=\"#b9c1c8\"/>\n    </linearGradient>\n    <linearGradient id=\"lpScreen\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n      <stop offset=\"0\" stop-color=\"#0b1f33\"/><stop offset=\".6\" stop-color=\"#0d2a42\"/><stop offset=\"1\" stop-color=\"#14395a\"/>\n    </linearGradient>\n    <linearGradient id=\"lpRibbon1\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\">\n      <stop offset=\"0\" stop-color=\"#1b4f72\" stop-opacity=\"0\"/><stop offset=\".5\" stop-color=\"#3a99c9\"/><stop offset=\"1\" stop-color=\"#75c2e6\"/>\n    </linearGradient>\n    <linearGradient id=\"lpRibbon2\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n      <stop offset=\"0\" stop-color=\"#75c2e6\" stop-opacity=\".9\"/><stop offset=\"1\" stop-color=\"#1b4f72\" stop-opacity=\"0\"/>\n    </linearGradient>\n    <linearGradient id=\"lpGlass\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n      <stop offset=\"0\" stop-color=\"#fff\" stop-opacity=\".16\"/><stop offset=\".45\" stop-color=\"#fff\" stop-opacity=\"0\"/>\n    </linearGradient>\n    <linearGradient id=\"lpDeck\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0\" stop-color=\"#e3e8ec\"/><stop offset=\".55\" stop-color=\"#f4f6f8\"/><stop offset=\"1\" stop-color=\"#ffffff\"/>\n    </linearGradient>\n    <linearGradient id=\"lpEdge\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\">\n      <stop offset=\"0\" stop-color=\"#8f99a3\"/><stop offset=\".5\" stop-color=\"#aab3bb\"/><stop offset=\"1\" stop-color=\"#7f8a94\"/>\n    </linearGradient>\n    <linearGradient id=\"lpPad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0\" stop-color=\"#e6eaee\"/><stop offset=\"1\" stop-color=\"#f3f5f7\"/>\n    </linearGradient>\n    <clipPath id=\"lpDisp\"><rect x=\"5\" y=\"5\" width=\"150\" height=\"92\" rx=\"2.5\"/></clipPath>\n    <filter id=\"lpBlur\" x=\"-30%\" y=\"-100%\" width=\"160%\" height=\"300%\"><feGaussianBlur stdDeviation=\"6\"/></filter>\n  </defs>\n\n  <!-- floating shadow -->\n  <ellipse class=\"lp-shadow\" cx=\"112\" cy=\"196\" rx=\"78\" ry=\"7\" fill=\"#0d2a42\" opacity=\".22\" filter=\"url(#lpBlur)\"/>\n  <g class=\"lp-body\">\n\n  <!-- deck thickness: the same rounded shape, a few px lower and darker, so the edge follows every corner -->\n  <g transform=\"translate(0 4.6)\">\n    <g transform=\"matrix(0.975,-0.1375,-0.3,0.58,40,140)\">\n      <rect x=\"0\" y=\"0\" width=\"160\" height=\"100\" rx=\"7\" fill=\"url(#lpEdge)\"/>\n    </g>\n  </g>\n  <g transform=\"translate(0 2.3)\">\n    <g transform=\"matrix(0.975,-0.1375,-0.3,0.58,40,140)\">\n      <rect x=\"0\" y=\"0\" width=\"160\" height=\"100\" rx=\"7\" fill=\"#b3bbc2\"/>\n    </g>\n  </g>\n  <!-- deck (keyboard half), drawn in its own plane -->\n  <g transform=\"matrix(0.975,-0.1375,-0.3,0.58,40,140)\">\n    <rect x=\"0\" y=\"0\" width=\"160\" height=\"100\" rx=\"7\" fill=\"url(#lpDeck)\"/>\n    <rect x=\"0.5\" y=\"0.5\" width=\"159\" height=\"99\" rx=\"6.5\" fill=\"none\" stroke=\"#8d98a3\" stroke-opacity=\".45\"/>\n    <!-- hinge band along the back edge -->\n    <rect x=\"12\" y=\"0\" width=\"136\" height=\"3.2\" rx=\"1.6\" fill=\"#8d98a3\" opacity=\".55\"/>\n    <!-- speaker grilles -->\n    <rect x=\"5\" y=\"8\" width=\"8\" height=\"46\" rx=\"2\" fill=\"#cfd5da\"/>\n    <rect x=\"147\" y=\"8\" width=\"8\" height=\"46\" rx=\"2\" fill=\"#cfd5da\"/>\n    <!-- keyboard well -->\n    <rect x=\"17\" y=\"7\" width=\"126\" height=\"48\" rx=\"3\" fill=\"#1d232a\"/>\n    <g fill=\"#2f363e\">\n      <rect x=\"20.0\" y=\"10.0\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"28.3\" y=\"10.0\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"36.6\" y=\"10.0\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"44.9\" y=\"10.0\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"53.2\" y=\"10.0\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"61.5\" y=\"10.0\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"69.8\" y=\"10.0\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"78.1\" y=\"10.0\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"86.4\" y=\"10.0\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"94.7\" y=\"10.0\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"103.0\" y=\"10.0\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"111.3\" y=\"10.0\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"119.6\" y=\"10.0\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"20.0\" y=\"18.6\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"28.3\" y=\"18.6\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"36.6\" y=\"18.6\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"44.9\" y=\"18.6\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"53.2\" y=\"18.6\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"61.5\" y=\"18.6\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"69.8\" y=\"18.6\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"78.1\" y=\"18.6\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"86.4\" y=\"18.6\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"94.7\" y=\"18.6\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"103.0\" y=\"18.6\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"111.3\" y=\"18.6\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"119.6\" y=\"18.6\" width=\"6.9\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"20.0\" y=\"27.2\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"29.1\" y=\"27.2\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"38.2\" y=\"27.2\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"47.3\" y=\"27.2\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"56.4\" y=\"27.2\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"65.5\" y=\"27.2\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"74.6\" y=\"27.2\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"83.7\" y=\"27.2\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"92.8\" y=\"27.2\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"101.9\" y=\"27.2\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"111.0\" y=\"27.2\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"120.1\" y=\"27.2\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"20.0\" y=\"35.8\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"29.1\" y=\"35.8\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"38.2\" y=\"35.8\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"47.3\" y=\"35.8\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"56.4\" y=\"35.8\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"65.5\" y=\"35.8\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"74.6\" y=\"35.8\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"83.7\" y=\"35.8\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"92.8\" y=\"35.8\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"101.9\" y=\"35.8\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"111.0\" y=\"35.8\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"120.1\" y=\"35.8\" width=\"7.7\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"20.0\" y=\"44.4\" width=\"9.6\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"31.0\" y=\"44.4\" width=\"9.6\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"42.0\" y=\"44.4\" width=\"9.6\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"53.0\" y=\"44.4\" width=\"9.6\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"64.0\" y=\"44.4\" width=\"9.6\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"75.0\" y=\"44.4\" width=\"9.6\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"86.0\" y=\"44.4\" width=\"9.6\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"97.0\" y=\"44.4\" width=\"9.6\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"108.0\" y=\"44.4\" width=\"9.6\" height=\"6.6\" rx=\"1.1\"/>\n      <rect x=\"119.0\" y=\"44.4\" width=\"9.6\" height=\"6.6\" rx=\"1.1\"/>\n    </g>\n    <!-- trackpad -->\n    <rect x=\"48\" y=\"61\" width=\"64\" height=\"33\" rx=\"3.5\" fill=\"url(#lpPad)\" stroke=\"#a3adb6\" stroke-opacity=\".55\" stroke-width=\".8\"/>\n    <!-- front lip highlight -->\n    <path d=\"M7 99.2 H153\" stroke=\"#fff\" stroke-width=\"1.2\"/>\n  </g>\n\n  <!-- lid -->\n  <g transform=\"matrix(0.975,-0.1375,-0.08,1.12,48,28)\">\n    <!-- lid back edge peeking (thickness) -->\n    <rect x=\"1.4\" y=\"-1.6\" width=\"160\" height=\"92\" rx=\"7\" fill=\"#aeb6bd\"/>\n    <rect x=\"0\" y=\"0\" width=\"160\" height=\"102\" rx=\"7\" fill=\"#151b21\"/>\n    <rect x=\"0.4\" y=\"0.4\" width=\"159.2\" height=\"101.2\" rx=\"6.6\" fill=\"none\" stroke=\"#c3cad0\" stroke-width=\".8\"/>\n    <!-- display -->\n    <rect x=\"5\" y=\"5\" width=\"150\" height=\"92\" rx=\"2.5\" fill=\"url(#lpScreen)\"/>\n    <g clip-path=\"url(#lpDisp)\">\n      <path d=\"M-10 70 C30 40 70 95 120 50 S170 20 175 10 L175 -5 L-10 -5 Z\" fill=\"url(#lpRibbon2)\" opacity=\".55\"/>\n      <path d=\"M20 110 C50 60 90 70 115 40 C135 18 150 12 175 14 L175 34 C150 30 138 40 122 58 C95 90 60 85 40 110 Z\" fill=\"url(#lpRibbon1)\" opacity=\".9\"/>\n      <path d=\"M60 110 C85 80 120 86 140 60 C152 46 165 42 175 42 L175 52 C165 52 155 58 145 70 C125 95 95 92 78 110 Z\" fill=\"#75c2e6\" opacity=\".35\"/>\n      <rect x=\"5\" y=\"5\" width=\"150\" height=\"92\" fill=\"url(#lpGlass)\"/>\n    </g>\n    <text x=\"16\" y=\"58\" style=\"font-family: var(--font-geist-sans), Inter, -apple-system, Helvetica, Arial, sans-serif\" font-size=\"15\" font-weight=\"800\" fill=\"#fff\" letter-spacing=\"-0.4\">Stacks &amp;</text>\n    <text x=\"16\" y=\"75\" style=\"font-family: var(--font-geist-sans), Inter, -apple-system, Helvetica, Arial, sans-serif\" font-size=\"15\" font-weight=\"800\" fill=\"#fff\" letter-spacing=\"-0.4\">Projects</text>\n    <rect x=\"16\" y=\"81\" width=\"22\" height=\"2.2\" rx=\"1.1\" fill=\"#75c2e6\"/>\n    <!-- camera -->\n    <circle cx=\"80\" cy=\"2.6\" r=\"0.9\" fill=\"#3a434c\"/>\n  </g>\n  </g>\n</svg>\n";
+const BACK = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 240 170\">\n  <defs>\n    <linearGradient id=\"lpbShell\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0\" stop-color=\"#5a7fa6\"/><stop offset=\".35\" stop-color=\"#2f5378\"/><stop offset=\".8\" stop-color=\"#16314f\"/><stop offset=\"1\" stop-color=\"#0f2740\"/>\n    </linearGradient>\n    <linearGradient id=\"lpbSheen\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n      <stop offset=\"0\" stop-color=\"#fff\" stop-opacity=\".22\"/><stop offset=\".35\" stop-color=\"#fff\" stop-opacity=\"0\"/><stop offset=\".7\" stop-color=\"#fff\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#fff\" stop-opacity=\".06\"/>\n    </linearGradient>\n    <linearGradient id=\"lpbSide\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\">\n      <stop offset=\"0\" stop-color=\"#fff\" stop-opacity=\".25\"/><stop offset=\".06\" stop-color=\"#fff\" stop-opacity=\"0\"/><stop offset=\".94\" stop-color=\"#000\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#000\" stop-opacity=\".25\"/>\n    </linearGradient>\n    <linearGradient id=\"lpbHinge\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0\" stop-color=\"#0b1d30\"/><stop offset=\"1\" stop-color=\"#1b3654\"/>\n    </linearGradient>\n  </defs>\n  <!-- lid shell -->\n  <rect x=\"26\" y=\"12\" width=\"188\" height=\"128\" rx=\"9\" fill=\"url(#lpbShell)\"/>\n  <rect x=\"26\" y=\"12\" width=\"188\" height=\"128\" rx=\"9\" fill=\"url(#lpbSide)\"/>\n  <rect x=\"26\" y=\"12\" width=\"188\" height=\"128\" rx=\"9\" fill=\"url(#lpbSheen)\"/>\n  <!-- edges: bright top rim, fine outline -->\n  <path d=\"M35 12.8 H205\" stroke=\"#9fc0de\" stroke-opacity=\".75\" stroke-width=\"1.2\" stroke-linecap=\"round\"/>\n  <rect x=\"26.5\" y=\"12.5\" width=\"187\" height=\"127\" rx=\"8.5\" fill=\"none\" stroke=\"#0b1d30\" stroke-opacity=\".55\"/>\n  <!-- embossed FVL mark -->\n  <g style=\"font-family: var(--font-geist-sans), Inter, -apple-system, Helvetica, Arial, sans-serif\" font-size=\"22\" font-weight=\"800\" text-anchor=\"middle\" letter-spacing=\"1\">\n    <text x=\"120\" y=\"83.6\" fill=\"#9fc0de\" fill-opacity=\".22\">FVL</text>\n    <text x=\"120\" y=\"83\" fill=\"#0c2238\" fill-opacity=\".55\">FVL</text>\n  </g>\n  <!-- hinge lip + feet -->\n  <rect x=\"34\" y=\"138\" width=\"172\" height=\"5\" rx=\"2.5\" fill=\"url(#lpbHinge)\"/>\n  <rect x=\"44\" y=\"142.5\" width=\"18\" height=\"3.4\" rx=\"1.7\" fill=\"#0a1a2b\"/>\n  <rect x=\"178\" y=\"142.5\" width=\"18\" height=\"3.4\" rx=\"1.7\" fill=\"#0a1a2b\"/>\n</svg>\n";
+const FRONT = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 240 170\">\n  <defs>\n    <linearGradient id=\"lpfScreen\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n      <stop offset=\"0\" stop-color=\"#0b1f33\"/><stop offset=\".6\" stop-color=\"#0d2a42\"/><stop offset=\"1\" stop-color=\"#14395a\"/>\n    </linearGradient>\n    <linearGradient id=\"lpfRib1\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\">\n      <stop offset=\"0\" stop-color=\"#1b4f72\" stop-opacity=\"0\"/><stop offset=\".5\" stop-color=\"#3a99c9\"/><stop offset=\"1\" stop-color=\"#75c2e6\"/>\n    </linearGradient>\n    <linearGradient id=\"lpfRib2\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n      <stop offset=\"0\" stop-color=\"#75c2e6\" stop-opacity=\".9\"/><stop offset=\"1\" stop-color=\"#1b4f72\" stop-opacity=\"0\"/>\n    </linearGradient>\n    <linearGradient id=\"lpfGlass\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n      <stop offset=\"0\" stop-color=\"#fff\" stop-opacity=\".14\"/><stop offset=\".45\" stop-color=\"#fff\" stop-opacity=\"0\"/>\n    </linearGradient>\n    <linearGradient id=\"lpfBase\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0\" stop-color=\"#3f6489\"/><stop offset=\".45\" stop-color=\"#22426a\"/><stop offset=\"1\" stop-color=\"#11273f\"/>\n    </linearGradient>\n    <linearGradient id=\"lpfBaseSide\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\">\n      <stop offset=\"0\" stop-color=\"#fff\" stop-opacity=\".18\"/><stop offset=\".05\" stop-color=\"#fff\" stop-opacity=\"0\"/><stop offset=\".95\" stop-color=\"#000\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#000\" stop-opacity=\".25\"/>\n    </linearGradient>\n    <clipPath id=\"lpfDisp\"><rect x=\"33\" y=\"19\" width=\"174\" height=\"111\" rx=\"3\"/></clipPath>\n  </defs>\n  <!-- lid: navy frame + black bezel -->\n  <rect x=\"26\" y=\"12\" width=\"188\" height=\"126\" rx=\"9\" fill=\"#1b3654\"/>\n  <rect x=\"27.2\" y=\"13.2\" width=\"185.6\" height=\"123.6\" rx=\"8\" fill=\"#0a0f15\"/>\n  <path d=\"M35 12.8 H205\" stroke=\"#9fc0de\" stroke-opacity=\".6\" stroke-width=\"1\" stroke-linecap=\"round\"/>\n  <!-- display -->\n  <rect x=\"33\" y=\"19\" width=\"174\" height=\"111\" rx=\"3\" fill=\"url(#lpfScreen)\"/>\n  <g clip-path=\"url(#lpfDisp)\">\n    <path d=\"M20 90 C60 60 100 115 150 70 S200 40 215 30 L215 10 L20 10 Z\" fill=\"url(#lpfRib2)\" opacity=\".5\"/>\n    <path d=\"M50 140 C80 85 120 92 148 60 C168 36 185 30 215 32 L215 54 C188 52 174 60 156 80 C126 114 92 108 72 140 Z\" fill=\"url(#lpfRib1)\" opacity=\".9\"/>\n    <path d=\"M95 140 C120 108 155 112 176 84 C188 68 202 64 215 64 L215 76 C202 76 192 82 182 96 C160 124 130 120 112 140 Z\" fill=\"#75c2e6\" opacity=\".33\"/>\n    <rect x=\"33\" y=\"19\" width=\"174\" height=\"111\" fill=\"url(#lpfGlass)\"/>\n  </g>\n  <g style=\"font-family: var(--font-geist-sans), Inter, -apple-system, Helvetica, Arial, sans-serif\" font-weight=\"800\" fill=\"#fff\" letter-spacing=\"-0.4\">\n    <text x=\"46\" y=\"72\" font-size=\"17\">Stacks &amp;</text>\n    <text x=\"46\" y=\"92\" font-size=\"17\">Projects</text>\n  </g>\n  <rect x=\"46\" y=\"99\" width=\"24\" height=\"2.4\" rx=\"1.2\" fill=\"#75c2e6\"/>\n  <!-- camera -->\n  <circle cx=\"120\" cy=\"16.2\" r=\"1\" fill=\"#2a3440\"/>\n  <!-- base (keyboard half seen edge-on) -->\n  <path d=\"M14 137.5 H226 Q229 137.5 228.4 140.5 L227.6 143.6 Q226.8 147 222.8 147 H17.2 Q13.2 147 12.4 143.6 L11.6 140.5 Q11 137.5 14 137.5 Z\" fill=\"url(#lpfBase)\"/>\n  <path d=\"M14 137.5 H226 Q229 137.5 228.4 140.5 L227.6 143.6 Q226.8 147 222.8 147 H17.2 Q13.2 147 12.4 143.6 L11.6 140.5 Q11 137.5 14 137.5 Z\" fill=\"url(#lpfBaseSide)\"/>\n  <path d=\"M16 138.2 H224\" stroke=\"#a9c6e2\" stroke-opacity=\".55\" stroke-width=\".9\" stroke-linecap=\"round\"/>\n  <!-- thumb notch -->\n  <path d=\"M104 137.5 H136 V138.8 Q136 140.4 134.4 140.4 H105.6 Q104 140.4 104 138.8 Z\" fill=\"#0f2337\" opacity=\".8\"/>\n  <!-- feet -->\n  <rect x=\"30\" y=\"146.4\" width=\"16\" height=\"3\" rx=\"1.5\" fill=\"#0a1a2b\"/>\n  <rect x=\"194\" y=\"146.4\" width=\"16\" height=\"3\" rx=\"1.5\" fill=\"#0a1a2b\"/>\n</svg>\n";
 
 export default function Laptop() {
     return (
         <a className="laptop" href="#tech-stack" aria-label="Stacks & Projects: see my tech stack and projects">
-            <span className="lp-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: SVG }} />
+            <span className="lp-float" aria-hidden="true">
+                <span className="lp-flip">
+                    <span className="lp-face lp-back" dangerouslySetInnerHTML={{ __html: BACK }} />
+                    <span className="lp-face lp-front" dangerouslySetInnerHTML={{ __html: FRONT }} />
+                </span>
+            </span>
+            <span className="lp-shadow" aria-hidden="true" />
             <style jsx>{`
                 .laptop {
+                    position: relative;
                     display: block;
-                    width: 224px;
+                    width: 232px;
+                    aspect-ratio: 240 / 170;
                     text-decoration: none;
                     cursor: pointer;
                     outline: none;
+                    perspective: 900px;
                     -webkit-tap-highlight-color: transparent;
                 }
                 .laptop:hover {
                     opacity: 1; /* the site-wide link hover dims links */
                 }
-                .lp-art {
-                    display: block;
+                .lp-float {
+                    position: absolute;
+                    inset: 0;
+                    transform-style: preserve-3d;
+                    animation: lp-float 6s ease-in-out infinite;
                 }
-                .lp-art :global(svg) {
+                .lp-flip {
+                    position: absolute;
+                    inset: 0;
+                    transform-style: preserve-3d;
+                    transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+                }
+                .laptop:hover .lp-flip,
+                .laptop:focus-visible .lp-flip {
+                    transform: rotateY(180deg);
+                }
+                .lp-face {
+                    position: absolute;
+                    inset: 0;
+                    backface-visibility: hidden;
+                    -webkit-backface-visibility: hidden;
+                }
+                .lp-front {
+                    transform: rotateY(180deg);
+                }
+                .lp-face :global(svg) {
                     display: block;
                     width: 100%;
-                    height: auto;
+                    height: 100%;
                     overflow: visible;
                 }
-                .lp-art :global(.lp-body) {
-                    transform-box: fill-box;
-                    transform-origin: 50% 60%;
-                    animation: lp-float 6s ease-in-out infinite;
-                    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-                }
-                .lp-art :global(.lp-shadow) {
-                    transform-box: fill-box;
-                    transform-origin: 50% 50%;
+                /* soft floating shadow, like the earbud case and the file */
+                .lp-shadow {
+                    position: absolute;
+                    left: 12%;
+                    right: 12%;
+                    bottom: -8%;
+                    height: 12%;
+                    border-radius: 50%;
+                    background: radial-gradient(closest-side, rgba(13, 42, 66, 0.38), rgba(13, 42, 66, 0));
+                    filter: blur(5px);
                     animation: lp-shadow 6s ease-in-out infinite;
+                    pointer-events: none;
                 }
                 @keyframes lp-float {
                     0%,
                     100% {
-                        transform: translateY(0) rotate(0deg);
+                        transform: translateY(0);
                     }
                     50% {
-                        transform: translateY(-7px) rotate(-1deg);
+                        transform: translateY(-7px);
                     }
                 }
                 @keyframes lp-shadow {
                     0%,
                     100% {
                         transform: scale(1);
-                        opacity: 0.22;
+                        opacity: 1;
                     }
                     50% {
                         transform: scale(0.9);
-                        opacity: 0.15;
+                        opacity: 0.7;
                     }
                 }
-                .laptop:hover .lp-art :global(.lp-body),
-                .laptop:focus-visible .lp-art :global(.lp-body) {
-                    animation-play-state: paused;
-                }
-                .laptop:hover .lp-art :global(svg),
-                .laptop:focus-visible .lp-art :global(svg) {
-                    transform: translateY(-6px) scale(1.04) rotate(-2deg);
-                }
-                .lp-art :global(svg) {
-                    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-                }
-                .laptop:focus-visible .lp-art {
+                .laptop:focus-visible .lp-float {
                     outline: 2px dashed #3a99c9;
-                    outline-offset: 4px;
+                    outline-offset: 6px;
                     border-radius: 14px;
                 }
                 @media (prefers-reduced-motion: reduce) {
-                    .lp-art :global(.lp-body),
-                    .lp-art :global(.lp-shadow) {
+                    .lp-float,
+                    .lp-shadow {
                         animation: none;
+                    }
+                    .lp-flip {
+                        transition-duration: 0.01ms;
                     }
                 }
             `}</style>

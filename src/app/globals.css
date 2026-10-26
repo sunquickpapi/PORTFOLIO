@@ -11027,7 +11027,7 @@ html.fvl-loading body {
 .hero-laptop {
   position: absolute;
   right: -178px;
-  top: -168px;
+  top: -150px;
   z-index: 3;
   transform: rotate(4deg);
   animation: hero-laptop-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.9s both;
