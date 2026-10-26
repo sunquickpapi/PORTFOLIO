@@ -9,6 +9,7 @@ import { markPageReady } from "@/lib/pageReady";
 import Dossier from "./Dossier";
 import Earbuds from "./Earbuds";
 import Laptop from "./Laptop";
+import Notebook from "./Notebook";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
 
@@ -228,6 +229,9 @@ export default function Hero() {
                             </div>
                             <div className="hero-earbuds">
                                 <Earbuds />
+                            </div>
+                            <div className="hero-notebook">
+                                <Notebook />
                             </div>
                             <div className="hero-dossier">
                                 <Dossier href={profile.resume_url || "/assets/resume.pdf"} />
