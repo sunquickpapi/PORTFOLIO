@@ -113,8 +113,8 @@ const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 function place(d: number, H: number) {
     const a = Math.abs(d);
     const sgn = Math.sign(d);
-    const y = sgn * H * (0.5 * clamp(a, 0, 1) + 0.34 * clamp(a - 1, 0, 1) + 0.2 * clamp(a - 2, 0, 1));
-    const scale = 1 - 0.13 * clamp(a, 0, 3);
+    const y = sgn * H * (0.47 * clamp(a, 0, 1) + 0.27 * clamp(a - 1, 0, 1) + 0.16 * clamp(a - 2, 0, 1));
+    const scale = 1 - 0.24 * clamp(a, 0, 1) - 0.1 * clamp(a - 1, 0, 2);
     const rot = clamp(-d * 11, -32, 32);
     const opacity = a > 2.7 ? 0 : 1 - clamp(a - 1.9, 0, 1) * 1.25;
     const shade = clamp(a * 0.16, 0, 0.45);
@@ -286,17 +286,16 @@ export default function LaptopShowcase({
     const colTop = Math.max(40, rect.top + rect.height / 2 - colH / 2);
 
     const card = anchor.current?.closest(".hero-pass-move")?.getBoundingClientRect();
-    const buds = anchor.current?.closest(".hero-pass-move")?.querySelector(".hero-earbuds")?.getBoundingClientRect();
-    const leftEdge = Math.min(card ? card.left : rect.left, buds && buds.width ? buds.left : Infinity);
-    const TC = 74;
-    const TGAP = 10;
-    const cols = techs.length > 9 ? 4 : 3;
-    const techW = cols * TC + (cols - 1) * TGAP;
-    const techLeft = Math.max(14, leftEdge - 30 - techW);
-    const rowsT = Math.max(1, Math.ceil(techs.length / cols));
-    const techH = 24 + rowsT * TC + (rowsT - 1) * TGAP;
-    const techTop = card ? card.top + card.height / 2 - techH / 2 : colTop;
-    const project = list[sel];
+    const TC = 54;
+    const TGAP = 8;
+    const nt = techs.length;
+    const cols = Math.max(1, nt <= 4 ? nt : Math.min(6, Math.ceil(nt / 2)));
+    const rowsT = Math.max(1, Math.ceil(nt / cols));
+    const techW = 6 * TC + 5 * TGAP; // fixed box, cards line up against its right edge
+    const techLeft = Math.max(14, rect.left - 6 - techW);
+    const techH = 22 + rowsT * TC + (rowsT - 1) * TGAP;
+    const midY = rect.top + rect.height * 0.42;
+    const techTop = Math.min(midY - techH / 2, (card ? card.top : Infinity) - 12 - techH);
 
     return createPortal(
         <div className={`scs ${shown ? "is-in" : ""}`}>
@@ -360,12 +359,6 @@ export default function LaptopShowcase({
                     })}
                 </div>
             </div>
-            <div className="scs-cap" style={{ left: colLeft, top: colTop + colH + 6, width: colW }}>
-                <span className="scs-cap-title">{project ? project.title : "Loading…"}</span>
-                <span className={`scs-cap-count ${courier.className}`}>
-                    {String(sel + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
-                </span>
-            </div>
 
             <style jsx>{`
                 .scs {
@@ -383,7 +376,7 @@ export default function LaptopShowcase({
                     letter-spacing: 0.24em;
                     color: #3a7ca5;
                     text-align: right;
-                    margin-bottom: 10px;
+                    margin-bottom: 8px;
                     opacity: 0;
                     transition: opacity 0.4s ease;
                 }
@@ -402,6 +395,8 @@ export default function LaptopShowcase({
                     flex-wrap: wrap;
                     justify-content: flex-end;
                     gap: ${TGAP}px;
+                    margin-left: auto;
+                    width: ${cols * TC + (cols - 1) * TGAP}px;
                 }
                 .tc {
                     position: relative;
@@ -445,36 +440,36 @@ export default function LaptopShowcase({
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    gap: 6px;
-                    padding: 8px 6px;
-                    border-radius: 8px;
+                    gap: 4px;
+                    padding: 5px 4px;
+                    border-radius: 7px;
                     background: linear-gradient(160deg, #ffffff 0%, #f3f7fa 60%, #e6edf2 100%);
                     box-shadow: inset 0 0 0 1px rgba(13, 42, 66, 0.1), inset 0 1px 0 #fff, 0 10px 18px -12px rgba(13, 42, 66, 0.5);
                 }
                 .tc :global(.tc-logo) {
-                    width: 28px;
-                    height: 28px;
+                    width: 20px;
+                    height: 20px;
                     object-fit: contain;
                     user-select: none;
                 }
                 .tc :global(.tc-mono) {
-                    width: 28px;
-                    height: 28px;
+                    width: 20px;
+                    height: 20px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     border-radius: 50%;
-                    border: 2px solid #1b4f72;
+                    border: 1.5px solid #1b4f72;
                     font-family: var(--font-geist-sans), Inter, -apple-system, sans-serif;
-                    font-size: 10.5px;
+                    font-size: 8px;
                     font-weight: 800;
                     color: #1b4f72;
                 }
                 .tc :global(.tc-name) {
                     max-width: 100%;
-                    font-size: 7.5px;
+                    font-size: 6px;
                     font-weight: 700;
-                    letter-spacing: 0.04em;
+                    letter-spacing: 0.03em;
                     text-transform: uppercase;
                     color: var(--ink);
                     text-align: center;
@@ -540,35 +535,6 @@ export default function LaptopShowcase({
                     position: absolute;
                     inset: 0;
                     background: linear-gradient(135deg, #1b4f72, #0d2a42);
-                }
-                .scs-cap {
-                    position: absolute;
-                    display: flex;
-                    align-items: baseline;
-                    justify-content: space-between;
-                    gap: 10px;
-                    padding: 0 12px;
-                    opacity: 0;
-                    transition: opacity 0.4s ease 0.1s;
-                }
-                .scs.is-in .scs-cap {
-                    opacity: 1;
-                }
-                .scs-cap-title {
-                    font-family: var(--font-geist-sans), Inter, -apple-system, sans-serif;
-                    font-size: 13px;
-                    font-weight: 800;
-                    color: var(--ink);
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-                .scs-cap-count {
-                    flex: none;
-                    font-size: 10.5px;
-                    font-weight: 700;
-                    letter-spacing: 0.14em;
-                    color: #3a7ca5;
                 }
                 @media (prefers-reduced-motion: reduce) {
                     .tc,
