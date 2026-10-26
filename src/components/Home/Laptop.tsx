@@ -1,11 +1,14 @@
 "use client";
 
+import { useRef, useState } from "react";
+import LaptopShowcase, { prefetchProjects } from "./LaptopShowcase";
+
 /**
  * Sky-blue laptop by the pass card's top-right corner, built from real 3D planes.
  * At rest: closed, seen from above (embossed FVL on the lid).
  * On hover / focus: the lid swings open on its hinge, then the laptop tilts back so the
- * screen faces you ("Stacks & Projects"). Leaving reverses it. Click jumps to the Stack
- * section. No brand marks.
+ * screen faces you ("Stacks & Projects"). Leaving reverses it. Click opens the
+ * Stacks & Projects showcase (LaptopShowcase). No brand marks.
  *
  * Geometry: base and lid are W×D planes hinged on their top edge. Opening the lid by
  * LID° and tilting the whole laptop by (180 − LID)° puts the screen flat toward the viewer.
@@ -26,8 +29,24 @@ const RIBBONS = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 110" p
 </svg>`;
 
 export default function Laptop() {
+    const ref = useRef<HTMLAnchorElement>(null);
+    const [from, setFrom] = useState<DOMRect | null>(null);
     return (
-        <a className="laptop" href="#tech-stack" aria-label="Stacks & Projects: see my tech stack and projects">
+        <>
+        <a
+            ref={ref}
+            className={`laptop ${from ? "is-away" : ""}`}
+            href="#projects"
+            aria-label="Stacks & Projects: open the project showcase"
+            aria-haspopup="dialog"
+            onMouseEnter={() => prefetchProjects()}
+            onFocus={() => prefetchProjects()}
+            onClick={(e) => {
+                e.preventDefault();
+                const r = ref.current?.querySelector(".lp-lid")?.getBoundingClientRect() || ref.current?.getBoundingClientRect();
+                if (r) setFrom(r);
+            }}
+        >
             <span className="lp-shadow" aria-hidden="true" />
             <span className="lp-float" aria-hidden="true">
                 <span className="lp-obj">
@@ -300,7 +319,15 @@ export default function Laptop() {
                         transition-delay: 0s;
                     }
                 }
+                /* hidden while its enlarged copy is on screen */
+                .laptop.is-away {
+                    opacity: 0;
+                    pointer-events: none;
+                    transition: opacity 0.15s ease;
+                }
             `}</style>
         </a>
+        {from && <LaptopShowcase from={from} onClose={() => setFrom(null)} />}
+        </>
     );
 }
