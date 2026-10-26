@@ -1,17 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Courier_Prime } from "next/font/google";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { X } from "lucide-react";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
 
-type Project = { id: string; title: string; image_url?: string | null; tech_stack?: string[] | null; slug?: string | null };
-
-const MAX_MARKS = 10; // keeps the ring neat; the rest show as "+N"
-const INK = ["#1b4f72", "#0d2a42", "#2a7aa8"];
-const MARK = 104; // postmark size (px)
+type Project = { id: string; title: string; image_url?: string | null; tech_stack?: string[] | null };
 
 let cache: Project[] | null = null;
 let loading: Promise<Project[]> | null = null;
@@ -34,540 +30,572 @@ export function prefetchProjects(): Promise<Project[]> {
     return loading;
 }
 
-/** One vintage postmark for a technology: double ring, ring text, name in the middle. */
-function Postmark({ name, seed }: { name: string; seed: string }) {
-    const words = name.trim().split(/\s+/);
-    // balance into one or two lines
-    let lines = [name];
-    if (name.length > 9 && words.length > 1) {
-        let best = 1;
-        let bestDiff = Infinity;
-        for (let k = 1; k < words.length; k++) {
-            const a = words.slice(0, k).join(" ").length;
-            const b = words.slice(k).join(" ").length;
-            if (Math.abs(a - b) < bestDiff) {
-                bestDiff = Math.abs(a - b);
-                best = k;
-            }
-        }
-        lines = [words.slice(0, best).join(" "), words.slice(best).join(" ")];
-    }
-    const longest = Math.max(...lines.map((l) => l.length));
-    const size = Math.min(15, 66 / (longest * 0.6));
-    const lh = size * 1.05;
-    const y0 = 60 - ((lines.length - 1) * lh) / 2 + size * 0.34;
-    const id = `pm-${seed}`;
+/** Simple Icons slugs for the technologies we know; anything else gets a monogram case. */
+const LOGOS: Record<string, string> = {
+    "react native": "react",
+    react: "react",
+    expo: "expo",
+    "expo router": "expo",
+    python: "python",
+    flask: "flask",
+    sqlite: "sqlite",
+    "hugging face transformers": "huggingface",
+    "hugging face": "huggingface",
+    clip: "openai",
+    leaflet: "leaflet",
+    openstreetmap: "openstreetmap",
+    swiftui: "swift",
+    swift: "swift",
+    firebase: "firebase",
+    appstore: "appstore",
+    "app store": "appstore",
+    ios: "apple",
+    php: "php",
+    sql: "mysql",
+    mysql: "mysql",
+    javascript: "javascript",
+    typescript: "typescript",
+    "next.js": "nextdotjs",
+    nextjs: "nextdotjs",
+    supabase: "supabase",
+    figma: "figma",
+    html: "html5",
+    css: "css",
+    tailwind: "tailwindcss",
+    "tailwind css": "tailwindcss",
+    "node.js": "nodedotjs",
+    laravel: "laravel",
+    flutter: "flutter",
+    kotlin: "kotlin",
+    java: "openjdk",
+    git: "git",
+    github: "github",
+    vercel: "vercel",
+    tensorflow: "tensorflow",
+    pytorch: "pytorch",
+};
+const logoFor = (t: string) => {
+    const slug = LOGOS[t.trim().toLowerCase()];
+    return slug ? `https://cdn.simpleicons.org/${slug}` : null;
+};
+const monogram = (t: string) =>
+    t
+        .replace(/[^A-Za-z0-9 ]/g, " ")
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase();
+
+/** Folder colours: soft paper-blues in the site's palette. */
+const FOLDERS = [
+    ["#e6f2f9", "#c4e2f3"],
+    ["#d3eaf6", "#a6d1ec"],
+    ["#eef3f6", "#d6e2ea"],
+    ["#c8e5f5", "#8fc8ea"],
+    ["#e9eef0", "#c9d6de"],
+    ["#dbeef8", "#b7dcf2"],
+];
+
+function TechCase({ name }: { name: string }) {
+    const [broken, setBroken] = useState(false);
+    const src = logoFor(name);
     return (
-        <svg viewBox="0 0 120 120" width={MARK} height={MARK}>
-            <defs>
-                <path id={id} d="M60 60 m-45 0 a45 45 0 1 1 90 0 a45 45 0 1 1 -90 0" />
-            </defs>
-            <circle cx="60" cy="60" r="56" fill="rgba(255,255,255,0.35)" stroke="currentColor" strokeWidth="3.2" />
-            <circle cx="60" cy="60" r="36.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
-            <text fill="currentColor" fontSize="8" fontWeight="700" className={courier.className}>
-                <textPath href={`#${id}`} startOffset="0" textLength="276" lengthAdjust="spacing">
-                    {"TECH STACK • FVL • 2026 • TECH STACK • FVL • 2026 •"}
-                </textPath>
-            </text>
-            <g fill="currentColor" fontWeight="700" textAnchor="middle" className={courier.className}>
-                {lines.map((l, i) => (
-                    <text key={i} x="60" y={y0 + i * lh} fontSize={size}>
-                        {l.toUpperCase()}
-                    </text>
-                ))}
-            </g>
-        </svg>
+        <>
+            <span className="tc-face">
+                {src && !broken ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img className="tc-logo" src={src} alt="" draggable={false} onError={() => setBroken(true)} />
+                ) : (
+                    <span className="tc-mono">{monogram(name)}</span>
+                )}
+                <span className={`tc-name ${courier.className}`}>{name}</span>
+            </span>
+            <span className="tc-spine" />
+        </>
     );
 }
 
 /**
- * Full-screen showcase opened from the hero laptop: the page dims and blurs, the laptop
- * grows to the centre, its screen zooms into each project's main image, and that
- * project's tech stack floats around it as postmarks.
+ * Stacks & Projects, opened from the hero laptop. Left: a 3D row of tech cases (logo +
+ * name). Right: a pile of project folders (name on the tab, main image inside). Pick a
+ * folder and it is pulled up out of the pile while its tech cases slide out of the row.
  */
-export default function LaptopShowcase({ from, onClose }: { from: DOMRect; onClose: () => void }) {
+export default function LaptopShowcase({ onClose }: { from?: DOMRect; onClose: () => void }) {
     const [projects, setProjects] = useState<Project[] | null>(cache);
-    const [idx, setIdx] = useState(0);
-    const [phase, setPhase] = useState<"enter" | "open" | "zoomed" | "closing">("enter");
-    const [vp, setVp] = useState(() => ({ w: window.innerWidth, h: window.innerHeight }));
-    const lapRef = useRef<HTMLDivElement>(null);
-    const closeBtn = useRef<HTMLButtonElement>(null);
+    const [sel, setSel] = useState(0);
+    const [shown, setShown] = useState(false);
 
     useEffect(() => {
-        if (cache) return;
-        prefetchProjects().then((d) => setProjects(d));
-    }, []);
-
-    // size everything from the viewport
-    useLayoutEffect(() => {
-        const update = () => setVp({ w: window.innerWidth, h: window.innerHeight });
-        update();
-        window.addEventListener("resize", update);
-        return () => window.removeEventListener("resize", update);
-    }, []);
-
-    const lw = Math.max(320, Math.min(600, vp.w - 360, (vp.h - 430) / 0.64));
-    const lidH = lw * 0.64;
-    const baseH = lw * 0.05;
-    const lapH = lidH + baseH;
-    const cx = vp.w / 2;
-    const cy = vp.h / 2 - 24;
-
-    // FLIP: start exactly where the small laptop was, then grow to the centre
-    // (worked out before the first paint, so the very first frame is the small laptop)
-    const [startT] = useState(
-        () =>
-            `translate(${from.left + from.width / 2 - cx}px, ${from.top + from.height / 2 - cy}px) scale(${from.width / lw})`
-    );
-    useLayoutEffect(() => {
-        // wait two frames so the starting (small) position is painted before growing
-        let f2 = 0;
-        const f1 = requestAnimationFrame(() => {
-            f2 = requestAnimationFrame(() => setPhase("open"));
-        });
-        const t1 = window.setTimeout(() => {}, 0);
-        const t2 = window.setTimeout(() => setPhase((p) => (p === "open" ? "zoomed" : p)), 900);
-        return () => {
-            cancelAnimationFrame(f1);
-            cancelAnimationFrame(f2);
-            window.clearTimeout(t1);
-            window.clearTimeout(t2);
-        };
-        // only on mount
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        if (!cache) prefetchProjects().then(setProjects);
+        const f = requestAnimationFrame(() => requestAnimationFrame(() => setShown(true)));
+        return () => cancelAnimationFrame(f);
     }, []);
 
     const close = useCallback(() => {
-        setPhase("closing");
-        window.setTimeout(onClose, 620);
+        setShown(false);
+        window.setTimeout(onClose, 450);
     }, [onClose]);
 
     const list = projects || [];
     const n = list.length;
-    const go = useCallback((d: number) => n && setIdx((i) => (i + d + n) % n), [n]);
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key === "Escape") close();
-            if (e.key === "ArrowRight") go(1);
-            if (e.key === "ArrowLeft") go(-1);
+            if (e.key === "ArrowDown" || e.key === "ArrowRight") setSel((i) => (n ? (i + 1) % n : 0));
+            if (e.key === "ArrowUp" || e.key === "ArrowLeft") setSel((i) => (n ? (i - 1 + n) % n : 0));
         };
         window.addEventListener("keydown", onKey);
         const prev = document.body.style.overflow;
         document.body.style.overflow = "hidden";
-        closeBtn.current?.focus({ preventScroll: true });
         return () => {
             window.removeEventListener("keydown", onKey);
             document.body.style.overflow = prev;
         };
-    }, [close, go]);
+    }, [close, n]);
 
-    const project = list[idx];
-    const stack = (project?.tech_stack || []).filter(Boolean);
-    const shown = stack.slice(0, stack.length > MAX_MARKS ? MAX_MARKS - 1 : MAX_MARKS);
-    const extra = stack.length - shown.length;
-    const marks = extra > 0 ? [...shown, `+${extra} more`] : shown;
+    // every technology once, in the order projects list them
+    const techs = useMemo(() => {
+        const seen = new Map<string, string>();
+        list.forEach((p) => (p.tech_stack || []).forEach((t) => t && !seen.has(t.toLowerCase()) && seen.set(t.toLowerCase(), t)));
+        return [...seen.values()];
+    }, [list]);
+    const active = useMemo(
+        () => new Set((list[sel]?.tech_stack || []).map((t) => t.toLowerCase())),
+        [list, sel]
+    );
+    const activeOrder = useMemo(() => (list[sel]?.tech_stack || []).map((t) => t.toLowerCase()), [list, sel]);
+    const project = list[sel];
 
-    // place the postmarks on a rounded-rectangle ring around the laptop
-    const rx = lw / 2 + 128;
-    const ry = Math.min(lapH / 2 + 112, vp.h / 2 - 140);
-    const pos = marks.map((_, i) => {
-        const a = ((-90 + (360 * (i + 0.5)) / marks.length) * Math.PI) / 180;
-        const c = Math.cos(a);
-        const s = Math.sin(a);
-        const p = 0.72; // between an ellipse and a rounded rectangle: even spacing, clear of the corners
-        return {
-            x: cx + rx * Math.sign(c) * Math.abs(c) ** p,
-            y: cy + ry * Math.sign(s) * Math.abs(s) ** p,
-            rot: ((i * 37 + idx * 11) % 26) - 13,
-            ink: INK[i % 3],
-            delay: 120 + i * 70,
-        };
-    });
-
-    const visible = phase === "open" || phase === "zoomed";
-    const zoomed = phase === "zoomed";
+    // row geometry: cases recede up and to the right
+    const STEP_X = 24;
+    const STEP_Y = -13;
+    const STEP_Z = -38;
+    // pile geometry: the picked folder sits in front, the others peek out above it as tabs
+    const PEEK = 22;
+    const FRONT_GAP = 18;
 
     return createPortal(
-        <div className={`lps ${visible ? "is-in" : ""}`} role="dialog" aria-modal="true" aria-label="Stacks and projects">
-            <div className="lps-backdrop" onClick={close} />
+        <div className={`scs ${shown ? "is-in" : ""}`} role="dialog" aria-modal="true" aria-label="Stacks and projects">
+            <div className="scs-backdrop" onClick={close} />
 
-            <div
-                ref={lapRef}
-                className="lps-laptop"
-                style={{
-                    width: lw,
-                    left: cx - lw / 2,
-                    top: cy - lapH / 2,
-                    transform: visible || !startT ? "none" : startT,
-                }}
-            >
-                <div className="lps-lid" style={{ height: lidH }}>
-                    <div className="lps-display">
-                        {/* intro: the hero laptop's own title, zooming past */}
-                        <div className={`lps-intro ${zoomed ? "is-gone" : ""}`}>
-                            <span className="lps-intro-title">
-                                Stacks &amp;
-                                <br />
-                                Projects
-                            </span>
-                        </div>
-                        {list.map((p, i) => (
-                            <div key={p.id} className={`lps-shot ${zoomed && i === idx ? "is-on" : ""}`} aria-hidden={i !== idx}>
-                                {p.image_url ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={p.image_url} alt={i === idx ? p.title : ""} draggable={false} />
-                                ) : (
-                                    <div className="lps-noimg" />
-                                )}
+            <header className="scs-head">
+                <span className={`scs-kicker ${courier.className}`}>STACKS &amp; PROJECTS</span>
+                <span className="scs-title">{project ? project.title : "Loading…"}</span>
+                {project && (
+                    <span className={`scs-count ${courier.className}`}>
+                        N°{String(sel + 1).padStart(2, "0")} / {String(n).padStart(2, "0")} · {project.tech_stack?.length || 0} in the stack
+                    </span>
+                )}
+            </header>
+
+            {/* LEFT: tech cases in a row */}
+            <section className="scs-stack" aria-label="Tech stack">
+                <div className="scs-rail">
+                    {techs.map((t, i) => {
+                        const on = active.has(t.toLowerCase());
+                        // where this case lands when it pops out: a tidy 4-column grid beside the row
+                        const k = on ? activeOrder.indexOf(t.toLowerCase()) : 0;
+                        const gc = k % 4;
+                        const gr = Math.floor(k / 4);
+                        return (
+                            <div
+                                key={t}
+                                className={`tc ${on ? "is-on" : ""}`}
+                                style={
+                                    {
+                                        "--x": `${i * STEP_X}px`,
+                                        "--y": `${i * STEP_Y}px`,
+                                        "--z": `${i * STEP_Z}px`,
+                                        "--d": `${i * 25}ms`,
+                                        "--gx": `${300 + gc * 128 + (gr % 2) * 30}px`,
+                                        "--gy": `${-gr * 132}px`,
+                                        "--pd": `${k * 45}ms`,
+                                        zIndex: on ? 200 + k : techs.length - i,
+                                    } as React.CSSProperties
+                                }
+                                title={t}
+                            >
+                                <TechCase name={t} />
                             </div>
-                        ))}
-                        {project && (
-                            <div className={`lps-caption ${zoomed ? "is-on" : ""}`}>
-                                <span className={`lps-no ${courier.className}`}>
-                                    N°{String(idx + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
+                        );
+                    })}
+                </div>
+            </section>
+
+            {/* RIGHT: pile of project folders */}
+            <section className="scs-pile" aria-label="Projects">
+                <div className="scs-files" style={{ height: Math.max(0, n - 2) * PEEK + FRONT_GAP + 300 }}>
+                    {list.map((p, i) => {
+                        const [c1, c2] = FOLDERS[i % FOLDERS.length];
+                        const on = i === sel;
+                        const rank = i < sel ? i : i - 1; // order among the folders left in the pile
+                        const top = on ? Math.max(0, n - 2) * PEEK + FRONT_GAP : rank * PEEK;
+                        return (
+                            <button
+                                key={p.id}
+                                type="button"
+                                className={`fd ${on ? "is-on" : ""}`}
+                                style={
+                                    {
+                                        top,
+                                        zIndex: on ? 100 : rank + 1,
+                                        "--c1": c1,
+                                        "--c2": c2,
+                                        "--tab": `${[4, 36, 66][i % 3]}%`,
+                                        "--d": `${120 + i * 40}ms`,
+                                    } as React.CSSProperties
+                                }
+                                onClick={() => setSel(i)}
+                                aria-pressed={on}
+                                aria-label={`Show ${p.title}`}
+                            >
+                                <span className={`fd-tab ${courier.className}`}>{p.title}</span>
+                                <span className="fd-body">
+                                    {p.image_url ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img className="fd-img" src={p.image_url} alt="" draggable={false} loading="lazy" />
+                                    ) : (
+                                        <span className="fd-img fd-noimg" />
+                                    )}
                                 </span>
-                                <span className="lps-name">{project.title}</span>
-                            </div>
-                        )}
-                        <span className="lps-glass" />
-                    </div>
-                    <span className="lps-cam" />
+                            </button>
+                        );
+                    })}
                 </div>
-                <div className="lps-base" style={{ height: baseH }}>
-                    <span className="lps-notch" />
-                </div>
-            </div>
+            </section>
 
-            {/* tech stack postmarks floating around the laptop */}
-            {zoomed &&
-                marks.map((m, i) => (
-                    <div
-                        key={`${idx}-${m}`}
-                        className="lps-mark"
-                        style={{
-                            left: pos[i].x - MARK / 2,
-                            top: pos[i].y - MARK / 2,
-                            color: pos[i].ink,
-                            animationDelay: `${pos[i].delay}ms, ${pos[i].delay + 600 + i * 230}ms`,
-                            ["--rot" as string]: `${pos[i].rot}deg`,
-                        }}
-                        title={m}
-                    >
-                        <Postmark name={m} seed={`${idx}-${i}`} />
-                    </div>
-                ))}
-
-            <div className={`lps-controls ${zoomed && n > 1 ? "is-on" : ""}`}>
-                <button type="button" className="lps-arrow" onClick={() => go(-1)} aria-label="Previous project">
-                    <ChevronLeft size={20} strokeWidth={2.4} />
-                </button>
-                <div className="lps-dots">
-                    {list.map((p, i) => (
-                        <button
-                            key={p.id}
-                            type="button"
-                            className={`lps-dot ${i === idx ? "is-on" : ""}`}
-                            onClick={() => setIdx(i)}
-                            aria-label={`Show ${p.title}`}
-                        />
-                    ))}
-                </div>
-                <button type="button" className="lps-arrow" onClick={() => go(1)} aria-label="Next project">
-                    <ChevronRight size={20} strokeWidth={2.4} />
-                </button>
-            </div>
-
-            <button ref={closeBtn} type="button" className="lps-close" onClick={close} aria-label="Close">
+            <button type="button" className="scs-close" onClick={close} aria-label="Close">
                 <X size={22} strokeWidth={2.4} />
             </button>
 
             <style jsx>{`
-                .lps {
+                .scs {
                     position: fixed;
                     inset: 0;
                     z-index: 5000;
-                    --ease: cubic-bezier(0.65, 0, 0.35, 1);
+                    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+                    --ink: #0d2a42;
+                    overflow: hidden;
                 }
-                .lps-backdrop {
+                .scs-backdrop {
                     position: absolute;
                     inset: 0;
-                    background: rgba(233, 238, 241, 0.72);
-                    backdrop-filter: blur(10px) saturate(0.9);
-                    -webkit-backdrop-filter: blur(10px) saturate(0.9);
+                    background: rgba(233, 238, 241, 0.8);
+                    backdrop-filter: blur(12px) saturate(0.9);
+                    -webkit-backdrop-filter: blur(12px) saturate(0.9);
                     opacity: 0;
-                    transition: opacity 0.5s ease;
+                    transition: opacity 0.45s ease;
                 }
-                .lps.is-in .lps-backdrop {
+                .scs.is-in .scs-backdrop {
                     opacity: 1;
                 }
 
-                /* the enlarged laptop, front view */
-                .lps-laptop {
+                .scs-head {
                     position: absolute;
-                    transform-origin: 50% 50%;
-                    transition: transform 0.75s var(--ease);
-                    filter: drop-shadow(0 28px 34px rgba(13, 42, 66, 0.28)) drop-shadow(0 4px 8px rgba(13, 42, 66, 0.18));
-                }
-                .lps-lid {
-                    position: relative;
-                    border-radius: 18px;
-                    padding: 3px;
-                    background: linear-gradient(180deg, #b7e0f6 0%, #8fc8ea 55%, #6cb0dc 100%);
-                    box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.85), inset 0 0 0 1px rgba(27, 79, 114, 0.25);
-                }
-                .lps-lid::before {
-                    content: "";
-                    position: absolute;
-                    inset: 3px;
-                    border-radius: 15px;
-                    background: #0b1118;
-                }
-                .lps-display {
-                    position: absolute;
-                    inset: 14px 14px 18px 14px;
-                    border-radius: 6px;
-                    overflow: hidden;
-                    background: linear-gradient(135deg, #0b1f33 0%, #0d2a42 60%, #14395a 100%);
-                }
-                .lps-cam {
-                    position: absolute;
-                    top: 7px;
-                    left: calc(50% - 2.5px);
-                    width: 5px;
-                    height: 5px;
-                    border-radius: 50%;
-                    background: #2a3440;
-                }
-                .lps-intro {
-                    position: absolute;
-                    inset: 0;
-                    display: flex;
-                    align-items: center;
-                    padding-left: 9%;
-                    transition: transform 0.7s var(--ease), opacity 0.45s ease 0.15s;
-                }
-                .lps-intro.is-gone {
-                    transform: scale(2.6);
-                    opacity: 0;
-                }
-                .lps-intro-title {
-                    font-family: var(--font-geist-sans), Inter, -apple-system, sans-serif;
-                    font-size: clamp(28px, 4.2vw, 52px);
-                    font-weight: 800;
-                    line-height: 1.08;
-                    letter-spacing: -0.02em;
-                    color: #fff;
-                }
-                .lps-shot {
-                    position: absolute;
-                    inset: 0;
-                    opacity: 0;
-                    transform: scale(1.18);
-                    transition: opacity 0.45s ease, transform 0.9s var(--ease);
-                }
-                .lps-shot.is-on {
-                    opacity: 1;
-                    transform: scale(1);
-                }
-                .lps-shot img,
-                .lps-noimg {
-                    display: block;
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                    object-position: top center;
-                    user-select: none;
-                }
-                .lps-noimg {
-                    background: linear-gradient(135deg, #1b4f72, #0d2a42);
-                }
-                .lps-caption {
-                    position: absolute;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
+                    top: 30px;
+                    left: 50%;
+                    width: min(640px, 60vw);
+                    transform: translate(-50%, -10px);
                     display: flex;
                     flex-direction: column;
-                    gap: 4px;
-                    padding: 34px 18px 14px;
-                    background: linear-gradient(180deg, rgba(11, 17, 24, 0), rgba(11, 17, 24, 0.78));
-                    opacity: 0;
-                    transform: translateY(10px);
-                    transition: opacity 0.4s ease 0.35s, transform 0.5s var(--ease) 0.35s;
-                }
-                .lps-caption.is-on {
-                    opacity: 1;
-                    transform: none;
-                }
-                .lps-no {
-                    font-size: 11px;
-                    font-weight: 700;
-                    letter-spacing: 0.18em;
-                    color: #9fd8f2;
-                }
-                .lps-name {
-                    font-family: var(--font-geist-sans), Inter, -apple-system, sans-serif;
-                    font-size: 18px;
-                    font-weight: 700;
-                    letter-spacing: -0.01em;
-                    color: #fff;
-                }
-                .lps-glass {
-                    position: absolute;
-                    inset: 0;
-                    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 40%);
-                    pointer-events: none;
-                }
-                .lps-base {
-                    position: relative;
-                    margin: -2px -5%;
-                    border-radius: 3px 3px 14px 14px;
-                    background: linear-gradient(180deg, #cfe9f8 0%, #a6d1ec 55%, #7fb6dc 100%);
-                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -2px 4px rgba(27, 79, 114, 0.25);
-                }
-                .lps-notch {
-                    position: absolute;
-                    top: 0;
-                    left: calc(50% - 9%);
-                    width: 18%;
-                    height: 38%;
-                    border-radius: 0 0 8px 8px;
-                    background: rgba(27, 79, 114, 0.22);
-                }
-
-                /* postmarks: stamp in, then drift gently */
-                .lps-mark {
-                    position: absolute;
-                    width: ${MARK}px;
-                    height: ${MARK}px;
-                    opacity: 0;
-                    transform: rotate(var(--rot)) scale(1.6);
-                    animation: lps-stamp 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) forwards, lps-drift 5s ease-in-out infinite;
-                    pointer-events: none;
-                }
-                .lps-mark::after {
-                    content: "";
-                    position: absolute;
-                    inset: 0;
-                    border-radius: 50%;
-                    background: url(/assets/passcard/pass-ink-gaps.png) center / 160px 160px;
-                    opacity: 0.55;
-                }
-                .lps-mark :global(svg) {
-                    display: block;
-                    opacity: 0.9;
-                }
-                @keyframes lps-stamp {
-                    0% {
-                        opacity: 0;
-                        transform: rotate(var(--rot)) scale(1.6);
-                    }
-                    60% {
-                        opacity: 1;
-                        transform: rotate(var(--rot)) scale(0.95);
-                    }
-                    100% {
-                        opacity: 1;
-                        transform: rotate(var(--rot)) scale(1);
-                    }
-                }
-                @keyframes lps-drift {
-                    0%,
-                    100% {
-                        translate: 0 0;
-                    }
-                    50% {
-                        translate: 0 -6px;
-                    }
-                }
-
-                .lps-controls {
-                    position: absolute;
-                    left: 50%;
-                    bottom: 34px;
-                    display: flex;
                     align-items: center;
-                    gap: 14px;
-                    transform: translate(-50%, 12px);
+                    gap: 6px;
+                    text-align: center;
                     opacity: 0;
+                    transition: opacity 0.4s ease 0.1s, transform 0.5s var(--ease) 0.1s;
                     pointer-events: none;
-                    transition: opacity 0.35s ease, transform 0.45s var(--ease);
                 }
-                .lps-controls.is-on {
+                .scs.is-in .scs-head {
                     opacity: 1;
                     transform: translate(-50%, 0);
-                    pointer-events: auto;
                 }
-                .lps-arrow,
-                .lps-close {
-                    display: inline-flex;
+                .scs-kicker {
+                    font-size: 12px;
+                    font-weight: 700;
+                    letter-spacing: 0.3em;
+                    color: #3a7ca5;
+                }
+                .scs-title {
+                    font-family: var(--font-geist-sans), Inter, -apple-system, sans-serif;
+                    font-size: 26px;
+                    font-weight: 800;
+                    letter-spacing: -0.02em;
+                    color: var(--ink);
+                }
+                .scs-count {
+                    font-size: 11px;
+                    font-weight: 700;
+                    letter-spacing: 0.12em;
+                    color: #5b6b7a;
+                }
+
+                /* ---------- LEFT: the row of tech cases ---------- */
+                .scs-stack {
+                    position: absolute;
+                    left: 4vw;
+                    top: 150px;
+                    bottom: 40px;
+                    width: 46vw;
+                    perspective: 1300px;
+                    perspective-origin: 20% 10%;
+                }
+                .scs-rail {
+                    position: absolute;
+                    left: 4%;
+                    bottom: 12%;
+                    transform-style: preserve-3d;
+                }
+                .tc {
+                    position: absolute;
+                    left: 0;
+                    bottom: 0;
+                    width: 132px;
+                    height: 132px;
+                    transform-style: preserve-3d;
+                    transform: translate3d(calc(var(--x) - 120px), var(--y), var(--z)) rotateY(38deg);
+                    opacity: 0;
+                    transition: transform 0.6s var(--ease), opacity 0.4s ease, filter 0.4s ease;
+                    filter: saturate(0.55) brightness(1.02);
+                }
+                .scs.is-in .tc {
+                    opacity: 1;
+                    transform: translate3d(var(--x), var(--y), var(--z)) rotateY(38deg);
+                    transition-delay: var(--d), var(--d), 0s;
+                }
+                /* the project's tech pops out of the row and lands in front, facing you */
+                .scs.is-in .tc.is-on {
+                    transform: translate3d(var(--gx), var(--gy), 180px) rotateY(14deg) scale(0.86);
+                    filter: none;
+                    transition: transform 0.65s cubic-bezier(0.34, 1.3, 0.64, 1), opacity 0.4s ease, filter 0.4s ease;
+                    transition-delay: var(--pd);
+                }
+                .tc :global(.tc-face) {
+                    position: absolute;
+                    inset: 0;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                    padding: 12px;
+                    border-radius: 6px;
+                    background: linear-gradient(160deg, #ffffff 0%, #f1f5f8 60%, #e2eaef 100%);
+                    box-shadow: inset 0 0 0 1px rgba(13, 42, 66, 0.12), inset 0 1px 0 #fff, 0 10px 22px -12px rgba(13, 42, 66, 0.45);
+                    backface-visibility: hidden;
+                }
+                /* jewel-case hinge strip */
+                .tc :global(.tc-face)::before {
+                    content: "";
+                    position: absolute;
+                    top: 0;
+                    bottom: 0;
+                    left: 7px;
+                    width: 1.5px;
+                    background: rgba(13, 42, 66, 0.12);
+                    box-shadow: 1px 0 0 #fff;
+                }
+                .tc :global(.tc-spine) {
+                    position: absolute;
+                    top: 0;
+                    bottom: 0;
+                    left: 0;
+                    width: 14px;
+                    background: linear-gradient(90deg, #c9d4db, #e6ecf0);
+                    transform-origin: 0 50%;
+                    transform: rotateY(90deg);
+                    border-radius: 2px;
+                }
+                .tc :global(.tc-logo) {
+                    width: 54px;
+                    height: 54px;
+                    object-fit: contain;
+                    user-select: none;
+                }
+                .tc :global(.tc-mono) {
+                    width: 54px;
+                    height: 54px;
+                    display: flex;
                     align-items: center;
                     justify-content: center;
                     border-radius: 50%;
-                    border: 2px solid #0d2a42;
-                    background: rgba(255, 255, 255, 0.7);
-                    color: #0d2a42;
-                    cursor: pointer;
-                    transition: background 0.2s ease, color 0.2s ease, transform 0.25s ease;
+                    border: 2.5px solid #1b4f72;
+                    outline: 1px solid #1b4f72;
+                    outline-offset: -7px;
+                    font-family: var(--font-geist-sans), Inter, -apple-system, sans-serif;
+                    font-size: 17px;
+                    font-weight: 800;
+                    color: #1b4f72;
                 }
-                .lps-arrow {
-                    width: 44px;
-                    height: 44px;
+                .tc :global(.tc-name) {
+                    max-width: 100%;
+                    font-size: 10.5px;
+                    font-weight: 700;
+                    letter-spacing: 0.06em;
+                    text-transform: uppercase;
+                    color: var(--ink);
+                    text-align: center;
+                    line-height: 1.15;
+                    overflow: hidden;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
                 }
-                .lps-arrow:hover,
-                .lps-close:hover,
-                .lps-arrow:focus-visible,
-                .lps-close:focus-visible {
-                    background: #0d2a42;
-                    color: #e9eef0;
-                    outline: none;
-                }
-                .lps-dots {
+
+                /* ---------- RIGHT: the pile of project folders ---------- */
+                .scs-pile {
+                    position: absolute;
+                    right: 5vw;
+                    top: 140px;
+                    bottom: 36px;
+                    width: min(470px, 38vw);
                     display: flex;
-                    gap: 8px;
+                    align-items: flex-end;
+                    justify-content: center;
                 }
-                .lps-dot {
-                    width: 8px;
-                    height: 8px;
+                .scs-files {
+                    position: relative;
+                    width: 100%;
+                    max-height: 100%;
+                }
+                .fd {
+                    position: absolute;
+                    left: 0;
+                    right: 0;
+                    height: 300px;
                     padding: 0;
-                    border-radius: 999px;
                     border: none;
-                    background: rgba(13, 42, 66, 0.25);
+                    background: none;
                     cursor: pointer;
-                    transition: width 0.3s var(--ease), background 0.3s ease;
+                    text-align: left;
+                    opacity: 0;
+                    transform: translateY(60px);
+                    transition: top 0.6s var(--ease), transform 0.55s var(--ease), opacity 0.4s ease;
+                    -webkit-tap-highlight-color: transparent;
                 }
-                .lps-dot.is-on {
-                    width: 22px;
+                .scs.is-in .fd {
+                    opacity: 1;
+                    transform: translateY(0);
+                    transition-delay: var(--d), var(--d);
+                }
+                .scs.is-in .fd:hover {
+                    transform: translateY(-10px);
+                    transition-delay: 0s;
+                }
+                /* picked: pulled out of the pile and laid in front, image showing */
+                .scs.is-in .fd.is-on {
+                    animation: fd-pull 0.6s var(--ease);
+                    transition-delay: 0s;
+                }
+                .scs.is-in .fd.is-on:hover {
+                    transform: none;
+                }
+                @keyframes fd-pull {
+                    0% {
+                        transform: translateY(-70px) rotate(-1.5deg);
+                    }
+                    100% {
+                        transform: none;
+                    }
+                }
+                .fd-tab {
+                    position: absolute;
+                    top: -22px;
+                    left: var(--tab);
+                    max-width: 44%;
+                    height: 24px;
+                    padding: 5px 14px 0;
+                    border-radius: 9px 9px 0 0;
+                    background: var(--c1);
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 0 0 1px rgba(13, 42, 66, 0.1);
+                    font-size: 10.5px;
+                    font-weight: 700;
+                    letter-spacing: 0.06em;
+                    text-transform: uppercase;
+                    color: var(--ink);
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                .fd-body {
+                    position: absolute;
+                    inset: 0;
+                    border-radius: 4px 12px 12px 12px;
+                    background: linear-gradient(180deg, var(--c1) 0%, var(--c2) 100%);
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 0 0 1px rgba(13, 42, 66, 0.1),
+                        0 -6px 14px -8px rgba(13, 42, 66, 0.3);
+                    padding: 14px;
+                }
+                .fd.is-on .fd-tab {
+                    color: #fff;
                     background: #1b4f72;
                 }
-                .lps-close {
+                .fd-img {
+                    display: block;
+                    width: 100%;
+                    height: 228px;
+                    border-radius: 6px;
+                    object-fit: cover;
+                    object-position: top center;
+                    box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.12), 0 8px 18px -10px rgba(13, 42, 66, 0.5);
+                    user-select: none;
+                    pointer-events: none;
+                    opacity: 0;
+                    transition: opacity 0.35s ease;
+                }
+                /* only the folder in front shows its picture; the pile stays clean */
+                .fd.is-on .fd-img {
+                    opacity: 1;
+                    transition-delay: 0.15s;
+                }
+                .fd-noimg {
+                    background: linear-gradient(135deg, #1b4f72, #0d2a42);
+                }
+                .fd:focus-visible {
+                    outline: none;
+                }
+                .fd:focus-visible .fd-tab {
+                    outline: 2px dashed #3a99c9;
+                    outline-offset: 2px;
+                }
+
+                .scs-close {
                     position: absolute;
                     top: 28px;
                     right: 32px;
                     width: 52px;
                     height: 52px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 50%;
+                    border: 2px solid var(--ink);
+                    background: rgba(255, 255, 255, 0.7);
+                    color: var(--ink);
+                    cursor: pointer;
                     opacity: 0;
                     transform: scale(0.7) rotate(-90deg);
                     transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease,
                         color 0.2s ease;
                 }
-                .lps.is-in .lps-close {
+                .scs.is-in .scs-close {
                     opacity: 1;
                     transform: none;
                 }
-                .lps.is-in .lps-close:hover {
+                .scs.is-in .scs-close:hover,
+                .scs-close:focus-visible {
+                    background: var(--ink);
+                    color: #e9eef0;
                     transform: rotate(90deg);
+                    outline: none;
                 }
-
                 @media (prefers-reduced-motion: reduce) {
-                    .lps-laptop,
-                    .lps-shot,
-                    .lps-intro {
-                        transition-duration: 0.01ms;
-                    }
-                    .lps-mark {
-                        animation: lps-stamp 0.01ms forwards;
+                    .tc,
+                    .fd {
+                        transition-duration: 0.01ms !important;
+                        transition-delay: 0s !important;
                     }
                 }
             `}</style>
