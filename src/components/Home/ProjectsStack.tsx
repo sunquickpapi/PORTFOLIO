@@ -290,14 +290,9 @@ export default function ProjectsStack() {
     const techs = (projects[orbitIdx]?.tech_stack || []).filter(Boolean);
 
     return (
-        <section id="projects" className="pst-section" aria-roledescription="carousel" aria-label="Projects and tech stack">
-            <span id="tech-stack" className="pst-anchor" aria-hidden="true" />
-            <div className="container pst-head">
-                <div className="section-header">
-                    <h2>Projects</h2>
-                    <p className="section-subtitle">Drag sideways to browse. Each project&apos;s tech stack gathers around its logo.</p>
-                </div>
-            </div>
+        <section id="projects" className="pst-section" style={{ scrollMarginTop: 0, padding: "96px 0 40px", boxSizing: "border-box" }} aria-roledescription="carousel" aria-label="Projects and tech stack">
+            {/* old #tech-stack links land here; inline so the old section's global styles can't size it */}
+            <span id="tech-stack" aria-hidden="true" style={{ position: "absolute", top: 0, left: 0, width: 0, height: 0, padding: 0, margin: 0, overflow: "hidden" }} />
 
             <div
                 ref={stageRef}
@@ -448,17 +443,16 @@ export default function ProjectsStack() {
             </div>
 
             <style jsx>{`
+                /* fills the screen; the showcase sits in the middle (top padding clears the nav bar) */
                 .pst-section {
                     position: relative;
-                    padding: 6rem 0 5rem;
+                    min-height: 100vh;
+                    min-height: 100svh;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    padding: 96px 0 40px;
                     overflow: hidden;
-                }
-                .pst-anchor {
-                    position: absolute;
-                    top: 0;
-                }
-                .pst-head :global(.section-header) {
-                    margin-bottom: 0.5rem;
                 }
                 .pst-stage {
                     position: relative;
