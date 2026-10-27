@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import FileLink from "./FileLink";
 import { Courier_Prime } from "next/font/google";
 import { FolderKanban } from "lucide-react";
 import type { Project } from "@/types/project";
@@ -603,10 +604,10 @@ export default function ProjectsStack() {
 
             </div>
 
-            <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
-                <Link href="/projects" className="btn-view-all">
-                    View All Projects
-                </Link>
+            <div className="file-link-row" style={{ marginTop: 36 }}>
+
+                <FileLink href="/projects" no="03" title="View All Projects" />
+
             </div>
 
             <style jsx>{`

@@ -11144,3 +11144,14 @@ html.fvl-loading body {
 @media (prefers-reduced-motion: reduce) {
   .hero-laptop { animation: none; }
 }
+
+/* "View All" links as file slips (FileLink), centred under their sections */
+.file-link {
+  margin-top: 0;
+}
+.file-link-row {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+}

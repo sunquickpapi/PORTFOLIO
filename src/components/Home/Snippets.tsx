@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import FileLink from "./FileLink";
 
 interface Snippet {
     id: string;
@@ -247,10 +248,10 @@ export default function Snippets() {
                     </div>
                 </div>
 
-                <div className="flex justify-center relative z-10" style={{ marginTop: 40 }}>
-                    <Link href="/snippets" className="btn-view-all">
-                        View All Snippets
-                    </Link>
+                <div className="file-link-row" style={{ marginTop: 36 }}>
+
+                    <FileLink href="/snippets" no="04" title="View All Snippets" />
+
                 </div>
             </div>
 
