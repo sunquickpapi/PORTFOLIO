@@ -70,6 +70,33 @@ const monogram = (t: string) =>
 
 type Skill = { name: string; icon_url?: string | null };
 
+/** letters flicker through random glyphs before landing, like the reference's title swap */
+const GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/_-|";
+function Scramble({ text, ms = 520 }: { text: string; ms?: number }) {
+    const [out, setOut] = useState(text);
+    useEffect(() => {
+        if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            setOut(text);
+            return;
+        }
+        let raf = 0;
+        const t0 = performance.now();
+        const tick = (now: number) => {
+            const p = Math.min(1, (now - t0) / ms);
+            const fixed = Math.floor(p * text.length);
+            setOut(
+                [...text]
+                    .map((c, i) => (i < fixed || c === " " ? c : GLYPHS[(Math.random() * GLYPHS.length) | 0]))
+                    .join("")
+            );
+            if (p < 1) raf = requestAnimationFrame(tick);
+        };
+        raf = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(raf);
+    }, [text, ms]);
+    return <>{out}</>;
+}
+
 function TechChip({ name, src }: { name: string; src: string | null }) {
     const [broken, setBroken] = useState(false);
     return (
@@ -248,8 +275,19 @@ export default function ProjectsStack() {
     );
 
     // drag
-    const drag = useRef<{ x: number; start: number; want: number; moved: boolean; samples: { x: number; t: number }[] } | null>(null);
-    const PX = clamp(size.w * 0.3, 240, 420); // px of drag per project (lower = more sensitive)
+    // Drag up / down (like the reference): up brings the next project in from the bottom, the
+    // current one tilts away to the top. Sideways drags work too (left = next), e.g. on touch.
+    const drag = useRef<{
+        x: number;
+        y: number;
+        axis: "x" | "y" | null;
+        start: number;
+        want: number;
+        moved: boolean;
+        samples: { v: number; t: number }[];
+    } | null>(null);
+    const PX = clamp(size.w * 0.3, 240, 420); // sideways px per project (lower = more sensitive)
+    const PY = clamp(size.h * 0.5, 200, 340); // vertical px per project
     const follow = () => {
         // one update per frame: ease the cards toward where the pointer wants them
         const g = drag.current;
@@ -264,25 +302,29 @@ export default function ProjectsStack() {
         if ((e.target as HTMLElement).closest("a,button")) return;
         cancelAnimationFrame(rafRef.current);
         const now = performance.now();
-        drag.current = { x: e.clientX, start: posRef.current, want: posRef.current, moved: false, samples: [{ x: e.clientX, t: now }] };
+        drag.current = { x: e.clientX, y: e.clientY, axis: null, start: posRef.current, want: posRef.current, moved: false, samples: [{ v: 0, t: now }] };
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     };
     const onMove = (e: React.PointerEvent) => {
         const g = drag.current;
         if (!g) return;
         const dx = e.clientX - g.x;
-        if (!g.moved && Math.abs(dx) > 3) {
+        const dy = e.clientY - g.y;
+        if (!g.moved && Math.hypot(dx, dy) > 3) {
             g.moved = true;
+            g.axis = Math.abs(dy) >= Math.abs(dx) ? "y" : "x";
             g.x = e.clientX; // no jump from the dead zone
+            g.y = e.clientY;
             setDragging(true);
             setSettledIdx(null);
             rafRef.current = requestAnimationFrame(follow);
         }
         if (!g.moved) return;
         const now = performance.now();
-        g.samples.push({ x: e.clientX, t: now });
+        const along = g.axis === "y" ? (e.clientY - g.y) / PY : (e.clientX - g.x) / PX; // in projects
+        g.samples.push({ v: along, t: now });
         while (g.samples.length > 2 && now - g.samples[0].t > 90) g.samples.shift();
-        g.want = g.start - (e.clientX - g.x) / PX;
+        g.want = g.start - along;
     };
     const onUp = () => {
         const g = drag.current;
@@ -296,7 +338,7 @@ export default function ProjectsStack() {
         const a = g.samples[0];
         const b = g.samples[g.samples.length - 1];
         const still = performance.now() - b.t > 70; // paused before letting go: no flick
-        const v = !still && b.t > a.t ? -(b.x - a.x) / (b.t - a.t) / PX : 0;
+        const v = !still && b.t > a.t ? -(b.v - a.v) / (b.t - a.t) : 0;
         const p = posRef.current;
         const projected = p + v * 160; // where a flick would carry it
         // a flick moves to the neighbour in its direction; a slow drag snaps to the nearest
@@ -519,7 +561,7 @@ export default function ProjectsStack() {
                 {projects.map((p, i) => {
                     const d = wrapD(i);
                     const a = Math.abs(d);
-                    if (a > 0.55) return null;
+                    if (a > 0.75) return null;
                     const year = (p.date || "").match(/\d{4}/)?.[0];
                     return (
                         <div
@@ -528,19 +570,29 @@ export default function ProjectsStack() {
                             style={{
                                 left: midX,
                                 top: textY,
-                                opacity: clamp(1 - a * 2.2, 0, 1),
-                                transform: `translate(-50%, -50%) translateY(${d * 34}px)`,
+                                opacity: clamp(1 - a * 1.4, 0, 1),
+                                transform: `translate(-50%, -50%) translateY(${d * 46}px)`,
                                 pointerEvents: a < 0.2 ? "auto" : "none",
                             }}
                             aria-hidden={a >= 0.2}
                         >
                             <span className={`pst-no ${courier.className}`}>
-                                N°{String(i + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
+                                <Scramble text={`N°${String(i + 1).padStart(2, "0")} / ${String(n).padStart(2, "0")}`} ms={380} />
                             </span>
-                            <h3 className="pst-title">{p.title}</h3>
+                            <h3 className="pst-title" aria-label={p.title}>
+                                <Scramble text={p.title} />
+                            </h3>
                             <span className="pst-tags">
-                                {p.category && <span className="pst-tag">{p.category}</span>}
-                                {(p.date || year) && <span className="pst-tag">{p.date || year}</span>}
+                                {p.category && (
+                                    <span className="pst-tag">
+                                        <Scramble text={p.category} ms={420} />
+                                    </span>
+                                )}
+                                {(p.date || year) && (
+                                    <span className="pst-tag">
+                                        <Scramble text={p.date || year || ""} ms={460} />
+                                    </span>
+                                )}
                             </span>
                             <Link href={`/projects/${p.slug}`} className="pst-view" tabIndex={a < 0.2 ? 0 : -1}>
                                 View project
