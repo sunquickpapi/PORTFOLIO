@@ -29,70 +29,31 @@ type Variant = {
 };
 type Body = { x0: number; x1: number; y0: number; y1: number };
 
-const wedgeDown = (x: number, y: number, flip = false): [number, number][] => {
+/**
+ * All bubbles share the classic look (small stepped corners); only the pointer moves.
+ * A pointer is a 5-cell wedge: one straight side flush with the bubble, the other slanted.
+ */
+const wedge = (x: number, y: number, dir: "down" | "up" | "left" | "right", flip = false): [number, number][] => {
     const out: [number, number][] = [];
-    for (let k = 1; k <= 5; k++) for (let i = 0; i <= 5 - k; i++) out.push([flip ? x - i : x + i, y + k]);
+    for (let k = 1; k <= 5; k++)
+        for (let i = 0; i <= 5 - k; i++) {
+            const along = flip ? -i : i;
+            if (dir === "down") out.push([x + along, y + k]);
+            if (dir === "up") out.push([x + along, y - k]);
+            if (dir === "left") out.push([x - k, y + along]);
+            if (dir === "right") out.push([x + k, y + along]);
+        }
     return out;
 };
+const CORNERS = [2, 1];
 const VARIANTS: Variant[] = [
-    {
-        name: "classic", // tail bottom-left, like the reference
-        corners: [2, 1],
-        margin: { t: 0, r: 1, b: 5, l: 0 },
-        tail: (b) => wedgeDown(b.x0 + 5, b.y1),
-    },
-    {
-        name: "thought", // round body, trailing thought dots
-        corners: [4, 2, 1, 1],
-        margin: { t: 0, r: 1, b: 9, l: 0 },
-        tail: (b) => {
-            const dot = (cx: number, cy: number, r: number): [number, number][] => {
-                const o: [number, number][] = [];
-                for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) if (x * x + y * y <= r * r + r * 0.6) o.push([cx + x, cy + y]);
-                return o;
-            };
-            return [...dot(b.x0 + 8, b.y1 + 3, 2), ...dot(b.x0 + 4, b.y1 + 7, 1)];
-        },
-    },
-    {
-        name: "shout", // spiky edges, tail bottom-right
-        corners: [1],
-        spiky: true,
-        margin: { t: 1, r: 1, b: 6, l: 1 },
-        tail: (b) => wedgeDown(b.x1 - 6, b.y1, true),
-    },
-    {
-        name: "top", // tail pointing up from the top-right
-        corners: [3, 1, 1],
-        margin: { t: 6, r: 1, b: 1, l: 0 },
-        tail: (b) => {
-            const out: [number, number][] = [];
-            for (let k = 1; k <= 5; k++) for (let i = 0; i <= 5 - k; i++) out.push([b.x1 - 7 + i, b.y0 - k]);
-            return out;
-        },
-    },
-    {
-        name: "chamfer", // cut corners, tail out of the left side
-        corners: [3, 2, 1],
-        margin: { t: 0, r: 1, b: 1, l: 6 },
-        tail: (b) => {
-            const out: [number, number][] = [];
-            const my = Math.round(b.y0 + (b.y1 - b.y0) * 0.62);
-            for (let k = 1; k <= 5; k++) for (let i = 0; i <= 5 - k; i++) out.push([b.x0 - k, my + i]);
-            return out;
-        },
-    },
-    {
-        name: "boxy", // square corners, long tail bottom-centre
-        corners: [1],
-        margin: { t: 0, r: 1, b: 7, l: 0 },
-        tail: (b) => {
-            const x = Math.round((b.x0 + b.x1) / 2) - 2;
-            const out: [number, number][] = [];
-            for (let k = 1; k <= 6; k++) for (let i = 0; i <= Math.max(0, 4 - Math.floor(k * 0.8)); i++) out.push([x + i + Math.floor(k / 2), b.y1 + k]);
-            return out;
-        },
-    },
+    { name: "bl", corners: CORNERS, margin: { t: 0, r: 1, b: 5, l: 0 }, tail: (b) => wedge(b.x0 + 5, b.y1, "down") },
+    { name: "tr", corners: CORNERS, margin: { t: 5, r: 1, b: 1, l: 0 }, tail: (b) => wedge(b.x1 - 5, b.y0, "up", true) },
+    { name: "br", corners: CORNERS, margin: { t: 0, r: 1, b: 5, l: 0 }, tail: (b) => wedge(b.x1 - 5, b.y1, "down", true) },
+    { name: "l", corners: CORNERS, margin: { t: 0, r: 1, b: 1, l: 5 }, tail: (b) => wedge(b.x0, Math.round(b.y0 + (b.y1 - b.y0) * 0.6), "left") },
+    { name: "tl", corners: CORNERS, margin: { t: 5, r: 1, b: 1, l: 0 }, tail: (b) => wedge(b.x0 + 5, b.y0, "up") },
+    { name: "r", corners: CORNERS, margin: { t: 0, r: 6, b: 1, l: 0 }, tail: (b) => wedge(b.x1, Math.round(b.y0 + (b.y1 - b.y0) * 0.35), "right") },
+    { name: "bc", corners: CORNERS, margin: { t: 0, r: 1, b: 5, l: 0 }, tail: (b) => wedge(Math.round((b.x0 + b.x1) / 2), b.y1, "down") },
 ];
 
 function PixelFrame({ w, h, v }: { w: number; h: number; v: Variant }) {
@@ -177,15 +138,22 @@ function Bubble({ t, i }: { t: Testimonial; i: number }) {
             className={`tm-b tm-${v.name}`}
             style={
                 {
-                    paddingTop: (m.t + pad) * CELL,
-                    paddingRight: (m.r + pad + 1) * CELL,
-                    paddingBottom: (m.b + pad + 1) * CELL,
-                    paddingLeft: (m.l + pad) * CELL,
                     "--rot": `${[-1.6, 1.2, -0.6, 1.8, -1.2, 0.8][i % 6]}deg`,
                     "--dy": `${[0, 34, 12, 46, 6, 28][i % 6]}px`,
                 } as React.CSSProperties
             }
         >
+            <div
+                className="tm-float"
+                style={{
+                    paddingTop: (m.t + pad) * CELL,
+                    paddingRight: (m.r + pad + 1) * CELL,
+                    paddingBottom: (m.b + pad + 1) * CELL,
+                    paddingLeft: (m.l + pad) * CELL,
+                    animationDelay: `${-i * 2.7}s`,
+                    animationDuration: `${9 + (i % 3)}s`,
+                }}
+            >
             {size.w > 0 && <PixelFrame w={size.w} h={size.h} v={v} />}
             <div className="tm-content">
                 <span className={`tm-k ${courier.className}`}>MSG N°{String(i + 1).padStart(2, "0")}</span>
@@ -200,6 +168,7 @@ function Bubble({ t, i }: { t: Testimonial; i: number }) {
                         <span className={`tm-role ${courier.className}`}>{t.role}</span>
                     </span>
                 </div>
+            </div>
             </div>
         </article>
     );
@@ -285,6 +254,20 @@ export default function Testimonials() {
                     transform: translateY(calc(var(--dy) + 10px)) rotate(var(--rot)) scale(0.93);
                     filter: blur(1.5px) saturate(0.7);
                     opacity: 0.45;
+                }
+                /* same slow drift as the pass card (and the other floating objects) */
+                .tm-wall :global(.tm-float) {
+                    position: relative;
+                    animation: tm-float 10s ease-in-out infinite;
+                }
+                @keyframes tm-float {
+                    0%,
+                    100% {
+                        transform: translateY(0) rotate(-0.6deg);
+                    }
+                    50% {
+                        transform: translateY(-12px) rotate(0.4deg);
+                    }
                 }
                 .tm-wall :global(.tm-frame) {
                     position: absolute;
@@ -377,6 +360,9 @@ export default function Testimonials() {
                 @media (prefers-reduced-motion: reduce) {
                     .tm-wall :global(.tm-b) {
                         transition: none;
+                    }
+                    .tm-wall :global(.tm-float) {
+                        animation: none;
                     }
                 }
             `}</style>
