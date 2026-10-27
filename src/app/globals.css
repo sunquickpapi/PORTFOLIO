@@ -11040,27 +11040,27 @@ html.fvl-loading body {
   .hero-laptop { left: 62px; }
 }
 
-/* Notebook (Snippets / Blogs dividers) left of the résumé file, its right edge just under it */
-.hero-notebook {
+/* Book stack (Snippets / Blog) left of the résumé file, its right edge just under it */
+.hero-books {
   position: absolute;
-  left: 352px;
-  bottom: -146px;
+  left: 336px;
+  bottom: -196px;
   z-index: 2; /* the file (z 3) overlaps its right edge */
   transform: rotate(-4deg);
-  animation: hero-notebook-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 1.05s both;
+  animation: hero-books-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 1.05s both;
 }
-@keyframes hero-notebook-in {
+@keyframes hero-books-in {
   from { opacity: 0; transform: translateY(18px) rotate(-9deg); }
   to { opacity: 1; transform: rotate(-4deg); }
 }
 @media (max-width: 1280px) {
-  .hero-notebook { left: 306px; }
+  .hero-books { left: 296px; }
 }
 @media (max-width: 1024px) {
-  .hero-notebook { display: none; }
+  .hero-books { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hero-notebook { animation: none; }
+  .hero-books { animation: none; }
 }
 
 /* Card, AirPods, laptop, notebook and file make room for whichever one is hovered.
@@ -11068,7 +11068,7 @@ html.fvl-loading body {
 .hero-pass-move > .pass,
 .hero-earbuds,
 .hero-laptop,
-.hero-notebook,
+.hero-books,
 .hero-dossier {
   translate: 0 0;
   transition: translate 0.6s cubic-bezier(0.22, 1, 0.36, 1);
@@ -11076,8 +11076,8 @@ html.fvl-loading body {
 .hero-earbuds:hover,
 .hero-laptop:hover,
 .hero-dossier:hover,
-.hero-notebook:hover,
-.hero-notebook:focus-within,
+.hero-books:hover,
+.hero-books:focus-within,
 .hero-laptop:focus-within,
 .hero-dossier:focus-within {
   z-index: 6;
@@ -11086,32 +11086,32 @@ html.fvl-loading body {
 .hero-pass-move:has(> .pass:hover) .hero-earbuds { translate: -16px 14px; }
 .hero-pass-move:has(> .pass:hover) .hero-laptop { translate: 0 18px; }
 .hero-pass-move:has(> .pass:hover) .hero-dossier { translate: 16px 14px; }
-.hero-pass-move:has(> .pass:hover) .hero-notebook { translate: 4px 18px; }
+.hero-pass-move:has(> .pass:hover) .hero-books { translate: 4px 18px; }
 /* hovering the AirPods */
 .hero-pass-move:has(.hero-earbuds:hover) > .pass { translate: 8px -8px; }
 .hero-pass-move:has(.hero-earbuds:hover) .hero-laptop { translate: 30px 6px; }
 .hero-pass-move:has(.hero-earbuds:hover) .hero-dossier { translate: 12px 0; }
-.hero-pass-move:has(.hero-earbuds:hover) .hero-notebook { translate: 14px 2px; }
+.hero-pass-move:has(.hero-earbuds:hover) .hero-books { translate: 14px 2px; }
 /* hovering the laptop (it opens up toward the card) */
 .hero-pass-move:has(.hero-laptop:hover, .hero-laptop:focus-within) > .pass { translate: 0 -14px; }
 .hero-pass-move:has(.hero-laptop:hover, .hero-laptop:focus-within) .hero-earbuds { translate: -30px 6px; }
 .hero-pass-move:has(.hero-laptop:hover, .hero-laptop:focus-within) .hero-dossier { translate: 24px 6px; }
-.hero-pass-move:has(.hero-laptop:hover, .hero-laptop:focus-within) .hero-notebook { translate: 28px 6px; }
+.hero-pass-move:has(.hero-laptop:hover, .hero-laptop:focus-within) .hero-books { translate: 28px 6px; }
 /* hovering the file */
 .hero-pass-move:has(.hero-dossier:hover) > .pass { translate: -10px -8px; }
 .hero-pass-move:has(.hero-dossier:hover) .hero-laptop { translate: -18px 6px; }
 .hero-pass-move:has(.hero-dossier:hover) .hero-earbuds { translate: -10px 4px; }
-.hero-pass-move:has(.hero-dossier:hover) .hero-notebook { translate: -26px 6px; }
-/* hovering the notebook (its slips slide up toward the card) */
-.hero-pass-move:has(.hero-notebook:hover, .hero-notebook:focus-within) > .pass { translate: 0 -12px; }
-.hero-pass-move:has(.hero-notebook:hover, .hero-notebook:focus-within) .hero-laptop { translate: -24px 6px; }
-.hero-pass-move:has(.hero-notebook:hover, .hero-notebook:focus-within) .hero-earbuds { translate: -12px 4px; }
-.hero-pass-move:has(.hero-notebook:hover, .hero-notebook:focus-within) .hero-dossier { translate: 28px 6px; }
+.hero-pass-move:has(.hero-dossier:hover) .hero-books { translate: -26px 6px; }
+/* hovering the book stack (a book slides out toward you) */
+.hero-pass-move:has(.hero-books:hover, .hero-books:focus-within) > .pass { translate: 0 -12px; }
+.hero-pass-move:has(.hero-books:hover, .hero-books:focus-within) .hero-laptop { translate: -24px 6px; }
+.hero-pass-move:has(.hero-books:hover, .hero-books:focus-within) .hero-earbuds { translate: -12px 4px; }
+.hero-pass-move:has(.hero-books:hover, .hero-books:focus-within) .hero-dossier { translate: 28px 6px; }
 @media (prefers-reduced-motion: reduce) {
   .hero-pass-move > .pass,
   .hero-earbuds,
   .hero-laptop,
-  .hero-notebook,
+  .hero-books,
   .hero-dossier { transition: none; }
 }
 @media (max-width: 1024px) {
