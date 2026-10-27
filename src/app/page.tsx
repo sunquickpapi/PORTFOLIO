@@ -1,8 +1,7 @@
 import Navigation from "@/components/Home/Navigation";
 import PixelField from "@/components/Home/PixelField";
 import Hero from "@/components/Home/Hero";
-import TechStack from "@/components/Home/TechStack";
-import Projects from "@/components/Home/Projects";
+import ProjectsStack from "@/components/Home/ProjectsStack";
 import Snippets from "@/components/Home/Snippets";
 
 import Testimonials from "@/components/Home/Testimonials";
@@ -16,8 +15,7 @@ export default function Home() {
       <PixelField />
       <Navigation />
       <Hero />
-      <TechStack />
-      <Projects />
+      <ProjectsStack />
       <Snippets />
       <Testimonials />
       <Blog />

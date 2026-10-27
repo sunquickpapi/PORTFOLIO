@@ -144,6 +144,7 @@ export default function PixelField() {
         };
         const onDown = (e: PointerEvent) => {
             if (reduce || e.button !== 0) return;
+            if ((e.target as Element | null)?.closest?.("[data-no-ripple]")) return; // e.g. the drag carousel
             const p = local(e);
             if (!p.inside) return;
             // reach the farthest corner so the ripple rolls off every edge
