@@ -11145,6 +11145,22 @@ html.fvl-loading body {
   .hero-laptop { animation: none; }
 }
 
+/* File slips (journey + View All links): fully rounded, pill-shaped corners */
+.hj-slip,
+.hj-page {
+  border-radius: 999px;
+}
+.hj-slip {
+  padding-left: 1.7rem;
+}
+/* the spine fold sits inside the rounded end */
+.hj-slip::before {
+  left: 14px;
+  top: 22%;
+  bottom: 22%;
+  border-radius: 1px;
+}
+
 /* "View All" links as file slips (FileLink), centred under their sections */
 .file-link {
   margin-top: 0;
