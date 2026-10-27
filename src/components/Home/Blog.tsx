@@ -235,9 +235,9 @@ export default function Blog() {
                 .bl-thumbs {
                     flex: 1;
                     display: grid;
-                    grid-template-columns: 1fr 1fr;
+                    grid-template-columns: 1fr; /* one post per row */
                     grid-auto-rows: 1fr;
-                    gap: 16px;
+                    gap: 12px;
                     min-height: 0;
                 }
                 .bl-thumb {
@@ -257,7 +257,7 @@ export default function Blog() {
                 }
                 .bl-thumb {
                     display: flex;
-                    min-height: 120px;
+                    min-height: 78px;
                 }
                 .bl-frame .bl-thumb :global(.bl-cover) {
                     flex: 1;
@@ -265,6 +265,11 @@ export default function Blog() {
                     height: 100%;
                     border-radius: 6px;
                     box-shadow: none;
+                }
+                /* image takes no height of its own, so the four rows share the column evenly */
+                .bl-frame .bl-thumb :global(.bl-cover img) {
+                    position: absolute;
+                    inset: 0;
                 }
 
                 .bl-frame :global(.bl-cover) {
@@ -400,7 +405,7 @@ export default function Blog() {
                         border-top: 2px dashed rgba(27, 79, 114, 0.2);
                     }
                     .bl-thumbs {
-                        grid-template-columns: repeat(4, 1fr);
+                        grid-auto-rows: 120px;
                     }
                 }
                 @media (prefers-reduced-motion: reduce) {
