@@ -270,19 +270,34 @@ export default function ProjectsStack() {
         return d;
     };
     const idx = (((Math.round(pos) % n) + n) % n);
-    const imgW = narrow ? Math.min(W - 40, 440) : Math.min(520, W * 0.34);
+    // three columns: image centred in the space left of the text, logo centred in the space right of it
+    const textW = narrow ? Math.min(W - 40, 420) : Math.min(290, W * 0.2);
+    const colGap = 40;
+    const leftSpan = W / 2 - textW / 2 - colGap;
+    const rightStart = W / 2 + textW / 2 + colGap;
+    const imgW = narrow ? Math.min(W - 40, 440) : clamp(leftSpan - 170, 300, 540);
     const imgH = imgW * 0.6;
-    const tile = narrow ? 150 : Math.min(210, W * 0.15);
-    const leftX = narrow ? W / 2 : W * 0.235;
-    const rightX = narrow ? W / 2 : W * 0.775;
+    const leftX = narrow ? W / 2 : leftSpan / 2;
+    const rightX = narrow ? W / 2 : (rightStart + W) / 2;
+    const orbitPad = narrow ? 58 : 86; // tile edge → chip centre
+    const orbitRoom = narrow ? 999 : (W - rightStart) / 2 - 48; // keep the ring inside its column
+    const tile = narrow ? 150 : clamp(Math.min(210, (orbitRoom - orbitPad) * 2), 120, 210);
     const midX = W / 2;
     const cy = H / 2;
     const imgY = narrow ? 150 : cy;
     const textY = narrow ? 150 + imgH / 2 + 90 : cy;
     const tileY = narrow ? H - tile / 2 - 70 : cy;
-    const orbitR = tile * 0.5 + (narrow ? 58 : 86);
-    const cornerX = 70;
-    const cornerY = narrow ? 0 : 46;
+    const orbitR = tile * 0.5 + orbitPad;
+    // neighbours sit fully above / below the current one with a clear gap, tilted toward the screen edge
+    const NI = 0.5; // neighbour image scale
+    const NT = 0.62; // neighbour logo scale
+    const s34 = Math.sin((34 * Math.PI) / 180);
+    const c34 = Math.cos((34 * Math.PI) / 180);
+    const imgOffY = imgH / 2 + 56 + (NI * (imgW * s34 + imgH * c34)) / 2;
+    const imgOffX = Math.min(imgW * 0.3, leftX - 40);
+    const ringOuter = orbitR + 40; // chip + its label
+    const tileOffY = Math.max(tile / 2, ringOuter) + 40 + (NT * tile * (s34 + c34)) / 2;
+    const tileOffX = (W - rightX) * 0.42;
     // orbit shows the last settled project; it tucks back into the logo while you drag
     if (settledIdx !== null) lastSettled.current = settledIdx;
     const orbitIdx = lastSettled.current;
@@ -310,10 +325,10 @@ export default function ProjectsStack() {
                     const d = wrapD(i);
                     if (Math.abs(d) > 1.9) return null;
                     const a = Math.abs(d);
-                    const x = tri(d, cornerX + imgW * 0.18, leftX, cornerX + imgW * 0.18);
-                    const y = tri(d, cornerY + imgH * 0.12, imgY, H - cornerY - imgH * 0.12);
-                    const rot = tri(d, -32, -1.5, 34);
-                    const sc = tri(d, 0.46, 1, 0.46) * (a > 1 ? 1 - (a - 1) * 0.5 : 1);
+                    const x = tri(d, leftX - imgOffX, leftX, leftX - imgOffX);
+                    const y = tri(d, imgY - imgOffY, imgY, imgY + imgOffY) + (a > 1 ? Math.sign(d) * (a - 1) * 120 : 0);
+                    const rot = tri(d, -34, -1.5, 34);
+                    const sc = tri(d, NI, 1, NI) * (a > 1 ? 1 - (a - 1) * 0.5 : 1);
                     const op = a > 1 ? clamp(1 - (a - 1) / 0.8, 0, 1) : 1;
                     if (narrow && a > 0.6) return null;
                     return (
@@ -331,12 +346,16 @@ export default function ProjectsStack() {
                             }}
                             onClick={() => Math.round(pos) !== Math.round(pos + d) && go(targetRef.current + Math.round(d))}
                         >
-                            {p.image_url ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={p.image_url} alt={a < 0.5 ? p.title : ""} draggable={false} />
-                            ) : (
-                                <span className="pst-noimg" />
-                            )}
+                            <span className="pst-bub">
+                                <span className="pst-clip">
+                                    {p.image_url ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={p.image_url} alt={a < 0.5 ? p.title : ""} draggable={false} />
+                                    ) : (
+                                        <span className="pst-noimg" />
+                                    )}
+                                </span>
+                            </span>
                         </div>
                     );
                 })}
@@ -347,10 +366,10 @@ export default function ProjectsStack() {
                     if (Math.abs(d) > 1.9) return null;
                     const a = Math.abs(d);
                     if (narrow && a > 0.6) return null;
-                    const x = tri(d, W - cornerX - tile * 0.1, rightX, W - cornerX - tile * 0.1);
-                    const y = tri(d, cornerY + tile * 0.25, tileY, H - cornerY - tile * 0.25);
-                    const rot = tri(d, 30, 2, -32);
-                    const sc = tri(d, 0.62, 1, 0.62) * (a > 1 ? 1 - (a - 1) * 0.5 : 1);
+                    const x = tri(d, rightX + tileOffX, rightX, rightX + tileOffX);
+                    const y = tri(d, tileY - tileOffY, tileY, tileY + tileOffY) + (a > 1 ? Math.sign(d) * (a - 1) * 120 : 0);
+                    const rot = tri(d, 32, 2, -32);
+                    const sc = tri(d, NT, 1, NT) * (a > 1 ? 1 - (a - 1) * 0.5 : 1);
                     const op = a > 1 ? clamp(1 - (a - 1) / 0.8, 0, 1) : 1;
                     return (
                         <div
@@ -359,20 +378,22 @@ export default function ProjectsStack() {
                             style={{
                                 width: tile,
                                 height: tile,
-                                padding: Math.round(tile * 0.17),
                                 left: x - tile / 2,
                                 top: y - tile / 2,
                                 opacity: narrow ? clamp(1 - a * 1.8, 0, 1) : op,
                                 zIndex: 40 - Math.round(a * 10),
                                 transform: `rotate(${rot}deg) scale(${sc})`,
                             }}
+                            onClick={() => Math.round(pos) !== Math.round(pos + d) && go(targetRef.current + Math.round(d))}
                         >
-                            {p.logo_url ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={p.logo_url} alt={a < 0.5 ? `${p.title} logo` : ""} draggable={false} />
-                            ) : (
-                                <FolderKanban className="pst-fallback" strokeWidth={1.6} aria-hidden="true" />
-                            )}
+                            <span className="pst-bub pst-tile-face" style={{ padding: Math.round(tile * 0.17) }}>
+                                {p.logo_url ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={p.logo_url} alt={a < 0.5 ? `${p.title} logo` : ""} draggable={false} />
+                                ) : (
+                                    <FolderKanban className="pst-fallback" strokeWidth={1.6} aria-hidden="true" />
+                                )}
+                            </span>
                         </div>
                     );
                 })}
@@ -458,7 +479,7 @@ export default function ProjectsStack() {
                     position: relative;
                     height: ${narrow ? 860 : 640}px;
                     width: 100%;
-                    max-width: 1500px;
+                    max-width: 1920px;
                     margin: 0 auto;
                     cursor: grab;
                     touch-action: pan-y;
@@ -468,14 +489,55 @@ export default function ProjectsStack() {
                 .pst-stage.is-dragging {
                     cursor: grabbing;
                 }
-                .pst-img {
+                .pst-img,
+                .pst-tile {
                     position: absolute;
+                    will-change: transform;
+                }
+                /* the bubble: swells with a springy overshoot, corners round off, a glassy rim appears */
+                .pst-bub {
+                    position: absolute;
+                    inset: 0;
+                    display: block;
+                    border-radius: 14px 18px 16px 12px / 20px 26px 14px 18px; /* a slightly bowed print */
+                    transition: transform 0.6s cubic-bezier(0.34, 1.7, 0.5, 1), border-radius 0.6s cubic-bezier(0.34, 1.4, 0.5, 1);
+                }
+                .pst-bub::before {
+                    content: "";
+                    position: absolute;
+                    inset: -13px;
+                    border-radius: 28px 34px 30px 26px / 36px 42px 30px 34px;
+                    border: 2.5px solid rgba(255, 255, 255, 0.95);
+                    background: rgba(255, 255, 255, 0.28);
+                    box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.06), 0 18px 34px -18px rgba(13, 42, 66, 0.35),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+                    opacity: 0;
+                    transform: scale(0.94);
+                    transition: opacity 0.3s ease, transform 0.6s cubic-bezier(0.34, 1.7, 0.5, 1);
+                    pointer-events: none;
+                    z-index: -1;
+                }
+                .pst-clip {
+                    position: absolute;
+                    inset: 0;
                     overflow: hidden;
-                    /* a slightly bowed print, like the reference */
-                    border-radius: 14px 18px 16px 12px / 20px 26px 14px 18px;
+                    border-radius: inherit;
                     background: #dfe9f0;
                     box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.08), 0 26px 40px -22px rgba(13, 42, 66, 0.5);
-                    will-change: transform;
+                    transition: box-shadow 0.4s ease;
+                }
+                .pst-stage:not(.is-dragging) .pst-img:hover .pst-bub,
+                .pst-stage:not(.is-dragging) .pst-tile:hover .pst-bub {
+                    transform: scale(1.04);
+                    border-radius: 26px 32px 28px 22px / 34px 40px 26px 30px;
+                }
+                .pst-stage:not(.is-dragging) .pst-img:hover .pst-bub::before,
+                .pst-stage:not(.is-dragging) .pst-tile:hover .pst-bub::before {
+                    opacity: 1;
+                    transform: none;
+                }
+                .pst-stage:not(.is-dragging) .pst-img:hover .pst-clip {
+                    box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.06), 0 30px 46px -20px rgba(13, 42, 66, 0.55);
                 }
                 .pst-img img {
                     width: 100%;
@@ -490,16 +552,20 @@ export default function ProjectsStack() {
                     inset: 0;
                     background: linear-gradient(135deg, #1b4f72, #0d2a42);
                 }
-                .pst-tile {
-                    position: absolute;
+                .pst-tile-face {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    border-radius: 14px;
+                    border-radius: 16px;
                     background: linear-gradient(160deg, #fbfcfd 0%, #eef3f6 100%);
                     box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.07), 0 5px 0 #dfe6eb, 0 6px 0 rgba(13, 42, 66, 0.1),
                         0 24px 36px -18px rgba(13, 42, 66, 0.45);
-                    will-change: transform;
+                }
+                .pst-stage:not(.is-dragging) .pst-tile:hover .pst-tile-face {
+                    border-radius: 30px;
+                }
+                .pst-tile-face::before {
+                    border-radius: 40px;
                 }
                 .pst-tile img {
                     width: 100%;
@@ -610,7 +676,7 @@ export default function ProjectsStack() {
                     flex-direction: column;
                     align-items: center;
                     gap: 10px;
-                    width: ${narrow ? Math.min(W - 40, 420) : Math.min(290, W * 0.2)}px;
+                    width: ${textW}px;
                     text-align: center;
                 }
                 .pst-no {
