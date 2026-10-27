@@ -14,10 +14,12 @@ export default function FileLink({
     no,
     title,
     chip = "OPEN",
+    kicker,
     className = "",
 }: {
     href: string;
-    no: string;
+    no?: string;
+    kicker?: string;
     title: string;
     chip?: string;
     className?: string;
@@ -27,7 +29,7 @@ export default function FileLink({
             <span className="hj-page" aria-hidden="true" />
             <span className="hj-slip">
                 <span className="hj-text">
-                    <span className={`hj-kicker ${courier.className}`}>FILE:: N°{no}</span>
+                    <span className={`hj-kicker ${courier.className}`}>{kicker ?? `FILE:: N°${no}`}</span>
                     <span className="hj-title">{title}</span>
                 </span>
                 <span className={`hj-chip ${courier.className}`}>
