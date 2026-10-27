@@ -209,18 +209,13 @@ export default function Testimonials() {
     if (testimonials.length === 0) return null;
 
     return (
-        <section id="testimonials" className="section-high-fidelity py-24 relative overflow-hidden">
+        <section
+            id="testimonials"
+            className="section-high-fidelity relative overflow-hidden"
+            /* one full screen like Projects and Snippets: the bubbles sit in the middle, clear of the nav bar */
+            style={{ minHeight: "100svh", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 0 60px", scrollMarginTop: 0 }}
+        >
             <div className="container relative z-10" style={{ maxWidth: "1300px" }}>
-                <div className="section-header mb-16 flex flex-col items-center">
-                    <h2>Testimonials</h2>
-                    <p
-                        className="section-subtitle text-center text-lg md:text-xl max-w-3xl mx-auto italic leading-relaxed"
-                        style={{ color: "var(--color-text-secondary)" }}
-                    >
-                        What my clients and colleagues say about working with me
-                    </p>
-                </div>
-
                 <div className="tm-wall">
                     {testimonials.map((t, i) => (
                         <Bubble key={t.id} t={t} i={i} />
