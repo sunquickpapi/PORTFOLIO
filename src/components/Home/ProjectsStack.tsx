@@ -200,23 +200,40 @@ export default function ProjectsStack() {
         return () => ro.disconnect();
     }, [loading]);
 
-    // ease toward the target; the orbit only gathers once we've stopped
-    const animate = useCallback(() => {
-        cancelAnimationFrame(rafRef.current);
-        const step = () => {
-            const d = targetRef.current - posRef.current;
-            if (Math.abs(d) < 0.0015) {
-                posRef.current = targetRef.current;
-                setPos(posRef.current);
-                if (n) setSettledIdx((((Math.round(posRef.current) % n) + n) % n));
+    // ---- motion ----
+    // Settling uses a fixed tempo: an eased glide whose length depends only on the distance,
+    // so every move feels the same. While dragging, the cards follow the pointer once per
+    // frame with light smoothing (no re-render per mouse event).
+    const TEMPO = 420; // ms to glide one project
+    const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+    const settle = useCallback(() => {
+        if (n) setSettledIdx((((Math.round(posRef.current) % n) + n) % n));
+    }, [n]);
+    const glideTo = useCallback(
+        (target: number) => {
+            cancelAnimationFrame(rafRef.current);
+            const from = posRef.current;
+            const dist = target - from;
+            targetRef.current = target;
+            if (Math.abs(dist) < 0.002) {
+                posRef.current = target;
+                setPos(target);
+                settle();
                 return;
             }
-            posRef.current += d * 0.14;
-            setPos(posRef.current);
+            const dur = clamp(TEMPO * (0.55 + 0.45 * Math.min(Math.abs(dist), 2)), 240, TEMPO * 1.5);
+            const t0 = performance.now();
+            const step = (now: number) => {
+                const t = clamp((now - t0) / dur, 0, 1);
+                posRef.current = from + dist * easeOut(t);
+                setPos(posRef.current);
+                if (t < 1) rafRef.current = requestAnimationFrame(step);
+                else settle();
+            };
             rafRef.current = requestAnimationFrame(step);
-        };
-        rafRef.current = requestAnimationFrame(step);
-    }, [n]);
+        },
+        [settle]
+    );
     useEffect(() => {
         if (n) setSettledIdx(0);
         return () => cancelAnimationFrame(rafRef.current);
@@ -225,50 +242,68 @@ export default function ProjectsStack() {
     const go = useCallback(
         (t: number) => {
             setSettledIdx(null);
-            targetRef.current = Math.round(t);
-            animate();
+            glideTo(Math.round(t));
         },
-        [animate]
+        [glideTo]
     );
 
     // drag
-    const drag = useRef<{ x: number; start: number; last: number; lastT: number; v: number; moved: boolean } | null>(null);
-    const PX = Math.max(320, Math.min(560, size.w * 0.42)); // px of drag per project
+    const drag = useRef<{ x: number; start: number; want: number; moved: boolean; samples: { x: number; t: number }[] } | null>(null);
+    const PX = clamp(size.w * 0.3, 240, 420); // px of drag per project (lower = more sensitive)
+    const follow = () => {
+        // one update per frame: ease the cards toward where the pointer wants them
+        const g = drag.current;
+        if (!g) return;
+        const d = g.want - posRef.current;
+        posRef.current += Math.abs(d) < 0.0008 ? d : d * 0.45;
+        setPos(posRef.current);
+        rafRef.current = requestAnimationFrame(follow);
+    };
     const onDown = (e: React.PointerEvent) => {
         if (e.button !== 0 || !n) return;
         if ((e.target as HTMLElement).closest("a,button")) return;
         cancelAnimationFrame(rafRef.current);
-        drag.current = { x: e.clientX, start: posRef.current, last: e.clientX, lastT: performance.now(), v: 0, moved: false };
+        const now = performance.now();
+        drag.current = { x: e.clientX, start: posRef.current, want: posRef.current, moved: false, samples: [{ x: e.clientX, t: now }] };
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     };
     const onMove = (e: React.PointerEvent) => {
         const g = drag.current;
         if (!g) return;
         const dx = e.clientX - g.x;
-        if (!g.moved && Math.abs(dx) > 4) {
+        if (!g.moved && Math.abs(dx) > 3) {
             g.moved = true;
+            g.x = e.clientX; // no jump from the dead zone
             setDragging(true);
             setSettledIdx(null);
+            rafRef.current = requestAnimationFrame(follow);
         }
         if (!g.moved) return;
         const now = performance.now();
-        g.v = (e.clientX - g.last) / Math.max(1, now - g.lastT);
-        g.last = e.clientX;
-        g.lastT = now;
-        posRef.current = g.start - dx / PX;
-        targetRef.current = posRef.current;
-        setPos(posRef.current);
+        g.samples.push({ x: e.clientX, t: now });
+        while (g.samples.length > 2 && now - g.samples[0].t > 90) g.samples.shift();
+        g.want = g.start - (e.clientX - g.x) / PX;
     };
     const onUp = () => {
         const g = drag.current;
         drag.current = null;
+        cancelAnimationFrame(rafRef.current);
         setDragging(false);
         if (!g) return;
         if (!g.moved) return go(posRef.current);
-        // a quick flick carries on to the neighbouring project (never further)
-        const fling = -g.v * 0.35;
+        posRef.current = g.want;
+        // pointer speed over the last ~90ms, in projects per ms
+        const a = g.samples[0];
+        const b = g.samples[g.samples.length - 1];
+        const still = performance.now() - b.t > 70; // paused before letting go: no flick
+        const v = !still && b.t > a.t ? -(b.x - a.x) / (b.t - a.t) / PX : 0;
         const p = posRef.current;
-        go(fling > 0.25 ? Math.ceil(p + 0.001) : fling < -0.25 ? Math.floor(p - 0.001) : Math.round(p));
+        const projected = p + v * 160; // where a flick would carry it
+        // a flick moves to the neighbour in its direction; a slow drag snaps to the nearest
+        let target = Math.round(projected);
+        if (Math.abs(v) > 0.0009) target = v > 0 ? Math.ceil(p + 0.02) : Math.floor(p - 0.02);
+        target = clamp(target, Math.floor(p - 0.02), Math.ceil(p + 0.02)); // never skips a project
+        go(target);
     };
 
     // sideways trackpad scroll / keys
@@ -280,6 +315,7 @@ export default function ProjectsStack() {
         const onWheel = (e: WheelEvent) => {
             if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical scroll stays the page's
             e.preventDefault();
+            cancelAnimationFrame(rafRef.current);
             acc += e.deltaX;
             setSettledIdx(null);
             posRef.current = targetRef.current + acc / PX;
