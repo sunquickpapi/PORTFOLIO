@@ -1,4 +1,5 @@
 import Navigation from "@/components/Home/Navigation";
+import PixelField from "@/components/Home/PixelField";
 import Hero from "@/components/Home/Hero";
 import Services from "@/components/Home/Services";
 import TechStack from "@/components/Home/TechStack";
@@ -13,6 +14,7 @@ import Footer from "@/components/Home/Footer";
 export default function Home() {
   return (
     <main className="min-h-screen portfolio-main">
+      <PixelField />
       <Navigation />
       <Hero />
       <Services />

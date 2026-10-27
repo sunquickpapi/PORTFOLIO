@@ -3,11 +3,11 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Hero background: a quiet grid of square pixels (same chunky feel as the pass card's
- * pixel-art sprite). Pixels near the cursor light up in sky blue and grow a step.
- * Clicking anywhere in the hero drops a "water drop": a ripple rolls out from the
- * click to the edges of the screen, nudging and lighting the pixels as it passes.
- * Only animates while something is moving; pauses off-screen and for reduced motion.
+ * Homepage background, fixed behind every section: a quiet grid of square pixels (same
+ * chunky feel as the pass card's pixel-art sprite). Pixels near the cursor light up in sky
+ * blue and grow a step. Clicking anywhere drops a "water drop": a ripple rolls out from
+ * the click to the edges of the screen, nudging and lighting the pixels as it passes.
+ * Only animates while something is moving; no ripples for reduced motion.
  */
 const GAP = 14; // grid spacing (css px)
 const BASE = 2; // resting pixel size (css px)
@@ -22,8 +22,7 @@ export default function PixelField() {
 
     useEffect(() => {
         const cv = ref.current;
-        const host = cv?.parentElement;
-        if (!cv || !host) return;
+        if (!cv) return;
         const ctx = cv.getContext("2d");
         if (!ctx) return;
         const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -32,10 +31,9 @@ export default function PixelField() {
         let h = 0;
         let dpr = 1;
         const size = () => {
-            const r = host.getBoundingClientRect();
             dpr = Math.min(2, window.devicePixelRatio || 1);
-            w = r.width;
-            h = r.height;
+            w = window.innerWidth;
+            h = window.innerHeight;
             cv.width = Math.round(w * dpr);
             cv.height = Math.round(h * dpr);
             cv.style.width = `${w}px`;
@@ -155,13 +153,12 @@ export default function PixelField() {
             wake();
         };
 
-        const ro = new ResizeObserver(size);
-        ro.observe(host);
-        const io = new IntersectionObserver(([en]) => {
-            visible = en.isIntersecting;
+        window.addEventListener("resize", size);
+        const onVis = () => {
+            visible = document.visibilityState === "visible";
             if (visible) wake();
-        });
-        io.observe(host);
+        };
+        document.addEventListener("visibilitychange", onVis);
         const mo = new MutationObserver(wake); // light/dark switch
         mo.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
         window.addEventListener("pointermove", onMove, { passive: true });
@@ -171,8 +168,8 @@ export default function PixelField() {
 
         return () => {
             cancelAnimationFrame(raf);
-            ro.disconnect();
-            io.disconnect();
+            window.removeEventListener("resize", size);
+            document.removeEventListener("visibilitychange", onVis);
             mo.disconnect();
             window.removeEventListener("pointermove", onMove);
             window.removeEventListener("pointerdown", onDown);
@@ -180,5 +177,5 @@ export default function PixelField() {
         };
     }, []);
 
-    return <canvas ref={ref} className="hero-pixels" aria-hidden="true" />;
+    return <canvas ref={ref} className="page-pixels" aria-hidden="true" />;
 }
