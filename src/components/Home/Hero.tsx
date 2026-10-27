@@ -10,6 +10,7 @@ import Dossier from "./Dossier";
 import Earbuds from "./Earbuds";
 import Laptop from "./Laptop";
 import Books from "./Books";
+import GithubCard from "./GithubCard";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
 
@@ -218,6 +219,9 @@ export default function Hero() {
                             className="hero-pass-move"
                             style={{ transform: intro && !revealed ? `translateX(${shift}px)` : undefined }}
                         >
+                            <div className="hero-gh">
+                                <GithubCard href={profile.github_url} />
+                            </div>
                             <PassCard
                                 onAbout={toggle}
                                 socials={{ linkedin: profile.linkedin_url, github: profile.github_url, instagram: profile.instagram_url }}
