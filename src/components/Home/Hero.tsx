@@ -10,6 +10,7 @@ import Dossier from "./Dossier";
 import Earbuds from "./Earbuds";
 import Laptop from "./Laptop";
 import Books from "./Books";
+import PixelField from "./PixelField";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
 
@@ -181,6 +182,7 @@ export default function Hero() {
     return (
         <section id="home" className="hero hero-clean">
             <div className="hero-bg" aria-hidden="true" />
+            <PixelField />
             {!profile ? (
                 // the nav bar shows the loading progress; keep the hero's space meanwhile
                 <div className="container" style={{ minHeight: "600px" }} aria-busy="true" />
