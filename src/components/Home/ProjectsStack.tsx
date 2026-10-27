@@ -88,6 +88,56 @@ function TechChip({ name, src }: { name: string; src: string | null }) {
 }
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+
+/** small seeded RNG so each project's mosaic is random but the same every visit */
+function rng(seed: number) {
+    let t = seed >>> 0;
+    return () => {
+        t = (t + 0x6d2b79f5) >>> 0;
+        let r = Math.imul(t ^ (t >>> 15), 1 | t);
+        r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+        return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+    };
+}
+const hash = (str: string) => [...str].reduce((h, c) => (Math.imul(h, 31) + c.charCodeAt(0)) | 0, 7);
+
+/**
+ * Square mosaic around the logo, like tiles on a wall. The grid is 8×8 cells with the
+ * logo filling the middle 4×4; the ring around it is twelve 2×2 blocks. Each tech takes a
+ * block, as one big square or a small square tucked into one of the block's corners.
+ * Returns cell positions relative to the grid centre, in cell units.
+ */
+type Slot = { cx: number; cy: number; size: 1 | 2 };
+function mosaic(n: number, seed: number): Slot[] {
+    const r = rng(seed);
+    const blocks = [
+        [0, 0], [2, 0], [4, 0], [6, 0],
+        [0, 2], [6, 2], [0, 4], [6, 4],
+        [0, 6], [2, 6], [4, 6], [6, 6],
+    ].map(([c, rr]) => ({ c, r: rr, corner: (c === 0 || c === 6) && (rr === 0 || rr === 6), k: r() }));
+    // edge blocks first (they hug the logo), corners last, shuffled within each group
+    blocks.sort((a, b) => Number(a.corner) - Number(b.corner) || a.k - b.k);
+    const out: Slot[] = [];
+    const per = Math.max(1, Math.ceil(n / blocks.length)); // more than 12 techs: split blocks into small squares
+    for (const b of blocks) {
+        if (out.length >= n) break;
+        const left = n - out.length;
+        const many = Math.min(per, left, 4);
+        if (many === 1) {
+            const big = !b.corner && r() < 0.55;
+            if (big) out.push({ cx: b.c + 1 - 4, cy: b.r + 1 - 4, size: 2 });
+            else {
+                // a small square in the block corner nearest the logo, or a random one for corner blocks
+                const nx = b.corner ? (r() < 0.5 ? 0 : 1) : b.c < 2 ? 1 : b.c > 4 ? 0 : r() < 0.5 ? 0 : 1;
+                const ny = b.corner ? (r() < 0.5 ? 0 : 1) : b.r < 2 ? 1 : b.r > 4 ? 0 : r() < 0.5 ? 0 : 1;
+                out.push({ cx: b.c + nx + 0.5 - 4, cy: b.r + ny + 0.5 - 4, size: 1 });
+            }
+        } else {
+            [[0, 0], [1, 1], [1, 0], [0, 1]].slice(0, many).forEach(([x, y]) => out.push({ cx: b.c + x + 0.5 - 4, cy: b.r + y + 0.5 - 4, size: 1 }));
+        }
+    }
+    return out;
+}
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 /** piecewise blend between the value at d=-1, d=0 and d=+1 */
 const tri = (d: number, prev: number, mid: number, next: number) => (d < 0 ? lerp(mid, prev, clamp(-d, 0, 1)) : lerp(mid, next, clamp(d, 0, 1)));
@@ -95,8 +145,9 @@ const tri = (d: number, prev: number, mid: number, next: number) => (d < 0 ? ler
 /**
  * Projects + tech stack in one place. Drag (or swipe / arrows / trackpad sideways) to move
  * between projects. Left: main image. Middle: number, name, category and date. Right: the
- * project's logo (set in Admin, or a default project icon) with its tech stack orbiting it.
- * The orbit gathers once a project settles and tucks away while you drag. Neighbouring
+ * project's logo (set in Admin, or a default project icon) with its tech stack as a mosaic of
+ * squares around it (full name on hover). The mosaic gathers once a project settles and tucks
+ * away while you drag. Neighbouring
  * projects wait at the corners: their images on the left, their logos on the right.
  */
 export default function ProjectsStack() {
@@ -279,15 +330,16 @@ export default function ProjectsStack() {
     const imgH = imgW * 0.6;
     const leftX = narrow ? W / 2 : leftSpan / 2;
     const rightX = narrow ? W / 2 : (rightStart + W) / 2;
-    const orbitPad = narrow ? 58 : 86; // tile edge → chip centre
-    const orbitRoom = narrow ? 999 : (W - rightStart) / 2 - 48; // keep the ring inside its column
-    const tile = narrow ? 150 : clamp(Math.min(210, (orbitRoom - orbitPad) * 2), 120, 210);
+    // mosaic grid: logo = 4×4 cells in the middle of an 8×8 grid, cells `cell` px with `gap` gutters
+    const gap = narrow ? 8 : 10;
+    const room = narrow ? 999 : (W - rightStart) / 2 - 20; // half the right column
+    const cell = narrow ? 30 : clamp(Math.min((210 - 3 * gap) / 4, (room - 3.5 * gap) / 4), 26, 45);
+    const tile = 4 * cell + 3 * gap;
     const midX = W / 2;
     const cy = H / 2;
     const imgY = narrow ? 150 : cy;
     const textY = narrow ? 150 + imgH / 2 + 90 : cy;
     const tileY = narrow ? H - tile / 2 - 70 : cy;
-    const orbitR = tile * 0.5 + orbitPad;
     // neighbours sit fully above / below the current one with a clear gap, tilted toward the screen edge
     const NI = 0.5; // neighbour image scale
     const NT = 0.62; // neighbour logo scale
@@ -295,7 +347,7 @@ export default function ProjectsStack() {
     const c34 = Math.cos((34 * Math.PI) / 180);
     const imgOffY = imgH / 2 + 56 + (NI * (imgW * s34 + imgH * c34)) / 2;
     const imgOffX = Math.min(imgW * 0.3, leftX - 40);
-    const ringOuter = orbitR + 40; // chip + its label
+    const ringOuter = 4 * cell + 3.5 * gap; // half the mosaic
     const tileOffY = Math.max(tile / 2, ringOuter) + 40 + (NT * tile * (s34 + c34)) / 2;
     const tileOffX = (W - rightX) * 0.42;
     // orbit shows the last settled project; it tucks back into the logo while you drag
@@ -368,7 +420,7 @@ export default function ProjectsStack() {
                     if (narrow && a > 0.6) return null;
                     const x = tri(d, rightX + tileOffX, rightX, rightX + tileOffX);
                     const y = tri(d, tileY - tileOffY, tileY, tileY + tileOffY) + (a > 1 ? Math.sign(d) * (a - 1) * 120 : 0);
-                    const rot = tri(d, 32, 2, -32);
+                    const rot = tri(d, 32, 0, -32); // straight in the middle so it lines up with the mosaic
                     const sc = tri(d, NT, 1, NT) * (a > 1 ? 1 - (a - 1) * 0.5 : 1);
                     const op = a > 1 ? clamp(1 - (a - 1) / 0.8, 0, 1) : 1;
                     return (
@@ -398,20 +450,26 @@ export default function ProjectsStack() {
                     );
                 })}
 
-                {/* tech stack orbiting the current logo */}
+                {/* tech stack mosaic around the current logo */}
                 <div className={`pst-orbit ${orbitOut ? "is-out" : ""}`} style={{ left: rightX, top: tileY }} key={`orbit-${orbitIdx}`}>
-                    {techs.map((t, k) => {
-                        const ang = -Math.PI / 2 + (k / techs.length) * Math.PI * 2;
+                    {mosaic(techs.length, hash(projects[orbitIdx]?.id || String(orbitIdx))).map((sl, k) => {
+                        const t = techs[k];
+                        const px = sl.size * cell + (sl.size - 1) * gap;
+                        const step = cell + gap;
                         return (
                             <div
                                 key={t}
-                                className="pst-chip"
-                                title={t}
+                                className={`pst-chip ${sl.size === 2 ? "is-big" : ""} ${sl.cy < 0 ? "tip-above" : "tip-below"}`}
+                                aria-label={t}
                                 style={
                                     {
-                                        "--tx": `${Math.cos(ang) * orbitR}px`,
-                                        "--ty": `${Math.sin(ang) * orbitR}px`,
-                                        "--d": `${k * 55}ms`,
+                                        width: px,
+                                        height: px,
+                                        marginLeft: -px / 2,
+                                        marginTop: -px / 2,
+                                        "--tx": `${sl.cx * step}px`,
+                                        "--ty": `${sl.cy * step}px`,
+                                        "--d": `${k * 45}ms`,
                                     } as React.CSSProperties
                                 }
                             >
@@ -579,41 +637,37 @@ export default function ProjectsStack() {
                     color: #1b4f72;
                 }
 
+                /* tech mosaic around the logo (positions come from mosaic()) */
                 .pst-orbit {
                     position: absolute;
                     width: 0;
                     height: 0;
                     z-index: 60;
                     pointer-events: none;
-                    animation: pst-spin 90s linear infinite;
-                }
-                @keyframes pst-spin {
-                    to {
-                        transform: rotate(360deg);
-                    }
                 }
                 .pst-chip {
                     position: absolute;
                     left: 0;
                     top: 0;
-                    width: ${narrow ? 40 : 50}px;
-                    margin: -${narrow ? 20 : 25}px 0 0 -${narrow ? 20 : 25}px;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    gap: 4px;
-                    animation: pst-in 0.6s cubic-bezier(0.34, 1.4, 0.64, 1) var(--d) both;
+                    pointer-events: auto;
+                    animation: pst-in 0.55s cubic-bezier(0.34, 1.4, 0.64, 1) var(--d) both;
                 }
-                .pst-chip > :global(*) {
-                    animation: pst-counter 90s linear infinite;
-                }
-                @keyframes pst-counter {
-                    to {
-                        transform: rotate(-360deg);
-                    }
+                .pst-chip:hover {
+                    z-index: 5;
                 }
                 .pst-orbit.is-out .pst-chip {
-                    animation: pst-out 0.32s ease-in both;
+                    animation: pst-out 0.3s ease-in both;
+                    pointer-events: none;
+                }
+                @keyframes pst-in {
+                    from {
+                        opacity: 0;
+                        transform: translate(calc(var(--tx) * 0.35), calc(var(--ty) * 0.35)) scale(0.4);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translate(var(--tx), var(--ty)) scale(1);
+                    }
                 }
                 @keyframes pst-out {
                     from {
@@ -622,51 +676,68 @@ export default function ProjectsStack() {
                     }
                     to {
                         opacity: 0;
-                        transform: translate(0, 0) scale(0.3);
-                    }
-                }
-                @keyframes pst-in {
-                    from {
-                        opacity: 0;
-                        transform: translate(0, 0) scale(0.3);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translate(var(--tx), var(--ty)) scale(1);
+                        transform: translate(calc(var(--tx) * 0.35), calc(var(--ty) * 0.35)) scale(0.4);
                     }
                 }
                 .pst-chip :global(.pst-chip-face) {
-                    width: ${narrow ? 40 : 50}px;
-                    height: ${narrow ? 40 : 50}px;
+                    position: absolute;
+                    inset: 0;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    border-radius: 12px;
-                    background: #fff;
-                    box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.08), 0 3px 0 #e3e9ee, 0 10px 18px -10px rgba(13, 42, 66, 0.45);
+                    border-radius: 6px;
+                    background: linear-gradient(160deg, #ffffff 0%, #f1f5f8 100%);
+                    box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.07), 0 3px 0 #e2e8ed, 0 12px 18px -10px rgba(13, 42, 66, 0.45);
+                    transition: transform 0.45s cubic-bezier(0.34, 1.7, 0.5, 1), box-shadow 0.3s ease;
+                }
+                .pst-chip:hover :global(.pst-chip-face) {
+                    transform: translateY(-3px) scale(1.06);
+                    box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.07), 0 4px 0 #e2e8ed, 0 18px 24px -12px rgba(13, 42, 66, 0.5);
                 }
                 .pst-chip :global(.pst-chip-face img) {
-                    width: 56%;
-                    height: 56%;
+                    width: 52%;
+                    height: 52%;
                     object-fit: contain;
+                    pointer-events: none;
                 }
                 .pst-chip :global(.pst-mono) {
                     font-family: var(--font-geist-sans), Inter, -apple-system, sans-serif;
-                    font-size: ${narrow ? 11 : 13}px;
+                    font-size: ${Math.round(cell * 0.3)}px;
                     font-weight: 800;
                     color: #1b4f72;
                 }
+                .pst-chip.is-big :global(.pst-mono) {
+                    font-size: ${Math.round(cell * 0.5)}px;
+                }
+                /* full name on hover, as a small navy tag */
                 .pst-chip :global(.pst-chip-name) {
-                    max-width: 90px;
-                    font-size: 9px;
+                    position: absolute;
+                    left: 50%;
+                    padding: 5px 9px;
+                    border-radius: 6px;
+                    background: #0d2a42;
+                    box-shadow: 0 8px 16px -8px rgba(13, 42, 66, 0.6);
+                    font-size: 11px;
                     font-weight: 700;
                     letter-spacing: 0.06em;
                     text-transform: uppercase;
-                    color: #1b4f72;
-                    text-align: center;
+                    color: #fff;
                     white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
+                    pointer-events: none;
+                    opacity: 0;
+                    transition: opacity 0.2s ease, transform 0.3s cubic-bezier(0.34, 1.6, 0.5, 1);
+                }
+                .pst-chip.tip-above :global(.pst-chip-name) {
+                    bottom: calc(100% + 10px);
+                    transform: translate(-50%, 6px) scale(0.9);
+                }
+                .pst-chip.tip-below :global(.pst-chip-name) {
+                    top: calc(100% + 10px);
+                    transform: translate(-50%, -6px) scale(0.9);
+                }
+                .pst-chip:hover :global(.pst-chip-name) {
+                    opacity: 1;
+                    transform: translate(-50%, 0) scale(1);
                 }
 
                 .pst-text {
@@ -740,9 +811,8 @@ export default function ProjectsStack() {
                 }
 
                 @media (prefers-reduced-motion: reduce) {
-                    .pst-orbit,
-                    .pst-chip > :global(*) {
-                        animation: none;
+                    .pst-chip {
+                        animation-duration: 0.01ms !important;
                     }
                 }
             `}</style>
