@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Check, Copy, Github, Instagram, Linkedin } from "lucide-react";
-import { Courier_Prime, JetBrains_Mono } from "next/font/google";
+import { Courier_Prime } from "next/font/google";
 import FileLink from "./FileLink";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
-const jetbrains = JetBrains_Mono({ subsets: ["latin"], weight: "700", display: "swap" });
 
 type Profile = {
     phone?: string;
@@ -47,25 +46,25 @@ function Postmark({ time, place }: { time: string; place: string }) {
     return (
         <svg className="pc-postmark" viewBox="0 0 200 200" aria-hidden="true">
             <defs>
-                <path id="pcRingTop" d="M28 100 A72 72 0 0 1 172 100" />
-                <path id="pcRingBot" d="M36 100 A64 64 0 0 0 164 100" />
+                <path id="pcRingTop" d="M27 100 A73 73 0 0 1 173 100" />
+                <path id="pcRingBot" d="M21 100 A79 79 0 0 0 179 100" />
             </defs>
             <circle cx="100" cy="100" r="88" fill="none" stroke="currentColor" strokeWidth="3" />
             <circle cx="100" cy="100" r="58" fill="none" stroke="currentColor" strokeWidth="1.6" />
-            <text fontSize="13" fontWeight="700" letterSpacing="2" fill="currentColor">
+            <text fontSize="12" fontWeight="700" letterSpacing="2" fill="currentColor" dominantBaseline="middle">
                 <textPath href="#pcRingTop" startOffset="50%" textAnchor="middle">
                     {place}
                 </textPath>
             </text>
-            <text fontSize="13" fontWeight="700" letterSpacing="4" fill="currentColor">
+            <text fontSize="12" fontWeight="700" letterSpacing="3" fill="currentColor" dominantBaseline="middle">
                 <textPath href="#pcRingBot" startOffset="50%" textAnchor="middle">
                     ★ GMT+8 ★
                 </textPath>
             </text>
-            <text x="100" y="104" textAnchor="middle" fontSize="28" fontWeight="700" fill="currentColor">
+            <text x="100" y="99" textAnchor="middle" fontSize="28" fontWeight="700" fill="currentColor">
                 {hm || "--:--"}
             </text>
-            <text x="100" y="126" textAnchor="middle" fontSize="13" fontWeight="700" letterSpacing="3" fill="currentColor">
+            <text x="100" y="121" textAnchor="middle" fontSize="13" fontWeight="700" letterSpacing="3" fill="currentColor">
                 {ampm || ""}
             </text>
         </svg>
@@ -74,9 +73,8 @@ function Postmark({ time, place }: { time: string; place: string }) {
 
 /**
  * Contact, as an airmail postcard that fits one screen. Left: how to reach me, written on the
- * card's ruled lines (copy any of them), plus quick actions as file slips. Right: a stamp with
- * the pass-card portrait, a postmark with my live local time, an availability stamp, and my
- * socials on the address lines.
+ * card's ruled lines (copy any of them), plus quick actions as file slips. Right: a postmark
+ * with my live local time, an availability stamp, and my socials on the address lines.
  */
 export default function Contact() {
     const [profile, setProfile] = useState<Profile | null>(null);
@@ -157,13 +155,6 @@ export default function Contact() {
 
                     {/* RIGHT: stamp, postmark, availability, address lines */}
                     <div className="pc-right">
-                        <div className="pc-stamp" aria-hidden="true">
-                            <div className="pc-stamp-inner">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src="/assets/passcard/pass-photo.webp" alt="" draggable={false} />
-                                <span className={`pc-stamp-val ${jetbrains.className}`}>RM 0.60</span>
-                            </div>
-                        </div>
                         <div className={`pc-mark ${courier.className}`}>
                             <Postmark time={time} place={place} />
                             <span className="pc-waves" />
@@ -352,57 +343,17 @@ export default function Contact() {
                     white-space: nowrap;
                 }
 
-                /* stamp with the pass-card portrait */
-                .pc-stamp {
-                    position: absolute;
-                    top: 26px;
-                    right: 30px;
-                    width: 112px;
-                    height: 136px;
-                    padding: 7px;
-                    box-sizing: border-box;
-                    background: #f7f9fa;
-                    transform: rotate(3deg);
-                    filter: drop-shadow(0 4px 6px rgba(13, 42, 66, 0.25));
-                    -webkit-mask: radial-gradient(circle at center, transparent 4px, #000 4.5px) -7px -7px / 14px 14px,
-                        linear-gradient(#000 0 0) content-box;
-                    mask: radial-gradient(circle at center, transparent 4px, #000 4.5px) -7px -7px / 14px 14px, linear-gradient(#000 0 0) content-box;
-                }
-                .pc-stamp-inner {
-                    position: relative;
-                    height: 100%;
-                    padding: 6px;
-                    box-sizing: border-box;
-                    background: #e7eef2;
-                    box-shadow: inset 0 0 0 1px rgba(13, 42, 66, 0.15);
-                }
-                .pc-stamp-inner img {
-                    width: 100%;
-                    height: calc(100% - 16px);
-                    object-fit: cover;
-                    image-rendering: pixelated;
-                    display: block;
-                }
-                .pc-stamp-val {
-                    position: absolute;
-                    left: 0;
-                    right: 0;
-                    bottom: 3px;
-                    text-align: center;
-                    font-size: 9px;
-                    color: #0d2a42;
-                }
-                /* postmark overlapping the stamp, with cancellation waves */
+                /* postmark in the stamp corner, with cancellation waves */
                 .pc-mark {
                     position: absolute;
-                    top: 70px;
-                    right: 104px;
-                    width: 118px;
-                    height: 118px;
+                    top: 22px;
+                    right: 30px;
+                    width: 132px;
+                    height: 132px;
                     color: rgba(27, 79, 114, 0.72);
                     transform: rotate(-14deg);
                     pointer-events: none;
-                    z-index: 2; /* inked over the stamp */
+
                 }
                 .pc-mark :global(.pc-postmark) {
                     width: 100%;
