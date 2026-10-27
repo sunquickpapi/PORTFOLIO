@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Courier_Prime } from "next/font/google";
-import { ChevronLeft, ChevronRight, FolderKanban } from "lucide-react";
+import { FolderKanban } from "lucide-react";
 import type { Project } from "@/types/project";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
@@ -439,15 +439,6 @@ export default function ProjectsStack() {
                     );
                 })}
 
-                <div className="pst-nav">
-                    <button type="button" className="pst-arrow" aria-label="Previous project" onClick={() => go(targetRef.current - 1)}>
-                        <ChevronLeft size={18} />
-                    </button>
-                    <span className={`pst-hint ${courier.className}`}>DRAG</span>
-                    <button type="button" className="pst-arrow" aria-label="Next project" onClick={() => go(targetRef.current + 1)}>
-                        <ChevronRight size={18} />
-                    </button>
-                </div>
             </div>
 
             <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
@@ -688,39 +679,6 @@ export default function ProjectsStack() {
                     color: #e9f4fa;
                 }
 
-                .pst-nav {
-                    position: absolute;
-                    left: 50%;
-                    bottom: 18px;
-                    z-index: 80;
-                    display: flex;
-                    align-items: center;
-                    gap: 14px;
-                    transform: translateX(-50%);
-                }
-                .pst-arrow {
-                    width: 36px;
-                    height: 36px;
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    border-radius: 50%;
-                    border: 1.5px solid rgba(27, 79, 114, 0.35);
-                    background: rgba(255, 255, 255, 0.7);
-                    color: #1b4f72;
-                    cursor: pointer;
-                    transition: background 0.2s ease, color 0.2s ease;
-                }
-                .pst-arrow:hover {
-                    background: #1b4f72;
-                    color: #fff;
-                }
-                .pst-hint {
-                    font-size: 11px;
-                    font-weight: 700;
-                    letter-spacing: 0.3em;
-                    color: #3a7ca5;
-                }
                 @media (prefers-reduced-motion: reduce) {
                     .pst-orbit,
                     .pst-chip > :global(*) {
