@@ -206,7 +206,9 @@ export default function Snippets() {
                     position: absolute;
                     width: 320px;
                     cursor: pointer;
-                    transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+                    /* only the slide properties: hover never touches these, so it can't restart the slide */
+                    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+                        filter 0.7s cubic-bezier(0.4, 0, 0.2, 1);
                     will-change: transform, opacity;
                 }
 
@@ -248,12 +250,16 @@ export default function Snippets() {
                     filter: blur(6px);
                 }
 
-                .pos-center:hover {
-                    transform: translateX(0) scale(1.12);
+                /* hover lives on the inner card only (the outer card carries the slide) */
+                .carousel-card .project-new-card {
+                    transition: transform 0.35s ease, box-shadow 0.35s ease;
                 }
-                .pos-left:hover, .pos-right:hover {
-                    opacity: 0.9;
-                    filter: blur(0);
+                .carousel-card .project-new-card:hover {
+                    transform: none;
+                }
+                .carousel-card.pos-center:not(.transitioning) .project-new-card:hover {
+                    transform: translateY(-6px);
+                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
                 }
 
                 /* ── Snippet badges ── */
