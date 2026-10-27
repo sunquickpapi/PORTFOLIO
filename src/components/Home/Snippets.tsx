@@ -207,7 +207,7 @@ export default function Snippets() {
     const leafBack = turn?.dir === 1 ? next : cur; // left-hand face
 
     return (
-        <section id="snippets">
+        <section id="snippets" style={{ scrollMarginTop: 0 }}>
             <div className="snippets-main-container" ref={wrapRef}>
                 <div className="nb-fit" style={{ height: (BOOK_H + 12) * scale }}>
                     <div
@@ -247,7 +247,7 @@ export default function Snippets() {
                     </div>
                 </div>
 
-                <div className="flex justify-center relative z-10" style={{ marginTop: 44, marginBottom: 16 }}>
+                <div className="flex justify-center relative z-10" style={{ marginTop: 40 }}>
                     <Link href="/snippets" className="btn-view-all">
                         View All Snippets
                     </Link>
@@ -255,9 +255,16 @@ export default function Snippets() {
             </div>
 
             <style jsx>{`
+                /* one full screen: the notebook sits in the middle (top padding clears the nav bar) */
                 #snippets {
                     position: relative;
-                    padding: 7rem 0 4rem;
+                    min-height: 100vh;
+                    min-height: 100svh;
+                    box-sizing: border-box;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    padding: 96px 0 40px;
                     overflow: hidden;
                 }
                 .snippets-main-container {
