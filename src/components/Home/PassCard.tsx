@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Courier_Prime, Black_Ops_One, JetBrains_Mono } from "next/font/google";
-import { Coffee, Github, Instagram, Linkedin, Trophy, X, Zap } from "lucide-react";
+import { ArrowDown, Coffee, Github, Instagram, Linkedin, MessageSquare, Trophy, X, Zap } from "lucide-react";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
 const blackOps = Black_Ops_One({ subsets: ["latin"], weight: "400", display: "swap" });
@@ -68,10 +68,23 @@ export default function PassCard({
 }) {
     const routeFrom = (route.from ?? "MLK").trim();
     const routeTo = (route.to ?? "KDH").trim();
-    const statItems = [
+    // how many testimonials are on the site (for the speech-bubble stamp)
+    const [reviews, setReviews] = useState<number | null>(null);
+    useEffect(() => {
+        let alive = true;
+        fetch("/api/testimonials")
+            .then((r) => (r.ok ? r.json() : []))
+            .then((d) => alive && setReviews(Array.isArray(d) ? d.length : 0))
+            .catch(() => alive && setReviews(0));
+        return () => {
+            alive = false;
+        };
+    }, []);
+    const statItems: { label: string; value: string | number; Icon: typeof Trophy; stamp: string; exact?: boolean; viewAll?: string }[] = [
         { label: "Projects Completed", value: stats.projects || "15", Icon: Trophy, stamp: "trophy" },
         { label: "Years in Coding", value: stats.years || "2", Icon: Zap, stamp: "zap" },
         { label: "Coffee Consumed", value: stats.coffee || "900", Icon: Coffee, stamp: "coffee" },
+        { label: "Testimonials", value: reviews ?? "…", Icon: MessageSquare, stamp: "chat", exact: true, viewAll: "testimonials" },
     ];
     const links = [
         { label: "LinkedIn", href: socials.linkedin || "https://www.linkedin.com/in/muhammad-naufal-bin-mohd-nizam-0603b2279", Icon: Linkedin },
@@ -94,6 +107,9 @@ export default function PassCard({
     const [zoomIdx, setZoomIdx] = useState(0); // last opened stat (kept while zooming out)
     const [zoomOrigin, setZoomOrigin] = useState({ x: 450, y: 220 });
     const [closeHover, setCloseHover] = useState(false);
+    const viewAllRef = useRef<HTMLButtonElement>(null);
+    const [viewAllHover, setViewAllHover] = useState(false);
+    const plus = (i: number) => (statItems[i].exact ? "" : "+");
 
     // Same position-based hit test as the stamps (reliable inside the tilted card)
     const aboutAt = (x: number, y: number) => {
@@ -109,7 +125,7 @@ export default function PassCard({
     const stickerRefs = useRef<(HTMLButtonElement | null)[]>([]);
     // Each stamp loops on its own: fade in slowly at a random free spot, stay a while,
     // fade out slowly, then come back somewhere else. A stamp being hovered or read stays put.
-    const [stamps, setStamps] = useState<(StampPos | null)[]>([null, null, null]);
+    const [stamps, setStamps] = useState<(StampPos | null)[]>([null, null, null, null]);
     const stampsRef = useRef(stamps);
     stampsRef.current = stamps;
     const pinRef = useRef({ open: null as number | null, hover: -1 });
@@ -145,7 +161,7 @@ export default function PassCard({
         };
         // first appearance: random order, staggered (after a flip, wait for the front to face us)
         const start = stampsRef.current.some(Boolean) ? FLIP_MS / 2 + 100 : 400;
-        [0, 1, 2]
+        [0, 1, 2, 3]
             .sort(() => Math.random() - 0.5)
             .forEach((i, k) => later(() => place(i), start + k * 700 + rand(0, 400)));
         return () => {
@@ -193,6 +209,24 @@ export default function PassCard({
     const closeZoom = () => {
         setOpenStat(null);
         setCloseHover(false);
+        setViewAllHover(false);
+    };
+    const viewAllAt = (x: number, y: number) => {
+        const el = viewAllRef.current;
+        if (openStat === null || !statItems[openStat]?.viewAll || !el) return false;
+        const r = el.getBoundingClientRect();
+        return x >= r.left - 4 && x <= r.right + 4 && y >= r.top - 4 && y <= r.bottom + 4;
+    };
+    // "View All": zoom back out, then glide down to that section
+    const viewAll = () => {
+        const id = statItems[zoomIdx].viewAll;
+        closeZoom();
+        if (!id) return;
+        window.setTimeout(() => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+            else window.location.assign(`/#${id}`);
+        }, 260);
     };
 
     // Escape zooms back out
@@ -253,6 +287,8 @@ export default function PassCard({
         if (overAbout !== aboutHover) setAboutHover(overAbout);
         const overClose = closeAt(e.clientX, e.clientY);
         if (overClose !== closeHover) setCloseHover(overClose);
+        const overView = viewAllAt(e.clientX, e.clientY);
+        if (overView !== viewAllHover) setViewAllHover(overView);
         if (e.pointerType === "touch" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
         const r = e.currentTarget.getBoundingClientRect();
         const px = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
@@ -264,6 +300,7 @@ export default function PassCard({
         setHoverStat(-1);
         setAboutHover(false);
         setCloseHover(false);
+        setViewAllHover(false);
         target.current = { rx: 0, ry: 0, gx: 50, gy: 30 };
         kick();
     };
@@ -296,6 +333,7 @@ export default function PassCard({
                     // While a stat is zoomed in, only the ✕ does anything (no flipping underneath)
                     if (openStat !== null) {
                         if (closeAt(e.clientX, e.clientY)) closeZoom();
+                        else if (viewAllAt(e.clientX, e.clientY)) viewAll();
                         return;
                     }
                     // A click inside a stamp zooms into it, even if Chrome reports the card as the target
@@ -390,7 +428,7 @@ export default function PassCard({
                                                             }}
                                                             className="pf-sticker"
                                                             aria-expanded={open}
-                                                            aria-label={`${label}: ${value}+`}
+                                                            aria-label={`${label}: ${value}${plus(i)}`}
                                                             tabIndex={back ? -1 : 0}
                                                             onClick={(e) => {
                                                                 e.stopPropagation(); // don't flip the card
@@ -455,7 +493,7 @@ export default function PassCard({
                                         role="dialog"
                                         aria-modal="false"
                                         aria-hidden={openStat === null}
-                                        aria-label={`${statItems[zoomIdx].label}: ${statItems[zoomIdx].value}+`}
+                                        aria-label={`${statItems[zoomIdx].label}: ${statItems[zoomIdx].value}${plus(zoomIdx)}`}
                                     >
                                         <div className="pf-zoom-icon">
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -463,9 +501,28 @@ export default function PassCard({
                                         </div>
                                         <div className="pf-zoom-text">
                                             <span className="pf-zoom-kicker">STAT N°0{zoomIdx + 1}</span>
-                                            <span className="pf-zoom-value">{statItems[zoomIdx].value}+</span>
+                                            <span className="pf-zoom-value">
+                                                {statItems[zoomIdx].value}
+                                                {plus(zoomIdx)}
+                                            </span>
                                             <span className="pf-zoom-rule" />
                                             <span className="pf-zoom-label">{statItems[zoomIdx].label}</span>
+                                            {statItems[zoomIdx].viewAll && (
+                                                <button
+                                                    ref={viewAllRef}
+                                                    type="button"
+                                                    className={`pf-zoom-all ${viewAllHover ? "is-hover" : ""}`}
+                                                    tabIndex={openStat !== null ? 0 : -1}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        viewAll();
+                                                    }}
+                                                    onKeyDown={(e) => e.stopPropagation()}
+                                                >
+                                                    View All
+                                                    <ArrowDown size={18} strokeWidth={2.6} />
+                                                </button>
+                                            )}
                                         </div>
                                         <button
                                             ref={closeRef}
@@ -917,6 +974,45 @@ export default function PassCard({
                     color: #1b4f72;
                     max-width: 340px;
                     line-height: 1.25;
+                }
+                /* "View All": inked rubber stamp, like "Who is he ?" */
+                .pf-zoom-all {
+                    align-self: flex-start;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 10px;
+                    margin-top: 22px;
+                    padding: 11px 20px 11px 23px;
+                    color: #1b4f72;
+                    background: transparent;
+                    border: 3px solid currentColor;
+                    border-radius: 10px;
+                    outline: 1.5px solid currentColor;
+                    outline-offset: -8px;
+                    font-family: inherit;
+                    font-size: 15px;
+                    font-weight: 700;
+                    letter-spacing: 3px;
+                    text-transform: uppercase;
+                    cursor: pointer;
+                    transform: rotate(-2deg);
+                    transition: background 0.2s ease, color 0.2s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                }
+                .pf-zoom-all :global(svg) {
+                    transition: transform 0.3s ease;
+                }
+                .pf-zoom-all.is-hover,
+                .pf-zoom-all:focus-visible {
+                    background: #1b4f72;
+                    color: #e9eef0;
+                    outline-color: #e9eef0;
+                    transform: rotate(0deg) scale(1.04);
+                }
+                .pf-zoom-all.is-hover :global(svg) {
+                    transform: translateY(3px);
+                }
+                .pf-zoom-all:focus-visible {
+                    box-shadow: 0 0 0 3px #46c1e6;
                 }
                 .pf-zoom-close {
                     position: absolute;

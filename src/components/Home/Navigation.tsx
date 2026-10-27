@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Code, Layout, MessageSquare, BookOpen, Mail, Github, Linkedin, FileText, Sun, Moon, Menu, X, ChevronUp, ChevronDown, FileCode, Briefcase, ArrowUpRight, Download } from "lucide-react";
+import { Home, Layout, MessageSquare, BookOpen, Mail, Github, Linkedin, FileText, Sun, Moon, Menu, X, ChevronUp, ChevronDown, FileCode, Briefcase, ArrowUpRight, Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
 import { Courier_Prime } from "next/font/google";
@@ -90,7 +90,7 @@ export default function Navigation() {
         const observer = new IntersectionObserver(observerCallback, observerOptions);
 
         // Sections to observe
-        const sections = ["home", "tech-stack", "projects", "snippets", "testimonials", "blog-latest", "contact"];
+        const sections = ["home", "projects", "snippets", "testimonials", "blog-latest", "contact"];
         sections.forEach((id) => {
             const el = document.getElementById(id);
             if (el) observer.observe(el);
@@ -155,7 +155,6 @@ export default function Navigation() {
 
     const navItems: { id: string; label: string; short?: string; icon: typeof Home; href?: string }[] = [
         { id: "home", label: "Home", icon: Home },
-        { id: "tech-stack", label: "TechStack", short: "Stack", icon: Code },
         { id: "projects", label: "Project", short: "Projects", icon: Layout },
         { id: "snippets", label: "Snippets", icon: FileCode },
         { id: "testimonials", label: "Testimonials", icon: MessageSquare },

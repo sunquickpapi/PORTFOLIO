@@ -8,6 +8,8 @@ import PassCard from "./PassCard";
 import { markPageReady } from "@/lib/pageReady";
 import Dossier from "./Dossier";
 import Earbuds from "./Earbuds";
+import Laptop from "./Laptop";
+import Books from "./Books";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
 
@@ -222,8 +224,14 @@ export default function Hero() {
                                 stats={{ projects: profile.projects_count, years: profile.experience_years, coffee: profile.coffee_consumed }}
                                 route={{ from: profile.route_from, to: profile.route_to }}
                             />
+                            <div className="hero-laptop">
+                                <Laptop />
+                            </div>
                             <div className="hero-earbuds">
                                 <Earbuds />
+                            </div>
+                            <div className="hero-books">
+                                <Books />
                             </div>
                             <div className="hero-dossier">
                                 <Dossier href={profile.resume_url || "/assets/resume.pdf"} />

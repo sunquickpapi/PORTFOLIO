@@ -36,6 +36,7 @@ function ProjectFormContent({ projectId }: ProjectFormProps) {
         description: "",
         date: "",
         image_url: "",
+        logo_url: "",
         tech_stack: "" as string | string[],
         live_demo_url: "",
         repo_url: "",
@@ -217,6 +218,26 @@ function ProjectFormContent({ projectId }: ProjectFormProps) {
                             onUploaded={([url]) => setFormData((prev) => ({ ...prev, image_url: url }))}
                         />
                         <p className="helper-text">Paste a path like <code className="code-path">/assets/image.jpg</code>, or upload an image from your computer.</p>
+                    </div>
+
+                    <div className="input-group full-width">
+                        <label className="input-label">
+                            <Sparkles size={16} />
+                            Project Logo
+                        </label>
+                        <input
+                            name="logo_url"
+                            className="premium-input"
+                            placeholder="/assets/project-logo.png"
+                            value={formData.logo_url || ""}
+                            onChange={handleChange}
+                        />
+                        <FileUploadButton
+                            aspect={1}
+                            previewUrl={formData.logo_url || ""}
+                            onUploaded={([url]) => setFormData((prev) => ({ ...prev, logo_url: url }))}
+                        />
+                        <p className="helper-text">Square logo shown on the home page beside the project, with its tech stack around it. Use a PNG to keep a transparent background. Leave empty to show a default project icon.</p>
                     </div>
 
                     <div className="input-group full-width">
