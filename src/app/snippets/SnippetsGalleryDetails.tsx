@@ -512,7 +512,6 @@ export default function SnippetsGalleryDetails() {
                         </div>
                     </div>
                 )}
-                {!loading && !stack && <p className={`snb-hint ${courier.className}`}>← → TO TURN THE PAGES</p>}
             </main>
 
             {closeUp && <CloseUp snippet={closeUp} no={snippets.indexOf(closeUp) + 1} onClose={() => setCloseUp(null)} />}
