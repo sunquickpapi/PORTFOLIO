@@ -20,7 +20,8 @@ import {
     Search,
     Github,
     Globe,
-    FileText
+    FileText,
+    Smartphone
 } from "lucide-react";
 
 interface ProjectFormProps {
@@ -40,6 +41,7 @@ function ProjectFormContent({ projectId }: ProjectFormProps) {
         tech_stack: "" as string | string[],
         live_demo_url: "",
         repo_url: "",
+        app_store_url: "",
         slug: "",
         category: searchParams.get("category") || "Websites",
         challenge: "",
@@ -171,7 +173,8 @@ function ProjectFormContent({ projectId }: ProjectFormProps) {
                         >
                             <option value="Websites">Websites</option>
                             <option value="Mobile">Mobile</option>
-                            <option value="Photography">Photography</option>
+                            {/* photography is no longer shown on the site; keep the option only for old entries */}
+                            {formData.category === "Photography" && <option value="Photography">Photography (hidden on site)</option>}
                         </select>
                     </div>
 
@@ -375,6 +378,20 @@ function ProjectFormContent({ projectId }: ProjectFormProps) {
                             placeholder="https://github.com/username/project"
                             className="premium-input"
                             value={formData.repo_url || ""}
+                            onChange={handleChange}
+                        />
+                    </div>
+
+                    <div className="input-group">
+                        <label className="input-label">
+                            <Smartphone size={16} />
+                            App Store URL
+                        </label>
+                        <input
+                            name="app_store_url"
+                            placeholder="https://apps.apple.com/app/..."
+                            className="premium-input"
+                            value={formData.app_store_url || ""}
                             onChange={handleChange}
                         />
                     </div>

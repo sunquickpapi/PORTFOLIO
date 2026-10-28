@@ -53,7 +53,8 @@ type Block =
     | { kind: "h"; text: string; id: string }
     | { kind: "p"; lines: string[] }
     | { kind: "ul"; items: string[] }
-    | { kind: "ol"; items: string[] };
+    | { kind: "ol"; items: string[] }
+    | { kind: "img"; srcs: string[] };
 
 const BULLET = /^\s*(?:[-•*▪︎◦]|•)\s+/;
 const NUMBER = /^\s*\d+[.)]\s+/;
@@ -63,9 +64,20 @@ const isHeading = (line: string, next?: string) => {
     return !!next && l.length > 2 && l.length <= 90 && !/[.!?,;:]["”’)]?$/.test(l) && !BULLET.test(l) && !NUMBER.test(l);
 };
 
-/** Turns the post's plain text into headings, paragraphs and lists. */
+const IMG_MARK = "\u0000img:";
+const safeSrc = (u: string) => (/^(https?:\/\/|\/)/i.test(u.trim()) ? u.trim() : "");
+
+/** Turns the post's plain text into headings, paragraphs, lists and images. */
 function parse(content: string): Block[] {
-    const text = (content || "").replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "").replace(/\r/g, "");
+    const text = (content || "")
+        // images from the admin editor (<img src="…">) or markdown (![alt](url)) become their own lines
+        .replace(/<img\b[^>]*?\bsrc\s*=\s*["']([^"']+)["'][^>]*>/gi, (_, u) => `\n${IMG_MARK}${u}\n`)
+        .replace(/!\[[^\]]*\]\(([^)\s]+)[^)]*\)/g, (_, u) => `\n${IMG_MARK}${u}\n`)
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<[^>]+>/g, "")
+        .replace(/\r/g, "")
+        // keep images that were inserted together in one group
+        .replace(/(\u0000img:[^\n]*)\n(?:\s*\n)+(?=\u0000img:)/g, "$1\n");
     const out: Block[] = [];
     const used = new Map<string, number>();
     for (const chunk of text.split(/\n\s*\n/)) {
@@ -73,6 +85,16 @@ function parse(content: string): Block[] {
         let i = 0;
         while (i < lines.length) {
             const line = lines[i];
+            if (line.startsWith(IMG_MARK)) {
+                // images next to each other sit together in one row
+                const srcs: string[] = [];
+                while (i < lines.length && lines[i].startsWith(IMG_MARK)) {
+                    const u = safeSrc(lines[i++].slice(IMG_MARK.length));
+                    if (u) srcs.push(u);
+                }
+                if (srcs.length) out.push({ kind: "img", srcs });
+                continue;
+            }
             if (BULLET.test(line) || NUMBER.test(line)) {
                 const ordered = NUMBER.test(line);
                 const re = ordered ? NUMBER : BULLET;
@@ -81,7 +103,7 @@ function parse(content: string): Block[] {
                 out.push(ordered ? { kind: "ol", items } : { kind: "ul", items });
                 continue;
             }
-            if (i === 0 && isHeading(line, lines[i + 1])) {
+            if (i === 0 && isHeading(line, lines[i + 1]) && !lines[i + 1].startsWith(IMG_MARK)) {
                 const base = slug(line);
                 const n = used.get(base) || 0;
                 used.set(base, n + 1);
@@ -90,7 +112,7 @@ function parse(content: string): Block[] {
                 continue;
             }
             const para: string[] = [];
-            while (i < lines.length && !BULLET.test(lines[i]) && !NUMBER.test(lines[i])) para.push(lines[i++]);
+            while (i < lines.length && !BULLET.test(lines[i]) && !NUMBER.test(lines[i]) && !lines[i].startsWith(IMG_MARK)) para.push(lines[i++]);
             out.push({ kind: "p", lines: para });
         }
     }
@@ -306,6 +328,15 @@ export default function BlogDetail({ blog }: BlogDetailProps) {
                                         <h2 key={i} id={b.id} className="bd-h">
                                             {b.text}
                                         </h2>
+                                    );
+                                if (b.kind === "img")
+                                    return (
+                                        <figure key={i} className={`bd-fig ${b.srcs.length > 1 ? "is-row" : ""}`}>
+                                            {b.srcs.map((u, j) => (
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                <img key={j} src={u} alt="" loading="lazy" />
+                                            ))}
+                                        </figure>
                                     );
                                 if (b.kind === "ul")
                                     return (
@@ -592,6 +623,10 @@ const STYLES = `
 }
 .bd-h::before { content: ""; position: absolute; top: 0; left: 0; width: 44px; height: 3px; border-radius: 3px; background: var(--sky); }
 .bd-article > .bd-h:first-child { margin-top: 0; }
+.bd-fig { margin: 0.4em 0 1.8em; padding: 8px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.08), 0 20px 32px -24px rgba(13, 42, 66, 0.55); }
+.bd-fig img { display: block; width: 100%; height: auto; border-radius: 8px; background: #dfe9f0; }
+.bd-fig.is-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.bd-fig.is-row img { height: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
 .bd-list { margin: 0 0 1.35em; padding-left: 1.3em; font-size: 18px; line-height: 1.75; }
 .bd-list li { margin: 0.25em 0; padding-left: 0.3em; }
 .bd-list li::marker { color: var(--sky); font-weight: 800; }

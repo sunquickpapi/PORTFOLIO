@@ -62,7 +62,7 @@ export default function ProjectModal({ project, isOpen, onClose, onPreview }: Pr
 
     if (!isOpen || !mounted) return null;
 
-    const appStore = (project as Project & { app_store_url?: string | null }).app_store_url;
+    const appStore = project.app_store_url;
     const sections = [
         project.challenge && { k: "THE CHALLENGE", text: project.challenge },
         project.solution && { k: "THE SOLUTION", text: project.solution },
