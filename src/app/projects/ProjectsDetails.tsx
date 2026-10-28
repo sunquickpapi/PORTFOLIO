@@ -8,7 +8,6 @@ import { Project } from "@/types/project";
 import ProjectModal from "@/components/Home/ProjectModal";
 import PreviewModal from "@/components/Home/PreviewModal";
 import PixelField from "@/components/Home/PixelField";
-import Footer from "@/components/Home/Footer";
 import ProjectWall from "./ProjectWall";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
@@ -164,7 +163,6 @@ export default function ProjectsDetails() {
                 </button>
             </div>
 
-            {view === "list" && <Footer />}
 
             {selected && <ProjectModal project={selected} isOpen={!!selected} onClose={() => setSelected(null)} onPreview={(p) => setPreview(p)} />}
             {preview && <PreviewModal project={preview} isOpen={!!preview} onClose={() => setPreview(null)} />}
@@ -442,10 +440,11 @@ export default function ProjectsDetails() {
 
                 /* list view: flat rows */
                 .pw-wall.is-list {
-                    max-width: 960px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 14px;
+                    max-width: 1280px;
+                    display: grid;
+                    grid-template-columns: repeat(2, minmax(0, 1fr)); /* two columns */
+                    gap: 14px 18px;
+                    align-items: start;
                 }
                 .pw-wall.is-list .pw-cell {
                     flex-direction: row;
@@ -457,7 +456,7 @@ export default function ProjectsDetails() {
                     box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.07);
                 }
                 .pw-wall.is-list .pw-card {
-                    width: 210px;
+                    width: 180px;
                     flex: none;
                     padding: 5px;
                     border-radius: 12px;
@@ -540,6 +539,9 @@ export default function ProjectsDetails() {
                     }
                     .pw-count {
                         display: none;
+                    }
+                    .pw-wall.is-list {
+                        grid-template-columns: minmax(0, 1fr);
                     }
                     .pw-wall.is-list .pw-card {
                         width: 120px;
