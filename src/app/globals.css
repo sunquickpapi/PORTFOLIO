@@ -11208,9 +11208,18 @@ html.fvl-loading body {
 }
 .hero-pass-move .hero-gh:hover > .ghc,
 .hero-pass-move .hero-gh:focus-within > .ghc {
-  transform: translate(-300px, 16px) rotate(-8deg); /* slides out to the left */
+  transform: translate(-410px, -46px) rotate(-12deg); /* slides fully clear, out to the left and a little up */
   /* coming out: a touch of spring */
   transition: transform 0.65s cubic-bezier(0.34, 1.25, 0.5, 1);
+}
+/* while it is out, bridge the gap between the corner and the card so the hover holds */
+.hero-pass-move .hero-gh:hover::before {
+  content: "";
+  position: absolute;
+  top: -70px;
+  bottom: 0;
+  left: -90px;
+  width: 140px;
 }
 @media (max-width: 1024px) {
   .hero-gh { display: none; }
