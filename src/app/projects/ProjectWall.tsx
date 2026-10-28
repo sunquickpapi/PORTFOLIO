@@ -103,6 +103,49 @@ export default function ProjectWall({ projects, onOpen }: { projects: Project[];
     const [grabbing, setGrabbing] = useState(false);
     const n = projects.length;
 
+    // ---- steady hover ----
+    // The wall tilts and the hovered card lifts, so a still pointer near an edge can slip in
+    // and out of a card every frame. Keep the current card until the pointer is clearly off it
+    // (16px margin + a short grace period), and only then hand over to the card underneath.
+    const tileEls = useRef(new Map<string, HTMLElement>());
+    const ptr = useRef({ x: -1, y: -1 });
+    const hoverRef = useRef<string | null>(null);
+    const leaveTimer = useRef(0);
+    const within = (key: string | null, pad: number) => {
+        const el = key ? tileEls.current.get(key) : null;
+        if (!el) return false;
+        const r = el.getBoundingClientRect();
+        const { x, y } = ptr.current;
+        return x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad;
+    };
+    const setHoverKey = (k: string | null) => {
+        hoverRef.current = k;
+        setHover(k);
+    };
+    const enterTile = (key: string, e: React.PointerEvent) => {
+        if (drag.current) return;
+        ptr.current = { x: e.clientX, y: e.clientY }; // boundary events arrive before pointermove
+        if (hoverRef.current === key) {
+            window.clearTimeout(leaveTimer.current); // came back onto the same card
+            return;
+        }
+        if (hoverRef.current && within(hoverRef.current, 16)) return; // still on the old one; its leave timer will hand over
+        window.clearTimeout(leaveTimer.current);
+        setHoverKey(key);
+    };
+    const leaveTile = (key: string, e: React.PointerEvent) => {
+        ptr.current = { x: e.clientX, y: e.clientY };
+        if (hoverRef.current !== key) return;
+        window.clearTimeout(leaveTimer.current);
+        leaveTimer.current = window.setTimeout(() => {
+            if (hoverRef.current !== key || within(key, 16)) return;
+            // hand over to whichever card is under the pointer now (if any)
+            const next = [...tileEls.current.entries()].find(([k]) => k !== key && within(k, -4))?.[0] ?? null;
+            setHoverKey(next);
+        }, 160);
+    };
+    useEffect(() => () => window.clearTimeout(leaveTimer.current), []);
+
     useLayoutEffect(() => {
         const el = stageRef.current;
         if (!el) return;
@@ -167,6 +210,7 @@ export default function ProjectWall({ projects, onOpen }: { projects: Project[];
     }, []);
 
     const onMove = (e: React.PointerEvent) => {
+        ptr.current = { x: e.clientX, y: e.clientY };
         const r = stageRef.current!.getBoundingClientRect();
         tilt.current.tx = ((e.clientX - r.left) / r.width - 0.5) * 2;
         tilt.current.ty = ((e.clientY - r.top) / r.height - 0.5) * 2;
@@ -177,7 +221,8 @@ export default function ProjectWall({ projects, onOpen }: { projects: Project[];
         if (!g.moved && Math.hypot(dx, dy) > 5) {
             g.moved = true;
             setGrabbing(true);
-            setHover(null);
+            window.clearTimeout(leaveTimer.current);
+            setHoverKey(null);
         }
         if (!g.moved) return;
         const now = performance.now();
@@ -226,6 +271,8 @@ export default function ProjectWall({ projects, onOpen }: { projects: Project[];
     const onLeave = () => {
         tilt.current.tx = 0;
         tilt.current.ty = 0;
+        window.clearTimeout(leaveTimer.current);
+        setHoverKey(null);
     };
 
     if (!n) return null;
@@ -263,8 +310,12 @@ export default function ProjectWall({ projects, onOpen }: { projects: Project[];
                                 className={`pw-tile ${on ? "is-hover" : ""}`}
                                 data-pid={p.id}
                                 style={{ transform: `translate3d(${x}px, ${y}px, 0) rotate(${ROW_TILT[mod(j, ROW_TILT.length)]}deg)` }}
-                                onPointerEnter={() => !drag.current && setHover(key)}
-                                onPointerLeave={() => setHover((h) => (h === key ? null : h))}
+                                ref={(el) => {
+                                    if (el) tileEls.current.set(key, el);
+                                    else tileEls.current.delete(key);
+                                }}
+                                onPointerEnter={(e) => enterTile(key, e)}
+                                onPointerLeave={(e) => leaveTile(key, e)}
                             >
                                 <span className="pw-tile-img">
                                     {p.image_url ? (
@@ -331,7 +382,7 @@ export default function ProjectWall({ projects, onOpen }: { projects: Project[];
                     border-radius: 16px;
                     background: #fff;
                     box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.08), 0 26px 38px -26px rgba(13, 42, 66, 0.55);
-                    transition: transform 0.5s cubic-bezier(0.34, 1.5, 0.5, 1), box-shadow 0.3s ease;
+                    transition: transform 0.55s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease;
                 }
                 .pw-tile-img > img,
                 .pw-tile-noimg {
@@ -348,7 +399,7 @@ export default function ProjectWall({ projects, onOpen }: { projects: Project[];
                     background: linear-gradient(135deg, #1b4f72, #0d2a42);
                 }
                 .pw-tile.is-hover .pw-tile-img {
-                    transform: translateY(-6px) scale(1.03);
+                    transform: translateY(-4px) scale(1.02);
                     box-shadow: 0 0 0 2px #3a99c9, 0 34px 46px -24px rgba(13, 42, 66, 0.6);
                 }
                 /* uploaded preview pictures, cross-fading while hovered */
