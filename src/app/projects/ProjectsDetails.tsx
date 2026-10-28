@@ -185,15 +185,6 @@ export default function ProjectsDetails() {
                             </div>
                             <div className="stat-card">
                                 <div className="stat-icon-wrapper">
-                                    <Camera size={24} className="stat-icon" />
-                                </div>
-                                <div className="stat-info">
-                                    <h3>{settings.photography_shoots_count}</h3>
-                                    <p>Photographic Shoot</p>
-                                </div>
-                            </div>
-                            <div className="stat-card">
-                                <div className="stat-icon-wrapper">
                                     <ImageIcon size={24} className="stat-icon" />
                                 </div>
                                 <div className="stat-info">
@@ -244,13 +235,6 @@ export default function ProjectsDetails() {
                                 >
                                     <Code size={18} className="tab-icon mr-2" />
                                     Development ({filteredDevProjects.length})
-                                </button>
-                                <button
-                                    className={`tab-btn ${activeTab === "shoot" ? "active" : ""}`}
-                                    onClick={() => setActiveTab("shoot")}
-                                >
-                                    <Camera size={18} className="tab-icon mr-2" />
-                                    Photographic Shoot ({filteredPhotographyProjects.length})
                                 </button>
                             </div>
                         </div>
@@ -372,84 +356,9 @@ export default function ProjectsDetails() {
                         </div>
                     )}
 
-                    {/* Photographic Shoot Section */}
-                    {activeTab === "shoot" && (
-                        <div className="project-section active">
-                            <div className="section-title-group">
-                                <div className="section-icon-box">
-                                    <Camera size={24} />
-                                </div>
-                                <div>
-                                    <h2>Photographic Shoot</h2>
-                                    <p>Capturing moments, products, and visual stories</p>
-                                </div>
-                            </div>
-                            <div className="projects-grid photography-grid">
-                                {loading ? (
-                                    [1, 2, 3].map(i => (
-                                        <div key={i} className="bg-zinc-900/50 aspect-square rounded-2xl animate-pulse border border-white/5" />
-                                    ))
-                                ) : (
-                                    filteredPhotographyProjects.length > 0 ? (
-                                        filteredPhotographyProjects.map((project: Project) => (
-                                            <div
-                                                key={project.id}
-                                                className="project-shoot-card group"
-                                                onMouseEnter={() => setHoveredPhoto(project.image_url)}
-                                                onMouseLeave={() => setHoveredPhoto(null)}
-                                            >
-                                                <div className="shoot-image-wrapper">
-                                                    <img src={project.image_url} alt={project.title} />
-                                                    <div className="shoot-overlay"></div>
-                                                    <div className="shoot-info">
-                                                        <span className="shoot-tag">{project.tech_stack?.[0] || "Photography"}</span>
-                                                        <h4 className="shoot-title">{project.title}</h4>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="col-span-full py-20 text-center">
-                                            <p className="text-zinc-500 text-lg">No photography projects found in the database yet.</p>
-                                        </div>
-                                    )
-                                )}
-                            </div>
-                        </div>
-                    )}
                 </div>
             </section>
 
-            {/* Floating Preview Effect - Moved outside sections to avoid stacking context issues */}
-            {hoveredPhoto && (
-                <div
-                    className="cert-floating-preview"
-                    style={{
-                        position: "fixed",
-                        left: mousePosition.x + 20,
-                        top: mousePosition.y + 20,
-                        zIndex: 10000,
-                        pointerEvents: "none",
-                        transition: "left 0.1s ease-out, top 0.1s ease-out",
-                        width: "300px",
-                        borderRadius: "12px",
-                        overflow: "hidden",
-                        boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        backgroundColor: "transparent"
-                    }}
-                >
-                    <img
-                        src={hoveredPhoto}
-                        alt="Photography Preview"
-                        style={{
-                            width: "100%",
-                            height: "auto",
-                            display: "block"
-                        }}
-                    />
-                </div>
-            )}
 
             {/* Modals */}
             {selectedProject && (
