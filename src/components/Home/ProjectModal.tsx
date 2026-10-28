@@ -157,7 +157,7 @@ export default function ProjectModal({ project, isOpen, onClose, onPreview }: Pr
                                     onPreview(project);
                                 }}
                             >
-                                <Images size={16} strokeWidth={2.2} /> Preview
+                                <Images size={16} strokeWidth={2.2} /> Close Up
                             </button>
                         )}
                         {project.live_demo_url && (
