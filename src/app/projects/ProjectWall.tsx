@@ -24,24 +24,59 @@ const SX = CW + GX; // column step
 const SY = CH + LABEL + GY; // row step
 const ROW_TILT = [-1.8, 1.1, -0.6, 2.0, -1.3, 0.7]; // each row leans a little differently, like the reference
 
-/** Cycles through a project's uploaded preview pictures while hovered. */
+const HOVER_DELAY = 1500; // ms of resting on a card before its previews appear
+const HOLD = 2800; // ms each preview stays
+const FADE = 1100; // ms cross-fade between previews
+
+/**
+ * Plays a project's uploaded preview pictures once the pointer has rested on the card.
+ * Every picture is preloaded first and only pictures that actually loaded are shown, so
+ * nothing pops in half-drawn; they cross-fade slowly with a gentle drift.
+ */
 function HoverPreviews({ images }: { images: string[] }) {
+    const [ready, setReady] = useState<string[]>([]);
+    const [show, setShow] = useState(false);
     const [k, setK] = useState(0);
+
+    // wait before showing anything, preload meanwhile
     useEffect(() => {
-        if (images.length < 2) return;
-        const id = window.setInterval(() => setK((v) => (v + 1) % images.length), 900);
+        let alive = true;
+        const ok: string[] = [];
+        images.forEach((src) => {
+            const im = new Image();
+            im.onload = () => {
+                if (!alive) return;
+                ok.push(src);
+                setReady(images.filter((x) => ok.includes(x))); // keep the original order
+            };
+            im.src = src;
+        });
+        const t = window.setTimeout(() => alive && setShow(true), HOVER_DELAY);
+        return () => {
+            alive = false;
+            window.clearTimeout(t);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [images.join("|")]); // the parent rebuilds the array each render; only restart if the pictures change
+
+    useEffect(() => {
+        if (!show || ready.length < 2) return;
+        const id = window.setInterval(() => setK((v) => (v + 1) % ready.length), HOLD);
         return () => window.clearInterval(id);
-    }, [images.length]);
+    }, [show, ready.length]);
+
+    if (!show || ready.length === 0) return null;
+    const cur = k % ready.length;
     return (
         <span className="pw-previews" aria-hidden="true">
-            {images.map((src, i) => (
+            {ready.map((src, i) => (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img key={src + i} src={src} alt="" draggable={false} className={i === k ? "is-on" : ""} />
+                <img key={src} src={src} alt="" draggable={false} className={i === cur ? "is-on" : ""} />
             ))}
-            {images.length > 1 && (
+            {ready.length > 1 && (
                 <span className="pw-dots">
-                    {images.map((_, i) => (
-                        <span key={i} className={i === k ? "is-on" : ""} />
+                    {ready.map((_, i) => (
+                        <span key={i} className={i === cur ? "is-on" : ""} />
                     ))}
                 </span>
             )}
@@ -323,7 +358,7 @@ export default function ProjectWall({ projects, onOpen }: { projects: Project[];
                     overflow: hidden;
                     border-radius: 10px;
                     background: #0d2a42;
-                    animation: pw-fade 0.3s ease both;
+                    animation: pw-fade 0.7s ease both;
                 }
                 @keyframes pw-fade {
                     from {
@@ -337,8 +372,10 @@ export default function ProjectWall({ projects, onOpen }: { projects: Project[];
                     height: 100%;
                     object-fit: cover;
                     opacity: 0;
-                    transform: scale(1.04);
-                    transition: opacity 0.45s ease, transform 1.2s ease;
+                    transform: scale(1.06);
+                    /* slow cross-fade, and a gentle drift while each picture is showing */
+                    transition: opacity ${FADE}ms ease-in-out, transform ${HOLD + FADE}ms ease-out;
+                    will-change: opacity, transform;
                     pointer-events: none;
                 }
                 .pw-tile-img :global(.pw-previews img.is-on) {
@@ -361,6 +398,7 @@ export default function ProjectWall({ projects, onOpen }: { projects: Project[];
                     height: 5px;
                     border-radius: 50%;
                     background: rgba(255, 255, 255, 0.45);
+                    transition: background 0.6s ease;
                 }
                 .pw-tile-img :global(.pw-dots span.is-on) {
                     background: #fff;
