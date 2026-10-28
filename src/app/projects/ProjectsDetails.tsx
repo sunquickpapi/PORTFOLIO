@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Courier_Prime } from "next/font/google";
 import { ArrowLeft, Check, ChevronDown, Grid3x3, List, Search, X } from "lucide-react";
@@ -9,6 +9,7 @@ import ProjectModal from "@/components/Home/ProjectModal";
 import PreviewModal from "@/components/Home/PreviewModal";
 import PixelField from "@/components/Home/PixelField";
 import Footer from "@/components/Home/Footer";
+import ProjectWall from "./ProjectWall";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
 
@@ -62,35 +63,6 @@ export default function ProjectsDetails() {
         return okQ && okF;
     });
 
-    // curved wall: bend each card by how far it is from the middle of the screen
-    useLayoutEffect(() => {
-        const wall = wallRef.current;
-        if (!wall || view !== "grid") return;
-        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-        let raf = 0;
-        const bend = () => {
-            raf = 0;
-            const vw = window.innerWidth;
-            const vh = window.innerHeight;
-            wall.querySelectorAll<HTMLElement>(".pw-card").forEach((el) => {
-                const r = el.parentElement!.getBoundingClientRect();
-                const nx = Math.max(-1.3, Math.min(1.3, (r.left + r.width / 2 - vw / 2) / (vw / 2)));
-                const ny = Math.max(-1.3, Math.min(1.3, (r.top + r.height / 2 - vh / 2) / (vh / 2)));
-                const depth = (nx * nx * 0.9 + ny * ny * 0.6) * 140;
-                el.style.transform = `perspective(1100px) translateZ(${-depth}px) rotateY(${nx * -24}deg) rotateX(${ny * 14}deg)`;
-            });
-        };
-        const kick = () => !raf && (raf = requestAnimationFrame(bend));
-        bend();
-        window.addEventListener("scroll", kick, { passive: true });
-        window.addEventListener("resize", kick);
-        return () => {
-            cancelAnimationFrame(raf);
-            window.removeEventListener("scroll", kick);
-            window.removeEventListener("resize", kick);
-        };
-    }, [view, shown.length, loading]);
-
     return (
         <div className="pw-page">
             <PixelField />
@@ -141,8 +113,11 @@ export default function ProjectsDetails() {
                 </span>
             </div>
 
-            {/* the wall */}
-            <main className={`pw-wall is-${view}`} ref={wallRef}>
+            {/* grid: the endless wall */}
+            {view === "grid" && !loading && shown.length > 0 && <ProjectWall projects={shown} onOpen={setSelected} />}
+
+            {/* list (and loading / empty states) */}
+            <main className={`pw-wall is-${view === "grid" && !loading && shown.length > 0 ? "hidden" : view}`} ref={wallRef}>
                 {loading
                     ? Array.from({ length: 6 }).map((_, i) => (
                           <div className="pw-cell" key={i}>
@@ -189,7 +164,7 @@ export default function ProjectsDetails() {
                 </button>
             </div>
 
-            <Footer />
+            {view === "list" && <Footer />}
 
             {selected && <ProjectModal project={selected} isOpen={!!selected} onClose={() => setSelected(null)} onPreview={(p) => setPreview(p)} />}
             {preview && <PreviewModal project={preview} isOpen={!!preview} onClose={() => setPreview(null)} />}
@@ -349,6 +324,9 @@ export default function ProjectsDetails() {
                     max-width: 1720px;
                     margin: 0 auto;
                     padding: 70px 24px 140px;
+                }
+                .pw-wall.is-hidden {
+                    display: none;
                 }
                 .pw-wall.is-grid {
                     display: grid;
