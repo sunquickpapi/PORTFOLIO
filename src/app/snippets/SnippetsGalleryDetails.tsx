@@ -294,7 +294,7 @@ export default function SnippetsGalleryDetails() {
     const [copied, setCopied] = useState(false);
     const [closeUp, setCloseUp] = useState<Snippet | null>(null);
     const [note, setNote] = useState<Note | null>(null);
-    const [turn, setTurn] = useState<{ id: number; snippet: Snippet; no: number; view: "preview" | "code"; codeTab: CodeTab } | null>(null);
+    const [turn, setTurn] = useState<{ id: number; dir: 1 | -1; from: Snippet; fromNo: number; to: Snippet; toNo: number; view: "preview" | "code"; codeTab: CodeTab } | null>(null);
     const [scale, setScale] = useState(1);
     const [stack, setStack] = useState(false);
     const fitRef = useRef<HTMLDivElement>(null);
@@ -365,19 +365,22 @@ export default function SnippetsGalleryDetails() {
     const activeNo = active ? snippets.indexOf(active) + 1 : 0;
 
     const pick = useCallback(
-        (s: Snippet) => {
+        (s: Snippet, dirHint?: 1 | -1) => {
             if (!active || s.id === active.id) return;
             const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
             if (!stack && !reduce) {
                 window.clearTimeout(turnTimer.current);
-                setTurn({ id: Date.now(), snippet: active, no: activeNo, view, codeTab });
+                const toNo = snippets.indexOf(s) + 1;
+                // a later entry turns the page to the left; an earlier one turns it back to the right
+                const dir = dirHint ?? (toNo > activeNo ? 1 : -1);
+                setTurn({ id: Date.now(), dir, from: active, fromNo: activeNo, to: s, toNo, view, codeTab });
                 turnTimer.current = window.setTimeout(() => setTurn(null), FLIP_MS);
             }
             setActiveId(s.id);
             setCopied(false);
             if (stack) entryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         },
-        [active, activeNo, view, codeTab, stack]
+        [active, activeNo, view, codeTab, stack, snippets]
     );
 
     // keep the open entry inside the filtered list
@@ -394,10 +397,10 @@ export default function SnippetsGalleryDetails() {
             if (i < 0) return;
             if (e.key === "ArrowRight" || e.key === "ArrowDown") {
                 e.preventDefault();
-                pick(shown[(i + 1) % shown.length]);
+                pick(shown[(i + 1) % shown.length], 1);
             } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
                 e.preventDefault();
-                pick(shown[(i - 1 + shown.length) % shown.length]);
+                pick(shown[(i - 1 + shown.length) % shown.length], -1);
             }
         };
         window.addEventListener("keydown", key);
@@ -486,11 +489,22 @@ export default function SnippetsGalleryDetails() {
                                 />
                             </div>
 
-                            {/* the page turning over: the old entry on the front, a blank ruled back */}
+                            {/* turning back: the old entry stays on the right until the leaf lands on it */}
+                            {turn?.dir === -1 && (
+                                <div className="snb-side snb-side-r snb-under" key={`u${turn.id}`} aria-hidden="true">
+                                    <EntryPage snippet={turn.from} no={turn.fromNo} view={turn.view} codeTab={turn.codeTab} still />
+                                </div>
+                            )}
+
+                            {/* the turning leaf: forward = old entry lifts off to the left; back = new entry swings in from the left */}
                             {turn && (
-                                <div className="snb-leaf" key={turn.id} aria-hidden="true">
+                                <div className={`snb-leaf ${turn.dir === -1 ? "is-back" : ""}`} key={turn.id} aria-hidden="true">
                                     <div className="snb-face snb-face-front">
-                                        <EntryPage snippet={turn.snippet} no={turn.no} view={turn.view} codeTab={turn.codeTab} still />
+                                        {turn.dir === 1 ? (
+                                            <EntryPage snippet={turn.from} no={turn.fromNo} view={turn.view} codeTab={turn.codeTab} still />
+                                        ) : (
+                                            <EntryPage snippet={turn.to} no={turn.toNo} view={view} codeTab={codeTab} still />
+                                        )}
                                         <span className="snb-shade" />
                                     </div>
                                     <div className="snb-face snb-face-back">
@@ -823,6 +837,11 @@ const STYLES = `
     animation: snb-turn ${FLIP_MS}ms cubic-bezier(0.45, 0.05, 0.25, 1) both;
 }
 @keyframes snb-turn { from { transform: rotateY(0deg); } to { transform: rotateY(-180deg); } }
+.snb-leaf.is-back { animation-name: snb-turn-back; }
+@keyframes snb-turn-back { from { transform: rotateY(-180deg); } to { transform: rotateY(0deg); } }
+.snb-under { z-index: 5; pointer-events: none; }
+.snb-leaf.is-back .snb-face-back { animation-name: snb-rise; }
+@keyframes snb-rise { 0% { opacity: 0; } 20%, 100% { opacity: 1; } }
 .snb-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 .snb-face-back { transform: rotateY(180deg); animation: snb-settle ${FLIP_MS}ms linear both; }
 @keyframes snb-settle { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
