@@ -3,7 +3,11 @@
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { Courier_Prime } from "next/font/google";
 import BlogDetail from "@/components/Blog/BlogDetail";
+import PixelField from "@/components/Home/PixelField";
+
+const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
 
 interface Blog {
     id: string;
@@ -50,22 +54,24 @@ export default function BlogArticlePage({ params }: { params: Promise<{ id: stri
         fetchBlog();
     }, [resolvedParams.id]);
 
-    if (loading) {
+    if (loading || !blog) {
         return (
-            <div className="blog-page min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-current opacity-20"></div>
-            </div>
-        );
-    }
-
-    if (!blog) {
-        return (
-            <div className="blog-page min-h-screen flex flex-col items-center justify-center gap-4">
-                <h1 className="text-4xl font-bold">Article Not Found</h1>
-                <Link href="/blog" className="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-all">
-                    <ArrowLeft size={18} />
-                    Back to Blog
-                </Link>
+            <div style={{ position: "relative", minHeight: "100vh", display: "grid", placeItems: "center" }}>
+                <PixelField />
+                <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 18, textAlign: "center", padding: 20 }}>
+                    <span className={courier.className} style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.24em", color: "#3a7ca5" }}>
+                        {loading ? "LOADING POST…" : "404 · POST NOT FOUND"}
+                    </span>
+                    {!loading && (
+                        <Link
+                            href="/blog"
+                            className={courier.className}
+                            style={{ display: "inline-flex", alignItems: "center", gap: 8, height: 44, padding: "0 20px", borderRadius: 999, background: "#0d2a42", color: "#e9f4fa", fontSize: 12, fontWeight: 700, letterSpacing: "0.18em", textDecoration: "none", opacity: 1 }}
+                        >
+                            <ArrowLeft size={16} /> ALL POSTS
+                        </Link>
+                    )}
+                </div>
             </div>
         );
     }
