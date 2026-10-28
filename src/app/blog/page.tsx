@@ -375,12 +375,9 @@ export default function BlogAllPage() {
                         <aside className="bp-side">
                             <div className="bp-writer">
                                 <span className="bp-avatar">
-                                    {profile?.hero_photo_url ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={profile.hero_photo_url} alt="" />
-                                    ) : (
-                                        <span>{(profile?.name || "N").charAt(0)}</span>
-                                    )}
+                                    {/* same pixel portrait as the pass card on the homepage */}
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src="/assets/passcard/pass-photo.webp" alt="" draggable={false} />
                                 </span>
                                 <div>
                                     <span className={`bp-kicker ${courier.className}`}>WRITTEN BY</span>
@@ -794,8 +791,8 @@ const STYLES = `
 .bp-side > * + * { margin-top: 32px; }
 .bp-side { position: relative; }
 .bp-writer { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.08), 0 14px 22px -18px rgba(13, 42, 66, 0.5); }
-.bp-avatar { flex: none; width: 56px; height: 56px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--ink); color: #e9f4fa; font-weight: 800; font-size: 22px; box-shadow: 0 0 0 3px #fff, 0 0 0 4.5px rgba(27, 79, 114, 0.25); }
-.bp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.bp-avatar { flex: none; width: 56px; height: 56px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: #c9d4da; color: #e9f4fa; font-weight: 800; font-size: 22px; box-shadow: 0 0 0 3px #fff, 0 0 0 4.5px rgba(27, 79, 114, 0.25); }
+.bp-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; image-rendering: pixelated; }
 .bp-writer strong { display: block; margin-top: 4px; font-size: 15.5px; font-weight: 800; color: var(--ink); line-height: 1.25; }
 .bp-writer em { display: block; margin-top: 2px; font-style: normal; font-size: 12.5px; color: #4a6479; }
 .bp-top { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
