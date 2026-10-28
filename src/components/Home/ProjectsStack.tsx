@@ -518,12 +518,15 @@ export default function ProjectsStack() {
                             onClick={() => Math.round(pos) !== Math.round(pos + d) && go(targetRef.current + Math.round(d))}
                         >
                             <span className="pst-bub pst-tile-face" style={{ padding: Math.round(tile * 0.17) }}>
-                                {p.logo_url ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={p.logo_url} alt={a < 0.5 ? `${p.title} logo` : ""} draggable={false} />
-                                ) : (
-                                    <FolderKanban className="pst-fallback" strokeWidth={1.6} aria-hidden="true" />
-                                )}
+                                {/* every logo sits in the same rounded-square frame */}
+                                <span className="pst-logo-frame">
+                                    {p.logo_url ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={p.logo_url} alt={a < 0.5 ? `${p.title} logo` : ""} draggable={false} />
+                                    ) : (
+                                        <FolderKanban className="pst-fallback" strokeWidth={1.6} aria-hidden="true" />
+                                    )}
+                                </span>
                             </span>
                         </div>
                     );
@@ -714,10 +717,33 @@ export default function ProjectsStack() {
                 .pst-tile-face::before {
                     border-radius: 40px;
                 }
+                /* one shared frame for every logo: same size, same corner radius, same hairline edge */
+                .pst-logo-frame {
+                    position: relative;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 22.5%; /* app-icon corners; scales with the tile so every frame matches */
+                    overflow: hidden;
+                    background: #ffffff;
+                    isolation: isolate; /* keeps the rounded clip while the tile rotates and scales */
+                }
+                .pst-logo-frame::after {
+                    content: "";
+                    position: absolute;
+                    inset: 0;
+                    border-radius: inherit;
+                    box-shadow: inset 0 0 0 1px rgba(13, 42, 66, 0.1);
+                    pointer-events: none;
+                }
                 .pst-tile img {
+                    display: block;
                     width: 100%;
                     height: 100%;
                     object-fit: contain;
+                    border-radius: inherit;
                     pointer-events: none;
                 }
                 .pst-tile :global(.pst-fallback) {
