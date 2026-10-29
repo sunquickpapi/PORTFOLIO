@@ -76,7 +76,7 @@ function Paperclip() {
 }
 
 /** A page turn: mounted hidden first ("ready" false) until its prints are drawn, then it runs. */
-type Turn = { dir: 1 | -1; t0: number; ready: boolean } | null;
+type Turn = { dir: 1 | -1; t0: number; base: number; ready: boolean; settling?: boolean } | null;
 const FLIP_MS = 1100;
 const AUTO_MS = 5200;
 const BOOK_H = 470;
@@ -175,10 +175,10 @@ export default function Snippets() {
         (dir: 1 | -1) => {
             if (turn || spreads < 2) return;
             if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return setSpread((s) => mod(s + dir));
-            setTurn({ dir, t0: performance.now(), ready: false });
+            setTurn({ dir, t0: performance.now(), base: spread, ready: false });
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [turn, spreads]
+        [turn, spreads, spread]
     );
 
     // 1) the leaf mounts invisible; once its prints are decoded, start the turn on the next frame
@@ -195,17 +195,32 @@ export default function Snippets() {
         };
     }, [turn]);
 
-    // 2) when the turn has played, settle on the new spread
-    const turnDir = turn?.ready ? turn.dir : 0;
+    // 2) when the turn has played, move to the new spread but keep the landed leaf on top
+    const turnDir = turn?.ready && !turn.settling ? turn.dir : 0;
     useEffect(() => {
         if (!turnDir) return;
         const id = window.setTimeout(() => {
             setSpread((s) => mod(s + turnDir));
-            setTurn(null);
+            setTurn((t) => (t ? { ...t, settling: true } : t));
         }, FLIP_MS);
         return () => window.clearTimeout(id);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [turnDir]);
+
+    // 3) lift the leaf away only once the pages underneath have drawn their new prints
+    const bookRef = useRef<HTMLDivElement>(null);
+    const settling = !!turn?.settling;
+    useEffect(() => {
+        if (!settling) return;
+        let live = true;
+        const imgs = Array.from(bookRef.current?.querySelectorAll(".nb-side img") || []) as HTMLImageElement[];
+        const decoded = Promise.all(imgs.map((i) => (i.decode ? i.decode().catch(() => {}) : Promise.resolve())));
+        const cap = new Promise((r) => window.setTimeout(r, 250));
+        Promise.race([decoded, cap]).then(() => requestAnimationFrame(() => live && setTurn(null)));
+        return () => {
+            live = false;
+        };
+    }, [settling]);
 
     // turn a page every few seconds (not while the pointer rests on the book)
     useEffect(() => {
@@ -234,11 +249,13 @@ export default function Snippets() {
     // forward: the current right page turns over; its back is the next left page
     // back: the current left page turns back; its front is the previous right page
     // the pages under the leaf only change once the leaf is visible and covering them
-    const live = turn?.ready ? turn : null;
+    const live = turn?.ready && !turn.settling ? turn : null;
     const leftStatic = live?.dir === -1 ? prev : cur;
     const rightStatic = live?.dir === 1 ? next : cur;
-    const leafFront = turn?.dir === 1 ? cur : prev; // right-hand face
-    const leafBack = turn?.dir === 1 ? next : cur; // left-hand face
+    // the leaf's faces belong to the spread the turn started from (the book may already have moved on while it settles)
+    const base = turn ? turn.base : cur;
+    const leafFront = turn?.dir === 1 ? base : mod(base - 1); // right-hand face
+    const leafBack = turn?.dir === 1 ? mod(base + 1) : base; // left-hand face
 
     return (
         <section id="snippets" style={{ scrollMarginTop: 0 }}>
@@ -246,6 +263,7 @@ export default function Snippets() {
                 <div className="nb-fit" style={{ height: (BOOK_H + 12) * scale }}>
                     <div
                         className="nb-book"
+                        ref={bookRef}
                         style={{ transform: `translateX(-50%) scale(${scale})` }}
                         onPointerEnter={() => (hoverRef.current = true)}
                         onPointerLeave={() => (hoverRef.current = false)}
