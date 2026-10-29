@@ -25,6 +25,28 @@ export function getPlaygroundUrl(snippet: Snippet): string {
     return "/snippet-playground/preview-scroll.html";
 }
 
+/**
+ * A still "print" of the snippet's demo for the notebooks. Live iframes reload and replay their
+ * intro every time a page turns, which flickers; a photo of the finished demo doesn't.
+ * Uses the snippet's own preview image when one is set in admin, otherwise the print
+ * in /snippet-playground/prints/ named after its playground file.
+ */
+export function getPrintUrl(snippet: Snippet): string {
+    if (snippet.preview_image_url?.trim()) return snippet.preview_image_url.trim();
+    const base = (getPlaygroundUrl(snippet).split("?")[0].split("/").pop() || "").replace(/\.html?$/i, "");
+    return `/snippet-playground/prints/${base}.webp`;
+}
+
+/** Fetch and decode every print up front so a turning page never shows an empty frame. */
+export function preloadPrints(snippets: Snippet[]) {
+    if (typeof window === "undefined") return;
+    snippets.forEach((s) => {
+        const img = new Image();
+        img.src = getPrintUrl(s);
+        img.decode?.().catch(() => {});
+    });
+}
+
 /** Tiny single-pass tokenizer: returns escaped HTML with token spans (tok-keyword, tok-string, ...). */
 const TOKENS =
     /((?<!:)\/\/[^\n]*|\/\*[\s\S]*?\*\/|<!--[\s\S]*?-->)|(["'`])(?:\\.|(?!\2)[^\\\n])*\2|\b(const|let|var|function|return|import|export|from|default|class|extends|if|else|for|while|async|await|try|catch|new|this|typeof|void|public|private|string|number|boolean|any|unknown|never|null|undefined|true|false)\b|\b([a-zA-Z_$][\w$]*)(?=\()|\b(\d+(?:\.\d+)?)\b/g;

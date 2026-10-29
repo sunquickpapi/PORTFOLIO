@@ -2,26 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Edit, Trash2, Layout, Code, Camera, Save, Sparkles } from "lucide-react";
+import { Plus, Edit, Trash2, Code, Camera, Sparkles } from "lucide-react";
 import { Project } from "@/types/project";
-import * as LucideIcons from "lucide-react";
 
 export default function ProjectsDashboard() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<"hero" | "dev" | "photo">("hero");
+    const [activeTab, setActiveTab] = useState<"dev" | "photo">("dev");
 
-    // Project Settings State
-    const [settings, setSettings] = useState({
-        hero_title: "",
-        hero_subtitle: "",
-        hero_value_prop: "",
-        projects_completed_count: "",
-        photography_shoots_count: "",
-        years_coding_count: ""
-    });
-    const [savingSettings, setSavingSettings] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -30,42 +18,13 @@ export default function ProjectsDashboard() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [projRes, setRes] = await Promise.all([
-                fetch("/api/projects"),
-                fetch("/api/project-settings")
-            ]);
-
+            const projRes = await fetch("/api/projects");
             const projData = await projRes.json();
-            const setData = await setRes.json();
-
-            setProjects(projData);
-            setSettings(setData);
+            setProjects(Array.isArray(projData) ? projData : []);
         } catch (error) {
             console.error("Error fetching data:", error);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleSaveSettings = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setSavingSettings(true);
-        try {
-            const res = await fetch("/api/project-settings", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(settings),
-            });
-            if (res.ok) {
-                alert("Settings saved successfully!");
-                setIsEditing(false); // Disable editing after save
-            } else {
-                alert("Failed to save settings");
-            }
-        } catch (error) {
-            console.error("Error saving settings:", error);
-        } finally {
-            setSavingSettings(false);
         }
     };
 
@@ -109,21 +68,13 @@ export default function ProjectsDashboard() {
                         All <span className="gradient-text">Project Hub</span>
                     </h1>
                 </div>
-                <p className="page-subtitle">Centralized control for your portfolio's development projects and photographic shoots.</p>
+                <p className="page-subtitle">Centralized control for the projects shown on your portfolio.</p>
             </header>
 
             <div className="content-container">
                 {/* Tabs Navigation */}
                 <div className="tabs-container">
                     <div className="tabs-nav">
-                        <button
-                            onClick={() => setActiveTab("hero")}
-                            className={`tab-item ${activeTab === "hero" ? "active" : ""}`}
-                        >
-                            <Layout size={24} />
-                            <span>Hero Banner</span>
-                            {activeTab === "hero" && <div className="tab-indicator" />}
-                        </button>
                         <button
                             onClick={() => setActiveTab("dev")}
                             className={`tab-item ${activeTab === "dev" ? "active" : ""}`}
@@ -132,108 +83,18 @@ export default function ProjectsDashboard() {
                             <span>Development</span>
                             {activeTab === "dev" && <div className="tab-indicator" />}
                         </button>
-                        <button
-                            onClick={() => setActiveTab("photo")}
-                            className={`tab-item ${activeTab === "photo" ? "active" : ""}`}
-                        >
-                            <Camera size={24} />
-                            <span>Photography</span>
-                            {activeTab === "photo" && <div className="tab-indicator" />}
-                        </button>
+                        {photoProjects.length > 0 && (
+                            <button
+                                onClick={() => setActiveTab("photo")}
+                                className={`tab-item ${activeTab === "photo" ? "active" : ""}`}
+                            >
+                                <Camera size={24} />
+                                <span>Hidden · Photography ({photoProjects.length})</span>
+                                {activeTab === "photo" && <div className="tab-indicator" />}
+                            </button>
+                        )}
                     </div>
                 </div>
-
-                {/* Tab: Hero Banner Settings */}
-                {activeTab === "hero" && (
-                    <div className="glass-section settings-section">
-                        <div className="section-header">
-                            <div className="section-title-box">
-                                <Layout size={22} color="#1B4F72" />
-                                <h2 className="section-title">Gallery Hero Settings</h2>
-                            </div>
-                            <button
-                                onClick={() => setIsEditing(!isEditing)}
-                                className={`btn-edit-toggle ${isEditing ? 'active' : ''}`}
-                            >
-                                {isEditing ? <LucideIcons.X size={20} /> : <Edit size={20} />}
-                                <span>{isEditing ? "Cancel" : "Edit Settings"}</span>
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleSaveSettings} className="premium-form">
-                            <div className="form-grid">
-                                <div className="input-group">
-                                    <label>Hero Main Title</label>
-                                    <input
-                                        value={settings.hero_title || ""}
-                                        onChange={(e) => setSettings({ ...settings, hero_title: e.target.value })}
-                                        placeholder="e.g., Full Portfolio"
-                                        readOnly={!isEditing}
-                                    />
-                                </div>
-                                <div className="input-group">
-                                    <label>Hero Subtitle</label>
-                                    <input
-                                        value={settings.hero_subtitle || ""}
-                                        onChange={(e) => setSettings({ ...settings, hero_subtitle: e.target.value })}
-                                        placeholder="e.g., Complete Project History"
-                                        readOnly={!isEditing}
-                                    />
-                                </div>
-                                <div className="input-group full-width">
-                                    <label>Value Proposition (Bio)</label>
-                                    <textarea
-                                        rows={3}
-                                        value={settings.hero_value_prop || ""}
-                                        onChange={(e) => setSettings({ ...settings, hero_value_prop: e.target.value })}
-                                        placeholder="A comprehensive showcase of my journey..."
-                                        readOnly={!isEditing}
-                                    />
-                                </div>
-                                <div className="input-group">
-                                    <label>Projects Completed Count</label>
-                                    <input
-                                        value={settings.projects_completed_count || ""}
-                                        onChange={(e) => setSettings({ ...settings, projects_completed_count: e.target.value })}
-                                        placeholder="e.g., 3+"
-                                        readOnly={!isEditing}
-                                    />
-                                </div>
-                                <div className="input-group">
-                                    <label>Photographic Shoot Count</label>
-                                    <input
-                                        value={settings.photography_shoots_count || ""}
-                                        onChange={(e) => setSettings({ ...settings, photography_shoots_count: e.target.value })}
-                                        placeholder="e.g., 900+"
-                                        readOnly={!isEditing}
-                                    />
-                                </div>
-                                <div className="input-group">
-                                    <label>Years in Coding</label>
-                                    <input
-                                        value={settings.years_coding_count || ""}
-                                        onChange={(e) => setSettings({ ...settings, years_coding_count: e.target.value })}
-                                        placeholder="e.g., 4+"
-                                        readOnly={!isEditing}
-                                    />
-                                </div>
-                            </div>
-                            {isEditing && (
-                                <div className="form-footer">
-                                    <button
-                                        type="submit"
-                                        disabled={savingSettings}
-                                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flexDirection: 'row', whiteSpace: 'nowrap' }}
-                                        className="btn-premium-save"
-                                    >
-                                        <Save size={22} />
-                                        <span>{savingSettings ? "Saving..." : "Save Settings"}</span>
-                                    </button>
-                                </div>
-                            )}
-                        </form>
-                    </div>
-                )}
 
                 {/* Tab: Development Projects */}
                 {activeTab === "dev" && (
@@ -304,16 +165,11 @@ export default function ProjectsDashboard() {
                                 <Camera size={22} color="#059669" />
                                 <h2 className="section-title">Photographic Shoots</h2>
                             </div>
-                            <Link
-                                href="/admin/projects/new?category=Photography"
-                                id="btn-add-shoot"
-                                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flexDirection: 'row', whiteSpace: 'nowrap' }}
-                                className="btn-premium-add btn-shoot-add"
-                            >
-                                <Plus size={18} />
-                                <span>Add Shoot</span>
-                            </Link>
                         </div>
+                        <p className="hidden-note">
+                            The portfolio no longer shows photography. These stay here so you can edit or delete them;
+                            to show one again, edit it and set its category to Websites or Mobile.
+                        </p>
 
                         <div className="table-wrapper">
                             <table className="premium-table">
@@ -362,6 +218,15 @@ export default function ProjectsDashboard() {
             </div>
 
             <style jsx>{`
+                .hidden-note {
+                    margin: 0 0 1.25rem;
+                    padding: 0.85rem 1rem;
+                    border-radius: 12px;
+                    background: rgba(27, 79, 114, 0.06);
+                    color: #475569;
+                    font-size: 0.9rem;
+                    line-height: 1.5;
+                }
                 .projects-wrapper {
                     animation: fadeIn 0.8s ease-out;
                     padding: 2.5rem;

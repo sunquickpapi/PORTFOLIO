@@ -12,5 +12,6 @@ export interface Project {
     tech_stack: string[];
     live_demo_url?: string;
     repo_url?: string;
+    app_store_url?: string | null;
     slug: string;
 }

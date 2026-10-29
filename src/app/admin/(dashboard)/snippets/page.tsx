@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, Code, Sparkles, X, Save, Layout, Image as ImageIcon, ChevronDown, ChevronRight, StickyNote } from "lucide-react";
+import { Plus, Edit, Trash2, Code, Sparkles, X, Save, Image as ImageIcon, ChevronDown, ChevronRight, StickyNote } from "lucide-react";
 
 interface Snippet {
     id: string;
@@ -34,12 +34,6 @@ const NOTE_TYPE_ICONS: Record<string, string> = { idea: "💡", bug: "🐛", tod
 export default function SnippetsPage() {
     const [snippets, setSnippets] = useState<Snippet[]>([]);
     const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
-    const [settings, setSettings] = useState({
-        hero_title: "",
-        hero_subtitle: "",
-        hero_value_prop: "",
-        hero_image_url: ""
-    });
     const [notes, setNotes] = useState<Note[]>([]);
     const [showNoteModal, setShowNoteModal] = useState(false);
     const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -47,10 +41,7 @@ export default function SnippetsPage() {
     const [noteFormError, setNoteFormError] = useState<string | null>(null);
     const [noteFormData, setNoteFormData] = useState({ title: "", content: "", type: "general", color: "#3A99C9", pinned: false });
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<"hero" | "list" | "notes">("hero");
-    const [savingSettings, setSavingSettings] = useState(false);
-    const [isEditingSettings, setIsEditingSettings] = useState(false);
-    const [uploadingHeroPic, setUploadingHeroPic] = useState(false);
+    const [activeTab, setActiveTab] = useState<"list" | "notes">("list");
     const [showModal, setShowModal] = useState(false);
     const [editingSnippet, setEditingSnippet] = useState<Snippet | null>(null);
     const [formLoading, setFormLoading] = useState(false);
@@ -77,16 +68,13 @@ export default function SnippetsPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [snipRes, setRes, notesRes] = await Promise.all([
+            const [snipRes, notesRes] = await Promise.all([
                 fetch("/api/snippets"),
-                fetch("/api/snippets-settings"),
                 fetch("/api/notes")
             ]);
             const snipData = await snipRes.json();
-            const setData = await setRes.json();
             const notesData = await notesRes.json();
             setSnippets(snipData);
-            setSettings(setData);
             if (Array.isArray(notesData)) setNotes(notesData);
         } catch (error) {
             console.error("Error fetching data:", error);
@@ -103,61 +91,6 @@ export default function SnippetsPage() {
         } catch (error) {
             console.error("Error fetching snippets:", error);
         }
-    };
-
-    const handleSaveSettings = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setSavingSettings(true);
-        try {
-            const res = await fetch("/api/snippets-settings", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(settings),
-            });
-            if (res.ok) {
-                alert("Settings saved successfully!");
-                setIsEditingSettings(false);
-            } else {
-                alert("Failed to save settings");
-            }
-        } catch (error) {
-            console.error("Error saving settings:", error);
-        } finally {
-            setSavingSettings(false);
-        }
-    };
-
-    const handleHeroPicChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        setUploadingHeroPic(true);
-        const uploadFormData = new FormData();
-        uploadFormData.append("file", file);
-
-        try {
-            const res = await fetch("/api/upload", {
-                method: "POST",
-                body: uploadFormData,
-            });
-
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.error || "Upload failed");
-            }
-
-            const data = await res.json();
-            setSettings(prev => ({ ...prev, hero_image_url: data.url }));
-        } catch (error: any) {
-            console.error("Error uploading hero picture:", error);
-            alert(error.message || "Failed to upload hero picture");
-        } finally {
-            setUploadingHeroPic(false);
-        }
-    };
-
-    const handleRemoveHeroPic = () => {
-        setSettings(prev => ({ ...prev, hero_image_url: "" }));
     };
 
     const handleOpenAddModal = () => {
@@ -335,14 +268,6 @@ export default function SnippetsPage() {
                 <div className="tabs-container">
                     <div className="tabs-nav">
                         <button
-                            onClick={() => setActiveTab("hero")}
-                            className={`tab-item ${activeTab === "hero" ? "active" : ""}`}
-                        >
-                            <Layout size={24} />
-                            <span>Hero Banner</span>
-                            {activeTab === "hero" && <div className="tab-indicator" />}
-                        </button>
-                        <button
                             onClick={() => setActiveTab("list")}
                             className={`tab-item ${activeTab === "list" ? "active" : ""}`}
                         >
@@ -360,112 +285,6 @@ export default function SnippetsPage() {
                         </button>
                     </div>
                 </div>
-
-                {/* Tab: Hero Banner Settings */}
-                {activeTab === "hero" && (
-                    <div className="glass-section settings-section mb-8">
-                        <div className="section-header">
-                            <div className="section-title-box">
-                                <Layout size={22} color="#1B4F72" />
-                                <h2 className="section-title">Snippets Hero Settings</h2>
-                            </div>
-                            <button
-                                onClick={() => setIsEditingSettings(!isEditingSettings)}
-                                className={`btn-edit-toggle ${isEditingSettings ? 'active' : ''}`}
-                            >
-                                {isEditingSettings ? <X size={20} /> : <Edit size={20} />}
-                                <span>{isEditingSettings ? "Cancel" : "Edit Settings"}</span>
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleSaveSettings} className="premium-form">
-                            <div className="form-grid">
-                                <div className="input-group">
-                                    <label>Hero Main Title</label>
-                                    <input
-                                        value={settings.hero_title || ""}
-                                        onChange={(e) => setSettings({ ...settings, hero_title: e.target.value })}
-                                        placeholder="e.g., Snippet Gallery"
-                                        readOnly={!isEditingSettings}
-                                    />
-                                </div>
-                                <div className="input-group">
-                                    <label>Hero Subtitle</label>
-                                    <input
-                                        value={settings.hero_subtitle || ""}
-                                        onChange={(e) => setSettings({ ...settings, hero_subtitle: e.target.value })}
-                                        placeholder="e.g., Curated Reusable Code Gallery"
-                                        readOnly={!isEditingSettings}
-                                    />
-                                </div>
-                                <div className="input-group full-width">
-                                    <label>Value Proposition</label>
-                                    <textarea
-                                        rows={3}
-                                        value={settings.hero_value_prop || ""}
-                                        onChange={(e) => setSettings({ ...settings, hero_value_prop: e.target.value })}
-                                        placeholder="A comprehensive vault of reusable code fragments..."
-                                        readOnly={!isEditingSettings}
-                                    />
-                                </div>
-                                <div className="input-group full-width">
-                                    <label>Hero Background Image (Header Pic)</label>
-                                    <div className="file-uploader-container">
-                                        {settings.hero_image_url ? (
-                                            <div className="file-preview-box" style={{ maxWidth: '400px' }}>
-                                                <img
-                                                    src={settings.hero_image_url}
-                                                    alt="Hero Background"
-                                                    className="uploaded-preview-media"
-                                                    style={{ height: '180px', width: '100%', objectFit: 'cover' }}
-                                                />
-                                                <div className="file-preview-info">
-                                                    <span className="file-preview-path truncate">{settings.hero_image_url}</span>
-                                                    {isEditingSettings && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={handleRemoveHeroPic}
-                                                            className="btn-remove-file"
-                                                        >
-                                                            Remove Image
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <label className="file-upload-dropzone" style={{ maxWidth: '400px', minHeight: '120px' }}>
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={handleHeroPicChange}
-                                                    style={{ display: "none" }}
-                                                    disabled={uploadingHeroPic || !isEditingSettings}
-                                                />
-                                                <div className="dropzone-content">
-                                                    <Plus size={20} className="dropzone-icon" />
-                                                    <span>{uploadingHeroPic ? "Uploading image..." : "Click to select image"}</span>
-                                                </div>
-                                            </label>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                            {isEditingSettings && (
-                                <div className="form-footer">
-                                    <button
-                                        type="submit"
-                                        disabled={savingSettings}
-                                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flexDirection: 'row', whiteSpace: 'nowrap' }}
-                                        className="btn-premium-save"
-                                    >
-                                        <Save size={22} />
-                                        <span>{savingSettings ? "Saving..." : "Save Settings"}</span>
-                                    </button>
-                                </div>
-                            )}
-                        </form>
-                    </div>
-                )}
 
                 {/* Tab: Code Snippets List */}
                 {activeTab === "list" && (
