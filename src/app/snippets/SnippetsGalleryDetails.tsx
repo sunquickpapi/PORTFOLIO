@@ -6,7 +6,8 @@ import Link from "next/link";
 import { Courier_Prime, JetBrains_Mono } from "next/font/google";
 import { ArrowLeft, Check, ChevronDown, Copy, Maximize2, Search, X } from "lucide-react";
 import PixelField from "@/components/Home/PixelField";
-import { Snippet, getIntegrationCode, getPlaygroundUrl, highlight } from "./snippetCode";
+import { Snippet, getIntegrationCode, getPlaygroundUrl, highlight, preloadPrints } from "./snippetCode";
+import SnippetPrint from "@/components/Home/SnippetPrint";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
 const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "600"], display: "swap" });
@@ -236,7 +237,7 @@ function EntryPage({
                     <div className="snb-stage">
                         {view === "preview" ? (
                             <button type="button" className="snb-print" onClick={onCloseUp} tabIndex={still ? -1 : 0} aria-label="Open close up">
-                                <DemoFrame src={getPlaygroundUrl(snippet)} title={`${snippet.title} preview`} />
+                                <SnippetPrint snippet={snippet} fallback={<DemoFrame src={getPlaygroundUrl(snippet)} title={`${snippet.title} preview`} />} />
                                 <Paperclip />
                             </button>
                         ) : (
@@ -294,7 +295,8 @@ export default function SnippetsGalleryDetails() {
     const [copied, setCopied] = useState(false);
     const [closeUp, setCloseUp] = useState<Snippet | null>(null);
     const [note, setNote] = useState<Note | null>(null);
-    const [turn, setTurn] = useState<{ id: number; dir: 1 | -1; from: Snippet; fromNo: number; to: Snippet; toNo: number; view: "preview" | "code"; codeTab: CodeTab } | null>(null);
+    // a page turn mounts hidden ("ready" false) until its prints are drawn, then plays
+    const [turn, setTurn] = useState<{ id: number; dir: 1 | -1; from: Snippet; fromNo: number; to: Snippet; toNo: number; view: "preview" | "code"; codeTab: CodeTab; ready: boolean } | null>(null);
     const [scale, setScale] = useState(1);
     const [stack, setStack] = useState(false);
     const fitRef = useRef<HTMLDivElement>(null);
@@ -310,6 +312,7 @@ export default function SnippetsGalleryDetails() {
             .then(([s, n]) => {
                 if (Array.isArray(s)) {
                     setSnippets(s);
+                    preloadPrints(s);
                     if (s[0]) setActiveId(s[0].id);
                 }
                 if (Array.isArray(n)) setNotes([...n].sort((a: Note, b: Note) => Number(b.pinned) - Number(a.pinned)));
@@ -373,8 +376,7 @@ export default function SnippetsGalleryDetails() {
                 const toNo = snippets.indexOf(s) + 1;
                 // a later entry turns the page to the left; an earlier one turns it back to the right
                 const dir = dirHint ?? (toNo > activeNo ? 1 : -1);
-                setTurn({ id: Date.now(), dir, from: active, fromNo: activeNo, to: s, toNo, view, codeTab });
-                turnTimer.current = window.setTimeout(() => setTurn(null), FLIP_MS);
+                setTurn({ id: Date.now(), dir, from: active, fromNo: activeNo, to: s, toNo, view, codeTab, ready: false });
             }
             setActiveId(s.id);
             setCopied(false);
@@ -382,6 +384,31 @@ export default function SnippetsGalleryDetails() {
         },
         [active, activeNo, view, codeTab, stack, snippets]
     );
+
+    // start the turn once the hidden leaf's prints are decoded (capped so it never stalls)
+    const leafRef = useRef<HTMLDivElement>(null);
+    const turnId = turn && !turn.ready ? turn.id : 0;
+    useEffect(() => {
+        if (!turnId) return;
+        let live = true;
+        const imgs = Array.from(leafRef.current?.querySelectorAll("img") || []);
+        const decoded = Promise.all(imgs.map((i) => (i.decode ? i.decode().catch(() => {}) : Promise.resolve())));
+        const cap = new Promise((r) => window.setTimeout(r, 250));
+        Promise.race([decoded, cap]).then(() => requestAnimationFrame(() => live && setTurn((t) => (t && t.id === turnId ? { ...t, ready: true } : t))));
+        return () => {
+            live = false;
+        };
+    }, [turnId]);
+    const playingId = turn?.ready ? turn.id : 0;
+    useEffect(() => {
+        if (!playingId) return;
+        window.clearTimeout(turnTimer.current);
+        turnTimer.current = window.setTimeout(() => setTurn((t) => (t && t.id === playingId ? null : t)), FLIP_MS);
+        return () => window.clearTimeout(turnTimer.current);
+    }, [playingId]);
+    // until a forward turn is visible, the right page keeps showing the entry it is about to lift off
+    const rightShown = turn && !turn.ready && turn.dir === 1 ? turn.from : active;
+    const rightShownNo = rightShown ? snippets.indexOf(rightShown) + 1 : 0;
 
     // keep the open entry inside the filtered list
     useEffect(() => {
@@ -477,8 +504,8 @@ export default function SnippetsGalleryDetails() {
                             </div>
                             <div className="snb-side snb-side-r" ref={entryRef}>
                                 <EntryPage
-                                    snippet={active}
-                                    no={activeNo}
+                                    snippet={rightShown}
+                                    no={rightShownNo}
                                     view={view}
                                     setView={setView}
                                     codeTab={codeTab}
@@ -498,7 +525,7 @@ export default function SnippetsGalleryDetails() {
 
                             {/* the turning leaf: forward = old entry lifts off to the left; back = new entry swings in from the left */}
                             {turn && (
-                                <div className={`snb-leaf ${turn.dir === -1 ? "is-back" : ""}`} key={turn.id} aria-hidden="true">
+                                <div ref={leafRef} className={`snb-leaf ${turn.dir === -1 ? "is-back" : ""} ${turn.ready ? "" : "is-prep"}`} key={turn.id} aria-hidden="true">
                                     <div className="snb-face snb-face-front">
                                         {turn.dir === 1 ? (
                                             <EntryPage snippet={turn.from} no={turn.fromNo} view={turn.view} codeTab={turn.codeTab} still />
@@ -840,6 +867,9 @@ const STYLES = `
 .snb-leaf.is-back { animation-name: snb-turn-back; }
 @keyframes snb-turn-back { from { transform: rotateY(-180deg); } to { transform: rotateY(0deg); } }
 .snb-under { z-index: 5; pointer-events: none; }
+/* waiting for its prints: hidden, nothing animating yet */
+.snb-leaf.is-prep { opacity: 0; animation: none; }
+.snb-leaf.is-prep * { animation: none !important; }
 .snb-leaf.is-back .snb-face-back { animation-name: snb-rise; }
 @keyframes snb-rise { 0% { opacity: 0; } 20%, 100% { opacity: 1; } }
 .snb-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }

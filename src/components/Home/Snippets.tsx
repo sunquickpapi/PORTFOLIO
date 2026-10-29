@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import FileLink from "./FileLink";
+import SnippetPrint from "./SnippetPrint";
+import { preloadPrints } from "@/app/snippets/snippetCode";
 
 interface Snippet {
     id: string;
@@ -73,7 +75,8 @@ function Paperclip() {
     );
 }
 
-type Turn = { dir: 1 | -1; t0: number } | null;
+/** A page turn: mounted hidden first ("ready" false) until its prints are drawn, then it runs. */
+type Turn = { dir: 1 | -1; t0: number; ready: boolean } | null;
 const FLIP_MS = 1100;
 const AUTO_MS = 5200;
 const BOOK_H = 470;
@@ -92,7 +95,10 @@ function Page({ snippet, side, blank }: { snippet?: Snippet; side: "left" | "rig
             {snippet ? (
                 <div className="nbp-body">
                     <div className="nbp-print">
-                        <ScaledPreviewIframe src={getPlaygroundUrl(snippet)} title={`${snippet.title} Preview`} containerWidth={256} />
+                        <SnippetPrint
+                            snippet={snippet}
+                            fallback={<ScaledPreviewIframe src={getPlaygroundUrl(snippet)} title={`${snippet.title} Preview`} containerWidth={256} />}
+                        />
                         <Paperclip />
                     </div>
                     <div className="snippet-badges">
@@ -142,7 +148,10 @@ export default function Snippets() {
                 return res.json();
             })
             .then((data) => {
-                if (Array.isArray(data)) setSnippets(data);
+                if (Array.isArray(data)) {
+                    setSnippets(data);
+                    preloadPrints(data);
+                }
                 setLoading(false);
             })
             .catch(() => setLoading(false));
@@ -166,15 +175,37 @@ export default function Snippets() {
         (dir: 1 | -1) => {
             if (turn || spreads < 2) return;
             if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return setSpread((s) => mod(s + dir));
-            setTurn({ dir, t0: performance.now() });
-            window.setTimeout(() => {
-                setSpread((s) => mod(s + dir));
-                setTurn(null);
-            }, FLIP_MS);
+            setTurn({ dir, t0: performance.now(), ready: false });
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [turn, spreads]
     );
+
+    // 1) the leaf mounts invisible; once its prints are decoded, start the turn on the next frame
+    const leafRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        if (!turn || turn.ready) return;
+        let live = true;
+        const imgs = Array.from(leafRef.current?.querySelectorAll("img") || []);
+        const decoded = Promise.all(imgs.map((i) => (i.decode ? i.decode().catch(() => {}) : Promise.resolve())));
+        const cap = new Promise((r) => window.setTimeout(r, 250)); // never hold a turn longer than this
+        Promise.race([decoded, cap]).then(() => requestAnimationFrame(() => live && setTurn((t) => (t && !t.ready ? { ...t, ready: true } : t))));
+        return () => {
+            live = false;
+        };
+    }, [turn]);
+
+    // 2) when the turn has played, settle on the new spread
+    const turnDir = turn?.ready ? turn.dir : 0;
+    useEffect(() => {
+        if (!turnDir) return;
+        const id = window.setTimeout(() => {
+            setSpread((s) => mod(s + turnDir));
+            setTurn(null);
+        }, FLIP_MS);
+        return () => window.clearTimeout(id);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [turnDir]);
 
     // turn a page every few seconds (not while the pointer rests on the book)
     useEffect(() => {
@@ -202,8 +233,10 @@ export default function Snippets() {
     const blankR = (sp: number) => sp * 2 + 1 >= n; // odd count: last right page is the "end" page
     // forward: the current right page turns over; its back is the next left page
     // back: the current left page turns back; its front is the previous right page
-    const leftStatic = turn?.dir === -1 ? prev : cur;
-    const rightStatic = turn?.dir === 1 ? next : cur;
+    // the pages under the leaf only change once the leaf is visible and covering them
+    const live = turn?.ready ? turn : null;
+    const leftStatic = live?.dir === -1 ? prev : cur;
+    const rightStatic = live?.dir === 1 ? next : cur;
     const leafFront = turn?.dir === 1 ? cur : prev; // right-hand face
     const leafBack = turn?.dir === 1 ? next : cur; // left-hand face
 
@@ -227,7 +260,7 @@ export default function Snippets() {
 
                         {/* the turning page */}
                         {turn && (
-                            <div className={`nb-leaf ${turn.dir === 1 ? "is-fwd" : "is-back"}`} aria-hidden="true">
+                            <div ref={leafRef} className={`nb-leaf ${turn.dir === 1 ? "is-fwd" : "is-back"} ${turn.ready ? "" : "is-prep"}`} aria-hidden="true">
                                 <div className="nb-face nb-face-front">
                                     <Page snippet={R(leafFront)} side="right" blank={blankR(leafFront)} />
                                     <span className="nb-shade" />
@@ -319,6 +352,12 @@ export default function Snippets() {
                 }
                 .nb-leaf.is-back {
                     animation-name: nb-turn-back;
+                }
+                /* waiting for its prints: hidden and not moving yet */
+                .nb-leaf.is-prep,
+                .nb-leaf.is-prep :global(.nb-shade) {
+                    animation: none;
+                    opacity: 0;
                 }
                 @keyframes nb-turn {
                     0% {
