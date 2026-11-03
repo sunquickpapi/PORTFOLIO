@@ -121,7 +121,11 @@ export default function Hero() {
         const el = passRef.current;
         const grid = el?.parentElement;
         if (!el || !grid) return;
-        const measure = () => setShift(grid.clientWidth / 2 - (el.offsetLeft + el.offsetWidth / 2));
+        const measure = () => {
+            setShift(grid.clientWidth / 2 - (el.offsetLeft + el.offsetWidth / 2));
+            // tablets/phones: the whole card-and-objects scene (≈830px wide) is scaled to fit this width
+            el.style.setProperty("--hp-s", String(Math.min(1, el.clientWidth / 830)));
+        };
         measure();
         const ro = new ResizeObserver(measure);
         ro.observe(grid);

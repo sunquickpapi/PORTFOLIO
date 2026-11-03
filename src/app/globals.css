@@ -11228,3 +11228,61 @@ html.fvl-loading body {
   .hero-gh { animation: none; }
   .hero-pass-move .hero-gh > .ghc { transition: none; }
 }
+
+/* ── Tablets & phones: show the whole hero scene (pass card + telemetry + objects), scaled to fit ──
+   The scene is laid out at desktop size (≈811×532, from the earbuds at -119px to the dossier at
+   +692px, telemetry at -48px to the books at +484px) and shrunk by --hp-s, set from the width in Hero.tsx. */
+@media (max-width: 1024px) {
+  .hero-clean .hero-pass,
+  .hero-pass {
+    display: block;
+    position: relative;
+    width: 100%;
+    max-width: 830px;
+    height: calc(548px * var(--hp-s, 0.45));
+    margin: 2rem auto 0;
+  }
+  .hero-pass .hero-pass-move {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 573px;
+    transform-origin: 0 0;
+    transform: translate(calc(128px * var(--hp-s, 0.45)), calc(54px * var(--hp-s, 0.45))) scale(var(--hp-s, 0.45)) !important;
+    transition: none;
+  }
+  .hero-pass-move > .pass {
+    width: 573px;
+  }
+  .hero-gh,
+  .hero-laptop,
+  .hero-earbuds,
+  .hero-books,
+  .hero-dossier {
+    display: block;
+  }
+  /* desktop positions, not the tighter 1025–1280px ones */
+  .hero-dossier { right: -112px; }
+  .hero-earbuds { left: -112px; }
+  .hero-laptop { left: 14px; }
+  .hero-books { left: 336px; }
+  /* touch screens: the telemetry card stays tucked (a tap opens GitHub straight away) */
+  .hero-pass-move .hero-gh:hover > .ghc,
+  .hero-pass-move .hero-gh:focus-within > .ghc {
+    transform: rotate(-4deg);
+  }
+  .hero-pass-move .hero-gh:hover::before {
+    content: none;
+  }
+}
+/* phones: let the scene use the full screen width, not just the text column */
+@media (max-width: 640px) {
+  .hero-clean .hero-pass,
+  .hero-pass {
+    width: 100vw;
+    max-width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: 0;
+  }
+}
+
