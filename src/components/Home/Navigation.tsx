@@ -185,13 +185,28 @@ export default function Navigation() {
                     <button type="button" className="mnav-grip" aria-label="Close menu" onClick={() => setIsMenuOpen(false)} />
 
                     <div className="mnav-head">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img className="mnav-avatar" src="/assets/passcard/pass-photo.webp" alt="" />
+                        <span className="mnav-logo">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={profile?.logo_url || "/assets/NameLogo.png"} alt="FVL" />
+                        </span>
                         <div className="mnav-id">
-                            <span className={`mnav-kicker ${courier.className}`}>FILE:: INDEX</span>
+                            <span className={`mnav-kicker ${courier.className}`}>FILE:: NAV</span>
                             <span className="mnav-name">Naufal Nizam</span>
                             <span className="mnav-role">{profile?.role || "Intelligent System Engineer"}</span>
                         </div>
+                        {mounted && (
+                            <button
+                                type="button"
+                                className="mnav-theme"
+                                onClick={toggleTheme}
+                                aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                            >
+                                <span className="mnav-stamp">
+                                    {theme === "dark" ? <Sun size={17} strokeWidth={2.1} /> : <Moon size={17} strokeWidth={2.1} />}
+                                </span>
+                                <span className={`mnav-link-label ${courier.className}`}>{theme === "dark" ? "Light" : "Dark"}</span>
+                            </button>
+                        )}
                     </div>
 
                     <nav className="mnav-grid" aria-label="Sections">
@@ -242,17 +257,6 @@ export default function Navigation() {
                         })}
                     </div>
 
-                    <div className="mnav-foot">
-                        {mounted && (
-                            <button type="button" className={`mnav-theme ${courier.className}`} onClick={toggleTheme}>
-                                {theme === "dark" ? <Sun size={15} strokeWidth={2.25} /> : <Moon size={15} strokeWidth={2.25} />}
-                                {theme === "dark" ? "LIGHT MODE" : "DARK MODE"}
-                            </button>
-                        )}
-                        <span className={`mnav-route ${courier.className}`} aria-hidden="true">
-                            {(profile?.route_from || "MLK").trim()} → {(profile?.route_to || "KDH").trim()}
-                        </span>
-                    </div>
                 </div>
             </div>
 

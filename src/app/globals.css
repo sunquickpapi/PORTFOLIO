@@ -11630,19 +11630,36 @@ html.hero-m-top .social-floating-group .floating-btn {
     padding-bottom: calc(12px * var(--u));
     border-bottom: 2px dashed var(--line);
   }
-  .mnav-avatar {
-    width: calc(50px * var(--u));
-    height: calc(50px * var(--u));
-    border-radius: 10px;
-    object-fit: cover;
-    background: #dce4e8;
+  /* FVL logo on a paper tile, ringed like the pass card's photo stamp */
+  .mnav-logo {
+    width: calc(54px * var(--u));
+    height: calc(54px * var(--u));
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: #fbfcfd;
+    border: 1px solid var(--line);
     outline: 2px dashed var(--cyan);
     outline-offset: 2px;
-    flex: none;
+    box-shadow: 0 6px 12px -8px rgba(13, 42, 66, 0.45);
+  }
+  .mnav-logo img {
+    width: 78%;
+    height: auto;
+    display: block;
+  }
+  :root.dark .mnav-logo {
+    background: #0a141d;
+  }
+  :root.dark .mnav-logo img {
+    filter: invert(1) hue-rotate(180deg); /* black letters turn light, the blue V stays blue */
   }
   .mnav-id {
     display: flex;
     flex-direction: column;
+    flex: 1;
     min-width: 0;
     line-height: 1.15;
   }
@@ -11751,35 +11768,27 @@ html.hero-m-top .social-floating-group .floating-btn {
     text-transform: uppercase;
   }
 
-  .mnav-foot {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-  }
+  /* theme switch: one more inked stamp, at the end of the ID strip */
   .mnav-theme {
-    display: inline-flex;
+    flex: none;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 8px;
-    padding: calc(9px * var(--u)) 14px;
-    border-radius: 999px;
-    border: 1.5px solid var(--ink);
-    background: transparent;
+    gap: 5px;
+    padding: 0;
+    border: 0;
+    background: none;
     color: var(--ink);
-    font-size: 11px;
-    letter-spacing: 1.6px;
     cursor: pointer;
   }
-  .mnav-theme:active {
+  .mnav-theme .mnav-stamp {
+    width: calc(40px * var(--u));
+    height: calc(40px * var(--u));
+  }
+  .mnav-theme:active .mnav-stamp {
     background: var(--ink);
     color: var(--paper);
   }
-  .mnav-route {
-    font-size: 12px;
-    letter-spacing: 1.5px;
-    color: var(--ink-2);
-  }
-
   /* contents settle in one after another as the sheet arrives */
   .mnav .mnav-tile,
   .mnav .mnav-link {
