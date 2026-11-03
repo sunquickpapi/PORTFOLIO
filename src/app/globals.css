@@ -11363,11 +11363,12 @@ html.fvl-loading body {
 /* the card opens on its own (no neighbours to nudge) */
 .hero-m .is-revealed .hero-pass-move > .pass { translate: 0 0 !important; }
 /* phones: the objects packed in close round the card so the scene can be drawn bigger
-   (bounds -49…618 × -48…468, kept in step with PHONE_SCENE in Hero.tsx) */
-.hero-m .hero-pass-move > .hero-earbuds { left: -33px; bottom: -133px; }
+   (bounds -30…598 × -48…476, kept in step with PHONE_SCENE in Hero.tsx) */
+.hero-m .hero-pass-move > .hero-gh { left: -21px; }
+.hero-m .hero-pass-move > .hero-earbuds { left: -13px; bottom: -133px; }
 .hero-m .hero-pass-move > .hero-laptop { left: 113px; bottom: -174px; }
 .hero-m .hero-pass-move > .hero-books { left: 306px; bottom: -180px; }
-.hero-m .hero-pass-move > .hero-dossier { right: -37px; bottom: -148px; }
+.hero-m .hero-pass-move > .hero-dossier { right: -17px; bottom: -190px; }
 .hero-m .hero-content {
   order: 1;
   flex: none;
@@ -11423,26 +11424,26 @@ html.fvl-loading body {
   box-shadow: 0 30px 60px -20px rgba(13, 42, 66, 0.55);
 }
 /* the neighbours make room, same as on hover */
-.hero-m .hero-pass-move:has(.pass-stage.is-armed) .hero-earbuds { translate: -16px 14px; }
+.hero-m .hero-pass-move:has(.pass-stage.is-armed) .hero-earbuds { translate: -8px 14px; }
 .hero-m .hero-pass-move:has(.pass-stage.is-armed) .hero-laptop { translate: 0 18px; }
-.hero-m .hero-pass-move:has(.pass-stage.is-armed) .hero-dossier { translate: 16px 14px; }
+.hero-m .hero-pass-move:has(.pass-stage.is-armed) .hero-dossier { translate: 8px 14px; }
 .hero-m .hero-pass-move:has(.pass-stage.is-armed) .hero-books { translate: 4px 18px; }
 .hero-m .hero-pass-move:has(> .hero-earbuds[data-tapw]) > .pass { translate: 8px -8px; }
 .hero-m .hero-pass-move:has(> .hero-earbuds[data-tapw]) .hero-laptop { translate: 30px 6px; }
-.hero-m .hero-pass-move:has(> .hero-earbuds[data-tapw]) .hero-dossier { translate: 12px 0; }
+.hero-m .hero-pass-move:has(> .hero-earbuds[data-tapw]) .hero-dossier { translate: 6px 0; }
 .hero-m .hero-pass-move:has(> .hero-earbuds[data-tapw]) .hero-books { translate: 14px 2px; }
 .hero-m .hero-pass-move:has(> .hero-laptop[data-tapw]) > .pass { translate: 0 -14px; }
-.hero-m .hero-pass-move:has(> .hero-laptop[data-tapw]) .hero-earbuds { translate: -30px 6px; }
-.hero-m .hero-pass-move:has(> .hero-laptop[data-tapw]) .hero-dossier { translate: 24px 6px; }
+.hero-m .hero-pass-move:has(> .hero-laptop[data-tapw]) .hero-earbuds { translate: -12px 6px; }
+.hero-m .hero-pass-move:has(> .hero-laptop[data-tapw]) .hero-dossier { translate: 12px 6px; }
 .hero-m .hero-pass-move:has(> .hero-laptop[data-tapw]) .hero-books { translate: 28px 6px; }
 .hero-m .hero-pass-move:has(> .hero-dossier[data-tapw]) > .pass { translate: -10px -8px; }
 .hero-m .hero-pass-move:has(> .hero-dossier[data-tapw]) .hero-laptop { translate: -18px 6px; }
-.hero-m .hero-pass-move:has(> .hero-dossier[data-tapw]) .hero-earbuds { translate: -10px 4px; }
+.hero-m .hero-pass-move:has(> .hero-dossier[data-tapw]) .hero-earbuds { translate: -6px 4px; }
 .hero-m .hero-pass-move:has(> .hero-dossier[data-tapw]) .hero-books { translate: -26px 6px; }
 .hero-m .hero-pass-move:has(> .hero-books[data-tapw]) > .pass { translate: 0 -12px; }
 .hero-m .hero-pass-move:has(> .hero-books[data-tapw]) .hero-laptop { translate: -24px 6px; }
-.hero-m .hero-pass-move:has(> .hero-books[data-tapw]) .hero-earbuds { translate: -12px 4px; }
-.hero-m .hero-pass-move:has(> .hero-books[data-tapw]) .hero-dossier { translate: 28px 6px; }
+.hero-m .hero-pass-move:has(> .hero-books[data-tapw]) .hero-earbuds { translate: -6px 4px; }
+.hero-m .hero-pass-move:has(> .hero-books[data-tapw]) .hero-dossier { translate: 12px 6px; }
 /* while the phone hero fills the screen, the floating social buttons step aside (the pass card has them) */
 .social-floating-group {
   transition: opacity 0.35s ease, translate 0.35s ease;
