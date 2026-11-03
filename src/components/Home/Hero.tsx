@@ -24,6 +24,7 @@ const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], disp
  */
 const SPEED = { h1: 55, subtitle: 38, bio: 11 }; // ms per character
 const LINE_PAUSE = 260;
+const LIFT = 12; // phones: room above/below the opened pass card for its hover lift and shadow
 
 type Seg = { key: string; text: string; speed: number; gradient?: boolean };
 
@@ -144,9 +145,15 @@ export default function Hero() {
                 // until the intro is opened the scene sits in the middle of the screen
                 el.style.setProperty("--hp-drop", `${Math.round((content.offsetHeight + gap) / 2)}px`);
                 el.style.setProperty("--hp-tx", `${(el.clientWidth / 2 - 286.5 * s).toFixed(1)}px`);
+                // opened: the objects slide off the sides and only the pass card (573×280) stays,
+                // as wide as the text column and lifted to sit just above the intro
+                const cw = content.clientWidth;
+                const s2 = Math.max(0.2, Math.min(1, cw / 573, (room - 2 * LIFT) / 280));
+                el.style.setProperty("--hp-s2", s2.toFixed(4));
+                el.style.setProperty("--hp-tx2", `${((el.clientWidth - 573 * s2) / 2).toFixed(1)}px`);
+                el.style.setProperty("--hp-h2", `${Math.round(280 * s2 + 2 * LIFT)}px`);
             } else {
-                el.style.removeProperty("--hp-drop");
-                el.style.removeProperty("--hp-tx");
+                ["--hp-drop", "--hp-tx", "--hp-s2", "--hp-tx2", "--hp-h2"].forEach((p) => el.style.removeProperty(p));
             }
             el.style.setProperty("--hp-s", String(s));
         };

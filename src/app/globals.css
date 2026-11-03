@@ -11303,7 +11303,7 @@ html.fvl-loading body {
   flex-direction: column;
   justify-content: center;
   align-items: stretch;
-  gap: 14px;
+  gap: 26px;
   width: 100% !important;
   max-width: none;
   height: 100%;
@@ -11317,15 +11317,49 @@ html.fvl-loading body {
   width: calc(100% + 44px) !important;
   max-width: none !important;
   margin: 0 -22px !important;
+  height: calc(548px * var(--hp-s, 0.45)) !important;
   translate: 0 var(--hp-drop, 0px);
-  transition: translate 1.1s cubic-bezier(0.65, 0, 0.35, 1);
-}
-.hero-m .hero-grid.is-revealed .hero-pass {
-  translate: 0 0;
+  transition: translate 1.1s cubic-bezier(0.65, 0, 0.35, 1), height 1.1s cubic-bezier(0.65, 0, 0.35, 1);
 }
 .hero-m .hero-pass .hero-pass-move {
   transform: translate(var(--hp-tx, 0px), calc(54px * var(--hp-s, 0.45))) scale(var(--hp-s, 0.45)) !important;
+  transition: transform 1.1s cubic-bezier(0.65, 0, 0.35, 1) !important;
 }
+/* opened: only the pass card stays, grown to the text column's width and moved up above the intro */
+.hero-m .hero-grid.is-revealed .hero-pass {
+  translate: 0 0;
+  height: var(--hp-h2, 200px) !important;
+  transition-delay: 0.12s;
+}
+.hero-m .hero-grid.is-revealed .hero-pass .hero-pass-move {
+  transform: translate(var(--hp-tx2, 22px), 12px) scale(var(--hp-s2, 0.58)) !important;
+  transition-delay: 0.12s !important;
+}
+/* …while the objects slide off the sides: AirPods, laptop (and telemetry) left, books and file right */
+.hero-m .hero-pass-move > .hero-earbuds,
+.hero-m .hero-pass-move > .hero-laptop,
+.hero-m .hero-pass-move > .hero-books,
+.hero-m .hero-pass-move > .hero-dossier {
+  transition: translate 1.1s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.8s ease;
+}
+.hero-m .hero-pass-move .hero-gh > .ghc {
+  transition: transform 1.1s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.8s ease;
+}
+.hero-m .is-revealed .hero-pass-move > .hero-earbuds { translate: -980px 30px !important; }
+.hero-m .is-revealed .hero-pass-move > .hero-laptop { translate: -980px 60px !important; transition-delay: 0.06s; }
+.hero-m .is-revealed .hero-pass-move > .hero-books { translate: 980px 60px !important; transition-delay: 0.06s; }
+.hero-m .is-revealed .hero-pass-move > .hero-dossier { translate: 980px 30px !important; }
+.hero-m .is-revealed .hero-pass-move .hero-gh > .ghc { transform: translate(-1000px, -20px) rotate(-10deg) !important; }
+.hero-m .is-revealed .hero-pass-move > .hero-earbuds,
+.hero-m .is-revealed .hero-pass-move > .hero-laptop,
+.hero-m .is-revealed .hero-pass-move > .hero-books,
+.hero-m .is-revealed .hero-pass-move > .hero-dossier,
+.hero-m .is-revealed .hero-pass-move .hero-gh > .ghc {
+  opacity: 0 !important; /* beats the entry animations' fill */
+  pointer-events: none;
+}
+/* the card opens on its own (no neighbours to nudge) */
+.hero-m .is-revealed .hero-pass-move > .pass { translate: 0 0 !important; }
 .hero-m .hero-content {
   order: 1;
   flex: none;
@@ -11348,7 +11382,7 @@ html.fvl-loading body {
 }
 .hero-m .hero-content .subtitle {
   font-size: clamp(0.98rem, 4.3vw, 1.15rem) !important;
-  margin-bottom: 0.3rem !important;
+  margin-bottom: 0.45rem !important;
 }
 .hero-m .hero-content .value-prop {
   font-size: clamp(0.82rem, 3.6vw, 0.95rem) !important;
@@ -11356,7 +11390,7 @@ html.fvl-loading body {
   margin: 0 !important;
 }
 .hero-m .hero-journey {
-  margin-top: 0.85rem;
+  margin-top: 1.25rem;
 }
 @media (prefers-reduced-motion: reduce) {
   .hero-m .hero-grid .hero-pass,
