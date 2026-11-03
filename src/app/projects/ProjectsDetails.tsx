@@ -467,11 +467,14 @@ export default function ProjectsDetails() {
                 }
                 .pw-wall.is-list .pw-label {
                     flex: 1;
+                    min-width: 0; /* let long titles wrap instead of pushing the row off screen */
                     flex-wrap: wrap;
                     row-gap: 6px;
                 }
                 .pw-stack {
                     flex-basis: 100%;
+                    min-width: 0;
+                    overflow-wrap: anywhere;
                     font-size: 12px;
                     font-weight: 700;
                     letter-spacing: 0.04em;
@@ -543,8 +546,37 @@ export default function ProjectsDetails() {
                     .pw-wall.is-list {
                         grid-template-columns: minmax(0, 1fr);
                     }
+                    .pw-wall.is-list .pw-cell {
+                        gap: 14px;
+                    }
                     .pw-wall.is-list .pw-card {
-                        width: 120px;
+                        width: 112px;
+                    }
+                    /* titles wrap to two lines on phones */
+                    .pw-wall.is-list .pw-title {
+                        white-space: normal;
+                        display: -webkit-box;
+                        -webkit-line-clamp: 2;
+                        -webkit-box-orient: vertical;
+                        font-size: 14px;
+                        line-height: 1.25;
+                        flex-basis: 100%;
+                    }
+                    .pw-wall.is-list .pw-stack {
+                        font-size: 11px;
+                    }
+                    /* top bar: back + filter on one row, search full width underneath */
+                    .pw-bar {
+                        flex-wrap: wrap;
+                        justify-content: space-between;
+                    }
+                    .pw-search {
+                        order: 3;
+                        width: 100%;
+                        max-width: none;
+                    }
+                    .pw-filter-btn {
+                        max-width: 52vw;
                     }
                 }
             `}</style>

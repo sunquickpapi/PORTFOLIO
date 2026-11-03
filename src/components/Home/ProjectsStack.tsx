@@ -418,7 +418,9 @@ export default function ProjectsStack() {
     const cy = H / 2;
     const imgY = narrow ? 150 : cy;
     const textY = narrow ? 150 + imgH / 2 + 90 : cy;
-    const tileY = narrow ? H - tile / 2 - 70 : cy;
+    // phones: the logo sits just under the project's text (≈170px block), not pinned to the bottom
+    const tileY = narrow ? textY + 85 + 50 + tile / 2 : cy;
+    const stageH = narrow ? Math.round(tileY + tile / 2 + 70) : 640;
     // neighbours sit fully above / below the current one with a clear gap, tilted toward the screen edge
     const NI = 0.5; // neighbour image scale
     const NT = 0.62; // neighbour logo scale
@@ -627,7 +629,7 @@ export default function ProjectsStack() {
                 }
                 .pst-stage {
                     position: relative;
-                    height: ${narrow ? 860 : 640}px;
+                    height: ${stageH}px;
                     width: 100%;
                     max-width: 1920px;
                     margin: 0 auto;

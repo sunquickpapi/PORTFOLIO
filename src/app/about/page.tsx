@@ -832,6 +832,7 @@ const STYLES = `
     .ab-org-head { flex-wrap: wrap; }
     .ab-btn.is-small { margin-left: 0; }
     .ab-banner .ab-print { width: 200px; height: 150px; }
+    .ab-banner { margin: 50px -12px 0; } /* match the narrower page padding so it doesn't spill sideways */
     .ab-nav { display: none; }
     .ab-sec { padding-top: 70px; }
     .ab-cta { padding: 40px 22px; }

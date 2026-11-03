@@ -1242,6 +1242,12 @@ const STYLES = `
 .snb-fit.is-stack .snb-holes { display: none; }
 .snb-fit.is-stack .snb-body, .snb-fit.is-stack .snb-right .snb-body { position: relative; inset: auto; padding: 26px 20px 24px 52px; }
 .snb-fit.is-stack .snb-index { overflow: visible; }
+/* phones: full titles on up to two lines instead of cutting them short */
+.snb-fit.is-stack .snb-entry { height: auto; min-height: 42px; padding-top: 8px; padding-bottom: 8px; align-items: flex-start; }
+.snb-fit.is-stack .snb-entry::before { inset: 4px 2px; }
+.snb-fit.is-stack .snb-entry-title { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3; flex: 1; }
+.snb-fit.is-stack .snb-entry-dots { display: none; }
+.snb-fit.is-stack .snb-entry-no, .snb-fit.is-stack .snb-entry-lang { padding-top: 3px; }
 .snb-fit.is-stack .snb-index-title { font-size: 38px; }
 .snb-fit.is-stack .snb-title { font-size: 24px; line-height: 30px; }
 .snb-fit.is-stack .snb-code pre { max-height: 360px; }
