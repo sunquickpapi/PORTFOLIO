@@ -24,6 +24,8 @@ const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], disp
  */
 const SPEED = { h1: 55, subtitle: 38, bio: 11 }; // ms per character
 const LINE_PAUSE = 260;
+// phones: the scene's bounds (pass card at 0,0 → 573×280) with the objects packed in close (globals.css .hero-m)
+const PHONE_SCENE = { x0: -49, x1: 618, y0: -48, y1: 468 };
 const LIFT = 12; // phones: room above/below the opened pass card for its hover lift and shadow
 
 type Seg = { key: string; text: string; speed: number; gradient?: boolean };
@@ -140,11 +142,16 @@ export default function Hero() {
                 // phones: scene + intro text share one screen, so the scene also shrinks to fit the height
                 const cs = getComputedStyle(grid);
                 const gap = parseFloat(cs.rowGap) || 0;
-                const room = grid.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - content.offsetHeight - gap;
-                s = Math.max(0.2, Math.min(s, room / 548));
-                // until the intro is opened the scene sits in the middle of the screen
+                const inner = grid.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+                const room = inner - content.offsetHeight - gap;
+                // closed: the scene (objects packed tighter round the card on phones, see PHONE_SCENE)
+                // is as big as the screen allows, sitting in the middle; the text is hidden until opened
+                const P = PHONE_SCENE;
+                s = Math.max(0.2, Math.min(1, (el.clientWidth - 40) / (P.x1 - P.x0), inner / (P.y1 - P.y0)));
                 el.style.setProperty("--hp-drop", `${Math.round((content.offsetHeight + gap) / 2)}px`);
-                el.style.setProperty("--hp-tx", `${(el.clientWidth / 2 - 286.5 * s).toFixed(1)}px`);
+                el.style.setProperty("--hp-tx", `${(el.clientWidth / 2 - ((P.x0 + P.x1) / 2) * s).toFixed(1)}px`);
+                el.style.setProperty("--hp-ty", `${(-P.y0 * s).toFixed(1)}px`);
+                el.style.setProperty("--hp-h1", `${Math.round((P.y1 - P.y0) * s)}px`);
                 // opened: the objects slide off the sides and only the pass card (573×280) stays,
                 // as wide as the text column and lifted to sit just above the intro
                 const cw = content.clientWidth;
@@ -153,7 +160,7 @@ export default function Hero() {
                 el.style.setProperty("--hp-tx2", `${((el.clientWidth - 573 * s2) / 2).toFixed(1)}px`);
                 el.style.setProperty("--hp-h2", `${Math.round(280 * s2 + 2 * LIFT)}px`);
             } else {
-                ["--hp-drop", "--hp-tx", "--hp-s2", "--hp-tx2", "--hp-h2"].forEach((p) => el.style.removeProperty(p));
+                ["--hp-drop", "--hp-tx", "--hp-ty", "--hp-h1", "--hp-s2", "--hp-tx2", "--hp-h2"].forEach((p) => el.style.removeProperty(p));
             }
             el.style.setProperty("--hp-s", String(s));
         };
