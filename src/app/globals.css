@@ -11308,7 +11308,9 @@ html.fvl-loading body {
   max-width: none;
   height: 100%;
   margin: 0 !important;
-  padding: 76px 22px 20px !important;
+  /* equal space above the card and below the journey slip: the card box has a 12px lift margin on top,
+     and the slip (with the paper behind it) reaches just past the text box */
+  padding: 72px 22px 84px !important;
   box-sizing: border-box;
 }
 .hero-m .hero-grid .hero-pass {
@@ -11390,7 +11392,10 @@ html.fvl-loading body {
   margin: 0 !important;
 }
 .hero-m .hero-journey {
+  display: block;
+  width: fit-content;
   margin-top: 1.25rem;
+  margin-bottom: 5px; /* the paper behind the slip peeks 5px lower */
 }
 @media (prefers-reduced-motion: reduce) {
   .hero-m .hero-grid .hero-pass,
