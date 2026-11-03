@@ -11362,13 +11362,30 @@ html.fvl-loading body {
 }
 /* the card opens on its own (no neighbours to nudge) */
 .hero-m .is-revealed .hero-pass-move > .pass { translate: 0 0 !important; }
-/* phones: the objects packed in close round the card so the scene can be drawn bigger
-   (bounds -30…598 × -48…476, kept in step with PHONE_SCENE in Hero.tsx) */
+/* phones: the objects sit in two rows under the card, a little bigger —
+   [card] / [AirPods · laptop] / [books · résumé]
+   (bounds kept in step with PHONE_SCENE in Hero.tsx) */
 .hero-m .hero-pass-move > .hero-gh { left: -21px; }
-.hero-m .hero-pass-move > .hero-earbuds { left: -13px; bottom: -133px; }
-.hero-m .hero-pass-move > .hero-laptop { left: 113px; bottom: -174px; }
-.hero-m .hero-pass-move > .hero-books { left: 306px; bottom: -180px; }
-.hero-m .hero-pass-move > .hero-dossier { right: -17px; bottom: -190px; }
+.hero-m .hero-pass-move > .hero-earbuds,
+.hero-m .hero-pass-move > .hero-laptop,
+.hero-m .hero-pass-move > .hero-books,
+.hero-m .hero-pass-move > .hero-dossier {
+  right: auto;
+  bottom: auto;
+  scale: 1.25;
+}
+.hero-m .hero-pass-move > .hero-earbuds { left: 41px; top: 343px; }
+.hero-m .hero-pass-move > .hero-laptop { left: 310px; top: 330px; }
+.hero-m .hero-pass-move > .hero-books { left: 41px; top: 635px; }
+.hero-m .hero-pass-move > .hero-dossier { left: 365px; top: 619px; }
+/* no neighbour nudging in the stacked layout (the reveal's slide-off still wins with its !important) */
+.hero-m .hero-pass-move > .pass,
+.hero-m .hero-pass-move > .hero-earbuds,
+.hero-m .hero-pass-move > .hero-laptop,
+.hero-m .hero-pass-move > .hero-books,
+.hero-m .hero-pass-move > .hero-dossier {
+  translate: 0 0 !important;
+}
 .hero-m .hero-content {
   order: 1;
   flex: none;
@@ -11489,9 +11506,9 @@ html.hero-m-top .social-floating-group .floating-btn {
   font-size: 0.95rem;
   white-space: nowrap;
 }
-/* phones: the Spotify ticket rises above the case onto the card instead of off the left edge */
+/* phones: the Spotify ticket slides out to the right of the case (over the laptop), not off the left edge */
 .hero-m .hero-earbuds .ap-ticket {
-  left: 34px;
-  bottom: 96%;
-  transform-origin: 15% 100%;
+  left: 92%;
+  bottom: 30%;
+  transform-origin: 0% 100%;
 }

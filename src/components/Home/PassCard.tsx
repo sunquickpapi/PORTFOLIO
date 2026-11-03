@@ -26,15 +26,22 @@ const STAMP_SLOTS = [
     { x: 128, y: 236 },
     { x: 252, y: 222 },
 ];
+// phones: the bigger "Who is he ?" button fills the top of the column, so stamps stay below it
+const STAMP_SLOTS_PHONE = [
+    { x: 66, y: 158 },
+    { x: 214, y: 150 },
+    { x: 120, y: 256 },
+    { x: 258, y: 250 },
+];
 type StampPos = { slot: number; x: number; y: number; rot: number; size: number; shown: boolean; tagBelow: boolean; tagAlign: "left" | "center" | "right" };
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 /** Slow fade, and how long a stamp stays on the card before drifting off to a new spot. */
 const STAMP_FADE_MS = 1800;
-function placeStamp(taken: number[]): StampPos {
-    const free = STAMP_SLOTS.map((_, i) => i).filter((i) => !taken.includes(i));
-    const slot = free[Math.floor(Math.random() * free.length)];
-    const x = STAMP_SLOTS[slot].x + rand(-8, 8);
-    const y = STAMP_SLOTS[slot].y + rand(-6, 6);
+function placeStamp(taken: number[], slots = STAMP_SLOTS): StampPos {
+    const free = slots.map((_, i) => i).filter((i) => !taken.includes(i));
+    const slot = free.length ? free[Math.floor(Math.random() * free.length)] : 0;
+    const x = slots[slot].x + rand(-8, 8);
+    const y = slots[slot].y + rand(-6, 6);
     return {
         slot,
         x,
@@ -115,6 +122,8 @@ export default function PassCard({
     // often swallows the first tap's click on things that change on hover; the click then
     // only acts if the thing was already picked before the tap.
     const armedRef = useRef<string | null>(null);
+    const twoTapRef = useRef(twoTap);
+    twoTapRef.current = twoTap;
     armedRef.current = armed;
     const wasRef = useRef<string | null>(null);
     const aboutRef = useRef<HTMLAnchorElement>(null);
@@ -163,7 +172,7 @@ export default function PassCard({
             });
         const place = (i: number) => {
             const taken = stampsRef.current.flatMap((st, j) => (j !== i && st ? [st.slot] : []));
-            update(i, () => placeStamp(taken));
+            update(i, () => placeStamp(taken, twoTapRef.current ? STAMP_SLOTS_PHONE : STAMP_SLOTS));
             later(() => show(i), 80); // let the hidden position land before fading in
         };
         const show = (i: number) => {
@@ -452,7 +461,7 @@ export default function PassCard({
                                             <a
                                                 ref={aboutRef}
                                                 href="#about"
-                                                className={`pf-about ${aboutHover || aboutActive ? "is-hover" : ""} ${cue ? "is-cue" : ""}`}
+                                                className={`pf-about ${aboutHover || aboutActive ? "is-hover" : ""} ${cue ? "is-cue" : ""} ${twoTap ? "is-big" : ""}`}
                                                 tabIndex={back ? -1 : 0}
                                                 onClick={(e) => {
                                                     e.preventDefault();
@@ -1169,6 +1178,23 @@ export default function PassCard({
                     opacity: 1;
                     background: rgba(27, 79, 114, 0.08);
                     transform: rotate(0deg) scale(1.04);
+                }
+                /* phones: a bigger, darker-inked stamp so it reads at the scaled-down size */
+                .pf-about.is-big {
+                    gap: 14px;
+                    padding: 18px 30px 18px 34px;
+                    font-size: 27px;
+                    letter-spacing: 4px;
+                    border-width: 4px;
+                    outline-width: 2px;
+                    outline-offset: -10px;
+                    border-radius: 12px;
+                    color: #0d2a42;
+                    opacity: 1;
+                    background: rgba(70, 193, 230, 0.18);
+                }
+                .pf-about.is-big.is-hover {
+                    background: rgba(70, 193, 230, 0.3);
                 }
                 /* phones: a slow ink pulse says "tap me first" */
                 .pf-about.is-cue {

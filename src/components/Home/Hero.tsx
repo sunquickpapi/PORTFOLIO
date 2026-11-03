@@ -24,8 +24,8 @@ const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], disp
  */
 const SPEED = { h1: 55, subtitle: 38, bio: 11 }; // ms per character
 const LINE_PAUSE = 260;
-// phones: the scene's bounds (pass card at 0,0 → 573×280) with the objects packed in close (globals.css .hero-m)
-const PHONE_SCENE = { x0: -30, x1: 598, y0: -48, y1: 476 };
+// phones: the scene's bounds (pass card at 0,0 → 573×280) with the objects in two rows below it (globals.css .hero-m)
+const PHONE_SCENE = { x0: -30, x1: 573, y0: -48, y1: 876 };
 const LIFT = 12; // phones: room above/below the opened pass card for its hover lift and shadow
 
 type Seg = { key: string; text: string; speed: number; gradient?: boolean };
