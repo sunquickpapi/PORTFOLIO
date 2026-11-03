@@ -119,6 +119,7 @@ export default function Books() {
                     -webkit-tap-highlight-color: transparent;
                 }
                 .bk:hover,
+                .bk[data-tap],
                 .bk:focus-visible {
                     transform: var(--out);
                     outline: none;
@@ -213,11 +214,13 @@ export default function Books() {
                     letter-spacing: 0.08em;
                 }
                 .bk:hover .bk-t-rest,
+                .bk[data-tap] .bk-t-rest,
                 .bk:focus-visible .bk-t-rest {
                     opacity: 0;
                     transform: translateY(-6px);
                 }
                 .bk:hover .bk-t-hover,
+                .bk[data-tap] .bk-t-hover,
                 .bk:focus-visible .bk-t-hover {
                     opacity: 1;
                     transform: none;

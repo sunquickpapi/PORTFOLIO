@@ -60,11 +60,20 @@ export default function PassCard({
     stats = {},
     route = {},
     onAbout,
+    twoTap = false,
+    cue = false,
+    aboutActive = false,
 }: {
     socials?: Socials;
     stats?: Stats;
     route?: Route;
     onAbout?: () => void;
+    /** phones: no hover, so the first tap shows the hover look and the second tap acts */
+    twoTap?: boolean;
+    /** draw the eye to the "Who is he ?" stamp */
+    cue?: boolean;
+    /** the intro it opens is showing */
+    aboutActive?: boolean;
 }) {
     const routeFrom = (route.from ?? "MLK").trim();
     const routeTo = (route.to ?? "KDH").trim();
@@ -100,6 +109,8 @@ export default function PassCard({
     const [openStat, setOpenStat] = useState<number | null>(null);
     const [hoverStat, setHoverStat] = useState(-1);
     const [aboutHover, setAboutHover] = useState(false);
+    // two-tap mode: what the first tap picked ("card", "s<stamp>" or "soc<icon>")
+    const [armed, setArmed] = useState<string | null>(null);
     const aboutRef = useRef<HTMLAnchorElement>(null);
     // Stat zoom: the clicked stamp grows into a panel over the whole front face
     const frontRef = useRef<HTMLDivElement>(null);
@@ -281,6 +292,7 @@ export default function PassCard({
 
     // Pointer is tracked on the stage, which never moves, so hover can't flicker
     const onMove = (e: React.PointerEvent) => {
+        if (twoTap && e.pointerType !== "mouse") return; // taps drive the hover look instead
         const hit = stickerAt(e.clientX, e.clientY);
         if (hit !== hoverStat) setHoverStat(hit);
         const overAbout = aboutAt(e.clientX, e.clientY);
@@ -296,13 +308,38 @@ export default function PassCard({
         target.current = { rx: (0.5 - py) * 16, ry: (px - 0.5) * 22, gx: px * 100, gy: py * 100 };
         kick();
     };
-    const onLeave = () => {
+    const onLeave = (e: React.PointerEvent) => {
+        if (twoTap && e.pointerType !== "mouse") return;
         setHoverStat(-1);
         setAboutHover(false);
         setCloseHover(false);
         setViewAllHover(false);
         target.current = { rx: 0, ry: 0, gx: 50, gy: 30 };
         kick();
+    };
+
+    useEffect(() => {
+        if (!armed) return;
+        const onDown = (e: PointerEvent) => {
+            if (stageRef.current && !stageRef.current.contains(e.target as Node)) {
+                setArmed(null);
+                setHoverStat(-1);
+            }
+        };
+        document.addEventListener("pointerdown", onDown, true);
+        return () => document.removeEventListener("pointerdown", onDown, true);
+    }, [armed]);
+    useEffect(() => {
+        if (!twoTap) setArmed(null);
+    }, [twoTap]);
+    // a stamp: first tap lifts it, the next one opens it
+    const tapStamp = (i: number) => {
+        if (twoTap && armed !== `s${i}`) {
+            setArmed(`s${i}`);
+            setHoverStat(i);
+            return;
+        }
+        openZoom(i);
     };
 
     // One flip at a time: a click mid-flip would desync the face swap from the rotation
@@ -321,7 +358,7 @@ export default function PassCard({
         <div className={`pass ${courier.className}`}>
             <div
                 ref={stageRef}
-                className="pass-stage"
+                className={`pass-stage ${armed ? "is-armed" : ""}`}
                 style={{ height: H * scale }}
                 role="button"
                 tabIndex={0}
@@ -344,7 +381,12 @@ export default function PassCard({
                     }
                     const hit = stickerAt(e.clientX, e.clientY);
                     if (hit >= 0) {
-                        openZoom(hit);
+                        tapStamp(hit);
+                        return;
+                    }
+                    if (twoTap && armed !== "card") {
+                        setArmed("card"); // first tap: the card lifts like on hover
+                        setHoverStat(-1);
                         return;
                     }
                     flip();
@@ -391,7 +433,7 @@ export default function PassCard({
                                             <a
                                                 ref={aboutRef}
                                                 href="#about"
-                                                className={`pf-about ${aboutHover ? "is-hover" : ""}`}
+                                                className={`pf-about ${aboutHover || aboutActive ? "is-hover" : ""} ${cue ? "is-cue" : ""}`}
                                                 tabIndex={back ? -1 : 0}
                                                 onClick={(e) => {
                                                     e.preventDefault();
@@ -433,7 +475,7 @@ export default function PassCard({
                                                             onClick={(e) => {
                                                                 e.stopPropagation(); // don't flip the card
                                                                 if (open) closeZoom();
-                                                                else openZoom(i);
+                                                                else tapStamp(i);
                                                             }}
                                                             onKeyDown={(e) => e.stopPropagation()}
                                                         >
@@ -452,13 +494,20 @@ export default function PassCard({
                                                     href={href}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="pf-social"
+                                                    className={`pf-social ${armed === `soc${i}` ? "is-tap" : ""}`}
                                                     style={{ transitionDelay: `${i * 70}ms` }}
                                                     aria-label={label}
                                                     title={label}
                                                     tabIndex={back ? -1 : 0}
                                                     // Open the link without flipping the card
-                                                    onClick={(e) => e.stopPropagation()}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (twoTap && armed !== `soc${i}`) {
+                                                            e.preventDefault(); // first tap: lift it, the next one opens it
+                                                            setArmed(`soc${i}`);
+                                                            setHoverStat(-1);
+                                                        }
+                                                    }}
                                                     onKeyDown={(e) => e.stopPropagation()}
                                                 >
                                                     <Icon size={18} strokeWidth={2.25} />
@@ -631,7 +680,8 @@ export default function PassCard({
                     transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
                     will-change: transform;
                 }
-                .pass-stage:hover .pass-lift {
+                .pass-stage:hover .pass-lift,
+                .pass-stage.is-armed .pass-lift {
                     transform: translateY(-10px) scale(1.04);
                 }
 
@@ -725,7 +775,8 @@ export default function PassCard({
                     opacity: 0;
                     transition: opacity 0.3s ease;
                 }
-                .pass-stage:hover .pass-glare {
+                .pass-stage:hover .pass-glare,
+                .pass-stage.is-armed .pass-glare {
                     opacity: 1;
                 }
 
@@ -738,7 +789,8 @@ export default function PassCard({
                     grid-template-columns: 290px 1fr 170px;
                     gap: 26px;
                 }
-                .pass-stage:hover .pass-front {
+                .pass-stage:hover .pass-front,
+                .pass-stage.is-armed .pass-front {
                     box-shadow: 0 60px 100px rgba(13, 42, 66, 0.4), 0 0 0 2px rgba(70, 193, 230, 0.55), inset 0 0 0 10px #dce4e8, inset 0 0 80px rgba(27, 79, 114, 0.12);
                 }
                 .pf-left {
@@ -1101,6 +1153,29 @@ export default function PassCard({
                     background: rgba(27, 79, 114, 0.08);
                     transform: rotate(0deg) scale(1.04);
                 }
+                /* phones: a slow ink pulse says "tap me first" */
+                .pf-about.is-cue {
+                    opacity: 1;
+                    color: #0d2a42;
+                    animation: pf-cue 1.9s ease-in-out infinite;
+                }
+                @keyframes pf-cue {
+                    0%,
+                    100% {
+                        transform: rotate(-2.5deg) scale(1);
+                        box-shadow: 0 0 0 0 rgba(70, 193, 230, 0.6);
+                    }
+                    55% {
+                        transform: rotate(-1deg) scale(1.08);
+                        box-shadow: 0 0 0 22px rgba(70, 193, 230, 0);
+                    }
+                }
+                @media (prefers-reduced-motion: reduce) {
+                    .pf-about.is-cue {
+                        animation: none;
+                        box-shadow: 0 0 0 4px rgba(70, 193, 230, 0.55);
+                    }
+                }
                 .pf-socials {
                     display: flex;
                     align-items: center;
@@ -1145,11 +1220,13 @@ export default function PassCard({
                         border-color 0.2s ease, box-shadow 0.25s ease;
                 }
                 /* Card hover: the icons slide up one after another */
-                .pass-stage:hover .pf-social {
+                .pass-stage:hover .pf-social,
+                .pass-stage.is-armed .pf-social {
                     transform: translateY(-6px);
                 }
                 /* Icon hover: lifts further and fills with cyan */
                 .pass-stage .pf-social:hover,
+                .pass-stage .pf-social.is-tap,
                 .pass-stage .pf-social:focus-visible {
                     transform: translateY(-12px);
                     transition-delay: 0ms !important;
@@ -1173,7 +1250,8 @@ export default function PassCard({
                     user-select: none;
                 }
                 /* Little life on hover: the standing sprite leans in */
-                .pass-stage:hover .pass-back {
+                .pass-stage:hover .pass-back,
+                .pass-stage.is-armed .pass-back {
                     box-shadow: 0 60px 100px rgba(0, 0, 0, 0.55), 0 0 0 2px rgba(70, 193, 230, 0.55), inset 0 0 0 10px #1b4f72;
                 }
 
@@ -1303,7 +1381,8 @@ export default function PassCard({
                         transition-delay: 0s !important;
                     }
                     .pass-lift,
-                    .pass-stage:hover .pass-lift {
+                    .pass-stage:hover .pass-lift,
+                    .pass-stage.is-armed .pass-lift {
                         transform: none;
                     }
                     .pass-flip {

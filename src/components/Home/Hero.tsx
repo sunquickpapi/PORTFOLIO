@@ -18,7 +18,9 @@ const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], disp
  * Desktop intro: the pass card starts centred and the text is hidden.
  * Pressing "About Me" on the card glides it to the right column, then the
  * intro types itself out line by line. Pressing it again reverses.
- * Tablets/phones (card stacked or hidden) and reduced-motion just show the text.
+ * Phones get the same intro on one screen: the scene sits centred, "Who is he ?" pulses,
+ * and pressing it lifts the scene up while the intro types out underneath.
+ * Tablets just show the text (reduced motion shows it at once).
  */
 const SPEED = { h1: 55, subtitle: 38, bio: 11 }; // ms per character
 const LINE_PAUSE = 260;
@@ -67,6 +69,8 @@ export default function Hero() {
     const [profile, setProfile] = useState<any>(null);
     const [revealed, setRevealed] = useState(false);
     const [intro, setIntro] = useState(true); // desktop intro layout
+    const [mobile, setMobile] = useState(false); // phone intro: one screen, two-tap objects
+    const mobileRef = useRef(false);
     const [reduced, setReduced] = useState(false);
     const [shift, setShift] = useState(0);
     const passRef = useRef<HTMLDivElement>(null);
@@ -101,16 +105,21 @@ export default function Hero() {
 
     useEffect(() => {
         const wide = window.matchMedia("(min-width: 1025px)");
+        const phone = window.matchMedia("(max-width: 767px)");
         const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
         const update = () => {
-            setIntro(wide.matches);
+            setIntro(wide.matches || phone.matches);
+            setMobile(phone.matches);
+            mobileRef.current = phone.matches;
             setReduced(motion.matches);
         };
         update();
         wide.addEventListener("change", update);
+        phone.addEventListener("change", update);
         motion.addEventListener("change", update);
         return () => {
             wide.removeEventListener("change", update);
+            phone.removeEventListener("change", update);
             motion.removeEventListener("change", update);
         };
     }, []);
@@ -124,13 +133,84 @@ export default function Hero() {
         const measure = () => {
             setShift(grid.clientWidth / 2 - (el.offsetLeft + el.offsetWidth / 2));
             // tablets/phones: the whole card-and-objects scene (≈830px wide) is scaled to fit this width
-            el.style.setProperty("--hp-s", String(Math.min(1, el.clientWidth / 830)));
+            let s = Math.min(1, el.clientWidth / 830);
+            const content = grid.querySelector<HTMLElement>(".hero-content");
+            if (mobileRef.current && content) {
+                // phones: scene + intro text share one screen, so the scene also shrinks to fit the height
+                const cs = getComputedStyle(grid);
+                const gap = parseFloat(cs.rowGap) || 0;
+                const room = grid.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - content.offsetHeight - gap;
+                s = Math.max(0.2, Math.min(s, room / 548));
+                // until the intro is opened the scene sits in the middle of the screen
+                el.style.setProperty("--hp-drop", `${Math.round((content.offsetHeight + gap) / 2)}px`);
+                el.style.setProperty("--hp-tx", `${(el.clientWidth / 2 - 286.5 * s).toFixed(1)}px`);
+            } else {
+                el.style.removeProperty("--hp-drop");
+                el.style.removeProperty("--hp-tx");
+            }
+            el.style.setProperty("--hp-s", String(s));
         };
         measure();
         const ro = new ResizeObserver(measure);
         ro.observe(grid);
+        const content = grid.querySelector(".hero-content");
+        if (content) ro.observe(content);
         return () => ro.disconnect();
-    }, [profile]);
+    }, [profile, mobile]);
+
+    // Phones: the pass card already carries the social icons, so the floating ones step aside
+    // while the hero fills the screen (they would sit on top of the intro text)
+    useEffect(() => {
+        const sec = passRef.current?.closest("section");
+        const root = document.documentElement;
+        if (!mobile || !sec) return;
+        const io = new IntersectionObserver(([en]) => root.classList.toggle("hero-m-top", en.intersectionRatio > 0.6), {
+            threshold: [0, 0.6, 1],
+        });
+        io.observe(sec);
+        return () => {
+            io.disconnect();
+            root.classList.remove("hero-m-top");
+        };
+    }, [mobile, profile]);
+
+    // Phones have no hover: the first tap on an object shows its hover look, the next tap opens it.
+    // (The pass card handles its own stamps and icons the same way.)
+    const tapRef = useRef<HTMLElement | null>(null);
+    useEffect(() => {
+        const root = passRef.current;
+        if (!mobile || !root) return;
+        const ITEMS = ".ghc, .ap-ticket, .ap-case, .laptop, .bk, .dossier";
+        const clear = () => {
+            const el = tapRef.current;
+            if (!el) return;
+            el.removeAttribute("data-tap");
+            el.closest(".hero-pass-move > *")?.removeAttribute("data-tapw");
+            tapRef.current = null;
+        };
+        const onClick = (e: MouseEvent) => {
+            const item = (e.target as Element | null)?.closest?.<HTMLElement>(ITEMS);
+            if (!item || !root.contains(item)) return;
+            if (tapRef.current === item) return; // already picked: let it do its thing
+            e.preventDefault();
+            e.stopPropagation();
+            clear();
+            item.setAttribute("data-tap", "");
+            item.closest(".hero-pass-move > *")?.setAttribute("data-tapw", "");
+            tapRef.current = item;
+        };
+        const onDown = (e: PointerEvent) => {
+            const el = tapRef.current;
+            if (el && !el.contains(e.target as Node)) clear();
+        };
+        root.addEventListener("click", onClick, true);
+        document.addEventListener("pointerdown", onDown, true);
+        return () => {
+            root.removeEventListener("click", onClick, true);
+            document.removeEventListener("pointerdown", onDown, true);
+            clear();
+        };
+    }, [mobile, profile]);
 
     const name = profile?.name?.split(" ")[profile.name.split(" ").length - 1] || "Naufal";
     const role = profile?.role || "Intelligent System Engineer";
@@ -184,7 +264,7 @@ export default function Hero() {
     }, [intro, router]);
 
     return (
-        <section id="home" className="hero hero-clean">
+        <section id="home" className={`hero hero-clean ${mobile ? "hero-m" : ""}`}>
             <div className="hero-bg" aria-hidden="true" />
             {!profile ? (
                 // the nav bar shows the loading progress; keep the hero's space meanwhile
@@ -228,6 +308,9 @@ export default function Hero() {
                             </div>
                             <PassCard
                                 onAbout={toggle}
+                                twoTap={mobile}
+                                cue={mobile && !revealed}
+                                aboutActive={mobile && revealed}
                                 socials={{ linkedin: profile.linkedin_url, github: profile.github_url, instagram: profile.instagram_url }}
                                 stats={{ projects: profile.projects_count, years: profile.experience_years, coffee: profile.coffee_consumed }}
                                 route={{ from: profile.route_from, to: profile.route_to }}
