@@ -111,6 +111,12 @@ export default function PassCard({
     const [aboutHover, setAboutHover] = useState(false);
     // two-tap mode: what the first tap picked ("card", "s<stamp>" or "soc<icon>")
     const [armed, setArmed] = useState<string | null>(null);
+    // What was picked before this tap began. Arming happens on pointerdown, because iOS Safari
+    // often swallows the first tap's click on things that change on hover; the click then
+    // only acts if the thing was already picked before the tap.
+    const armedRef = useRef<string | null>(null);
+    armedRef.current = armed;
+    const wasRef = useRef<string | null>(null);
     const aboutRef = useRef<HTMLAnchorElement>(null);
     // Stat zoom: the clicked stamp grows into a panel over the whole front face
     const frontRef = useRef<HTMLDivElement>(null);
@@ -334,12 +340,28 @@ export default function PassCard({
     }, [twoTap]);
     // a stamp: first tap lifts it, the next one opens it
     const tapStamp = (i: number) => {
-        if (twoTap && armed !== `s${i}`) {
-            setArmed(`s${i}`);
-            setHoverStat(i);
+        if (twoTap && wasRef.current !== `s${i}`) return; // first tap only lifts it (see onDown)
+        openZoom(i);
+    };
+    const onDown = (e: React.PointerEvent) => {
+        if (!twoTap) return;
+        wasRef.current = armedRef.current;
+        if (back && openStat === null) {
+            pick("card");
             return;
         }
-        openZoom(i);
+        if (openStat !== null || aboutAt(e.clientX, e.clientY)) return;
+        const social = (e.target as Element).closest?.("[data-social]");
+        if (social) return pick(`soc${social.getAttribute("data-social")}`);
+        const hit = stickerAt(e.clientX, e.clientY);
+        if (hit >= 0) return pick(`s${hit}`, hit);
+        pick("card");
+    };
+    const pick = (key: string, stat = -1) => {
+        if (armedRef.current === key) return;
+        armedRef.current = key;
+        setArmed(key);
+        setHoverStat(stat);
     };
 
     // One flip at a time: a click mid-flip would desync the face swap from the rotation
@@ -366,6 +388,7 @@ export default function PassCard({
                 aria-label={back ? "Pass card, back side. Press to flip to the front." : "Pass card, front side. Press to flip to the back."}
                 onPointerMove={onMove}
                 onPointerLeave={onLeave}
+                onPointerDownCapture={onDown}
                 onClick={(e) => {
                     // While a stat is zoomed in, only the ✕ does anything (no flipping underneath)
                     if (openStat !== null) {
@@ -384,11 +407,7 @@ export default function PassCard({
                         tapStamp(hit);
                         return;
                     }
-                    if (twoTap && armed !== "card") {
-                        setArmed("card"); // first tap: the card lifts like on hover
-                        setHoverStat(-1);
-                        return;
-                    }
+                    if (twoTap && wasRef.current !== "card") return; // first tap: the card only lifts
                     flip();
                 }}
                 onKeyDown={(e) => {
@@ -499,14 +518,12 @@ export default function PassCard({
                                                     aria-label={label}
                                                     title={label}
                                                     tabIndex={back ? -1 : 0}
+                                                    data-social={i}
                                                     // Open the link without flipping the card
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        if (twoTap && armed !== `soc${i}`) {
-                                                            e.preventDefault(); // first tap: lift it, the next one opens it
-                                                            setArmed(`soc${i}`);
-                                                            setHoverStat(-1);
-                                                        }
+                                                        // first tap: lift it, the next one opens it
+                                                        if (twoTap && wasRef.current !== `soc${i}`) e.preventDefault();
                                                     }}
                                                     onKeyDown={(e) => e.stopPropagation()}
                                                 >
