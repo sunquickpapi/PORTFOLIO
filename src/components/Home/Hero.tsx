@@ -25,7 +25,7 @@ const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], disp
 const SPEED = { h1: 55, subtitle: 38, bio: 11 }; // ms per character
 const LINE_PAUSE = 260;
 // phones: the scene's bounds (pass card at 0,0 → 573×280) with the objects packed in close (globals.css .hero-m)
-const PHONE_SCENE = { x0: -49, x1: 618, y0: -48, y1: 468 };
+const PHONE_SCENE = { x0: -30, x1: 598, y0: -48, y1: 476 };
 const LIFT = 12; // phones: room above/below the opened pass card for its hover lift and shadow
 
 type Seg = { key: string; text: string; speed: number; gradient?: boolean };
@@ -147,7 +147,7 @@ export default function Hero() {
                 // closed: the scene (objects packed tighter round the card on phones, see PHONE_SCENE)
                 // is as big as the screen allows, sitting in the middle; the text is hidden until opened
                 const P = PHONE_SCENE;
-                s = Math.max(0.2, Math.min(1, (el.clientWidth - 40) / (P.x1 - P.x0), inner / (P.y1 - P.y0)));
+                s = Math.max(0.2, Math.min(1, (el.clientWidth - 28) / (P.x1 - P.x0), inner / (P.y1 - P.y0)));
                 el.style.setProperty("--hp-drop", `${Math.round((content.offsetHeight + gap) / 2)}px`);
                 el.style.setProperty("--hp-tx", `${(el.clientWidth / 2 - ((P.x0 + P.x1) / 2) * s).toFixed(1)}px`);
                 el.style.setProperty("--hp-ty", `${(-P.y0 * s).toFixed(1)}px`);
