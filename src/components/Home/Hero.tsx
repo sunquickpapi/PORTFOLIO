@@ -25,7 +25,8 @@ const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], disp
 const SPEED = { h1: 55, subtitle: 38, bio: 11 }; // ms per character
 const LINE_PAUSE = 260;
 // phones: the scene's bounds (pass card at 0,0 → 573×280) with the objects in two rows below it (globals.css .hero-m)
-const PHONE_SCENE = { x0: -30, x1: 573, y0: -48, y1: 876 };
+const PHONE_SCENE = { x0: -30, x1: 573, y0: -48, y1: 762 };
+const CLOSED_GAP = 80; // phones, closed: least space above the card / below the books and résumé
 const LIFT = 12; // phones: room above/below the opened pass card for its hover lift and shadow
 
 type Seg = { key: string; text: string; speed: number; gradient?: boolean };
@@ -147,11 +148,18 @@ export default function Hero() {
                 // closed: the scene (objects packed tighter round the card on phones, see PHONE_SCENE)
                 // is as big as the screen allows, sitting in the middle; the text is hidden until opened
                 const P = PHONE_SCENE;
-                s = Math.max(0.2, Math.min(1, (el.clientWidth - 28) / (P.x1 - P.x0), inner / (P.y1 - P.y0)));
-                el.style.setProperty("--hp-drop", `${Math.round((content.offsetHeight + gap) / 2)}px`);
+                const H = grid.clientHeight;
+                // the card's top edge and the books/résumé's bottom edge sit the same distance
+                // from the top and bottom of the screen (at least CLOSED_GAP, clearing the menu button)
+                s = Math.max(0.2, Math.min(1, (el.clientWidth - 28) / (P.x1 - P.x0), (H - 2 * CLOSED_GAP) / P.y1));
+                const h1 = Math.round((P.y1 - P.y0) * s);
+                // where the flex column puts the scene box before it is shifted (centred, may overflow)
+                const boxTop = parseFloat(cs.paddingTop) + (inner - h1 - gap - content.offsetHeight) / 2;
+                const drop = (H - P.y1 * s) / 2 - boxTop - -P.y0 * s;
+                el.style.setProperty("--hp-drop", `${drop.toFixed(1)}px`);
                 el.style.setProperty("--hp-tx", `${(el.clientWidth / 2 - ((P.x0 + P.x1) / 2) * s).toFixed(1)}px`);
                 el.style.setProperty("--hp-ty", `${(-P.y0 * s).toFixed(1)}px`);
-                el.style.setProperty("--hp-h1", `${Math.round((P.y1 - P.y0) * s)}px`);
+                el.style.setProperty("--hp-h1", `${h1}px`);
                 // opened: the objects slide off the sides and only the pass card (573×280) stays,
                 // as wide as the text column and lifted to sit just above the intro
                 const cw = content.clientWidth;

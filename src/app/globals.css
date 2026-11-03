@@ -11362,7 +11362,7 @@ html.fvl-loading body {
 }
 /* the card opens on its own (no neighbours to nudge) */
 .hero-m .is-revealed .hero-pass-move > .pass { translate: 0 0 !important; }
-/* phones: the objects sit in two rows under the card, a little bigger —
+/* phones: the objects sit in two rows under the card, a little bigger and overlapping a touch —
    [card] / [AirPods · laptop] / [books · résumé]
    (bounds kept in step with PHONE_SCENE in Hero.tsx) */
 .hero-m .hero-pass-move > .hero-gh { left: -21px; }
@@ -11374,10 +11374,10 @@ html.fvl-loading body {
   bottom: auto;
   scale: 1.25;
 }
-.hero-m .hero-pass-move > .hero-earbuds { left: 41px; top: 343px; }
-.hero-m .hero-pass-move > .hero-laptop { left: 310px; top: 330px; }
-.hero-m .hero-pass-move > .hero-books { left: 41px; top: 635px; }
-.hero-m .hero-pass-move > .hero-dossier { left: 365px; top: 619px; }
+.hero-m .hero-pass-move > .hero-earbuds { left: 66px; top: 293px; z-index: 3; }
+.hero-m .hero-pass-move > .hero-laptop { left: 285px; top: 280px; z-index: 3; }
+.hero-m .hero-pass-move > .hero-books { left: 67px; top: 521px; z-index: 4; }
+.hero-m .hero-pass-move > .hero-dossier { left: 341px; top: 505px; z-index: 5; }
 /* no neighbour nudging in the stacked layout (the reveal's slide-off still wins with its !important) */
 .hero-m .hero-pass-move > .pass,
 .hero-m .hero-pass-move > .hero-earbuds,
