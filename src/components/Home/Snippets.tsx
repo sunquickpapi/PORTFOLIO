@@ -290,7 +290,8 @@ export default function Snippets() {
                             onClick={(e) => {
                                 // one-page notebook: tap the left third to go back, anywhere else to go on
                                 const r = e.currentTarget.getBoundingClientRect();
-                                flip(single && e.clientX - r.left < r.width / 3 ? -1 : 1);
+                                const tappedLeft = e.detail > 0 && e.clientX - r.left < r.width / 3; // keyboard "clicks" have no position
+                                flip(single && tappedLeft ? -1 : 1);
                             }}
                             title="Next page"
                         >
