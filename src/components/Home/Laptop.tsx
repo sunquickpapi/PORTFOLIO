@@ -88,7 +88,8 @@ export default function Laptop() {
                     perspective-origin: 50% 78%; /* eye level with the base, so it reads as a slim strip when open */
                     -webkit-tap-highlight-color: transparent;
                 }
-                .laptop:hover {
+                .laptop:hover,
+                .laptop[data-tap] {
                     opacity: 1; /* the site-wide link hover dims links */
                 }
                 .laptop > span,
@@ -126,6 +127,7 @@ export default function Laptop() {
                     transition: transform 0.6s var(--ease) 0s;
                 }
                 .laptop:hover .lp-obj,
+                .laptop[data-tap] .lp-obj,
                 .laptop:focus-visible .lp-obj {
                     /* move the hinge down so the open laptop stays centred, then tilt */
                     transform: translateY(${D - 18}px) rotateX(${TILT}deg);
@@ -188,6 +190,7 @@ export default function Laptop() {
                     transition: transform 0.55s var(--ease) 0.5s;
                 }
                 .laptop:hover .lp-lid,
+                .laptop[data-tap] .lp-lid,
                 .laptop:focus-visible .lp-lid {
                     transform: translateZ(3px) rotateX(${LID}deg);
                     transition: transform 0.6s var(--ease) 0s;
@@ -292,6 +295,7 @@ export default function Laptop() {
                     transition: transform 0.65s var(--ease) 0.2s, opacity 0.65s ease 0.2s;
                 }
                 .laptop:hover .lp-shadow,
+                .laptop[data-tap] .lp-shadow,
                 .laptop:focus-visible .lp-shadow {
                     transform: scaleX(0.9);
                     opacity: 0.85;
@@ -309,7 +313,9 @@ export default function Laptop() {
                     .lp-obj,
                     .lp-lid,
                     .laptop:hover .lp-obj,
-                    .laptop:hover .lp-lid {
+                    .laptop[data-tap] .lp-obj,
+                    .laptop:hover .lp-lid,
+                    .laptop[data-tap] .lp-lid {
                         transition-duration: 0.01ms;
                         transition-delay: 0s;
                     }

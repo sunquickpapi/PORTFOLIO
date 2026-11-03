@@ -474,6 +474,52 @@ export default function Contact() {
                         border-radius: 0 0 6px 6px;
                     }
                 }
+                /* phones: label above each value so nothing gets cut short; the two quick actions stack */
+                @media (max-width: 560px) {
+                    .pc-wrap {
+                        padding: 0 1rem;
+                    }
+                    .pc-card {
+                        padding: 10px;
+                    }
+                    .pc-left {
+                        padding: 26px 20px 24px;
+                    }
+                    .pc-right {
+                        padding: 24px 20px 22px;
+                    }
+                    .pc-lines li {
+                        grid-template-columns: minmax(0, 1fr);
+                        grid-template-rows: auto;
+                        row-gap: 4px;
+                        padding: 12px 44px 12px 0;
+                    }
+                    .pc-lines .pc-label {
+                        grid-row: auto;
+                    }
+                    .pc-value {
+                        white-space: normal;
+                        overflow-wrap: anywhere;
+                        font-size: 16px;
+                    }
+                    .pc-hint {
+                        grid-column: 1;
+                    }
+                    .pc-actions {
+                        flex-wrap: wrap;
+                    }
+                    .pc-actions :global(.file-link) {
+                        flex: 1 1 100%;
+                    }
+                    .pc-mark {
+                        right: 16px;
+                        width: 110px;
+                        height: 110px;
+                    }
+                    .pc-address {
+                        margin-top: 130px;
+                    }
+                }
                 @media (prefers-reduced-motion: reduce) {
                     .pc-dot {
                         animation: none;

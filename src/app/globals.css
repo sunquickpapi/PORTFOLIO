@@ -11228,3 +11228,232 @@ html.fvl-loading body {
   .hero-gh { animation: none; }
   .hero-pass-move .hero-gh > .ghc { transition: none; }
 }
+
+/* ── Tablets & phones: show the whole hero scene (pass card + telemetry + objects), scaled to fit ──
+   The scene is laid out at desktop size (≈811×532, from the earbuds at -119px to the dossier at
+   +692px, telemetry at -48px to the books at +484px) and shrunk by --hp-s, set from the width in Hero.tsx. */
+@media (max-width: 1024px) {
+  .hero-clean .hero-pass,
+  .hero-pass {
+    display: block;
+    position: relative;
+    width: 100%;
+    max-width: 830px;
+    height: calc(548px * var(--hp-s, 0.45));
+    margin: 2rem auto 0;
+  }
+  .hero-pass .hero-pass-move {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 573px;
+    transform-origin: 0 0;
+    transform: translate(calc(128px * var(--hp-s, 0.45)), calc(54px * var(--hp-s, 0.45))) scale(var(--hp-s, 0.45)) !important;
+    transition: none;
+  }
+  .hero-pass-move > .pass {
+    width: 573px;
+  }
+  .hero-gh,
+  .hero-laptop,
+  .hero-earbuds,
+  .hero-books,
+  .hero-dossier {
+    display: block;
+  }
+  /* desktop positions, not the tighter 1025–1280px ones */
+  .hero-dossier { right: -112px; }
+  .hero-earbuds { left: -112px; }
+  .hero-laptop { left: 14px; }
+  .hero-books { left: 336px; }
+  /* touch screens: the telemetry card stays tucked (a tap opens GitHub straight away) */
+  .hero-pass-move .hero-gh:hover > .ghc,
+  .hero-pass-move .hero-gh:focus-within > .ghc {
+    transform: rotate(-4deg);
+  }
+  .hero-pass-move .hero-gh:hover::before {
+    content: none;
+  }
+}
+/* phones: let the scene use the full screen width, not just the text column */
+@media (max-width: 640px) {
+  .hero-clean .hero-pass,
+  .hero-pass {
+    width: 100vw;
+    max-width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: 0;
+  }
+}
+
+
+/* ── Phones (≤767px, .hero-m set in Hero.tsx): the hero is one screen ──
+   The scene starts in the middle with "Who is he ?" pulsing; pressing it lifts the scene up
+   and the intro types out underneath. Objects take two taps: the first shows the hover look
+   (data-tap / data-tapw), the second opens them. Desktop never gets these classes. */
+.hero.hero-clean.hero-m {
+  min-height: 0 !important;
+  height: 100vh;
+  height: 100svh;
+  padding: 0 !important;
+  display: block;
+}
+.hero-m .hero-grid.has-pass {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  gap: 26px;
+  width: 100% !important;
+  max-width: none;
+  height: 100%;
+  margin: 0 !important;
+  /* equal space above the card and below the journey slip: the card box has a 12px lift margin on top,
+     and the slip (with the paper behind it) reaches just past the text box */
+  padding: 72px 22px 84px !important;
+  box-sizing: border-box;
+}
+.hero-m .hero-grid .hero-pass {
+  order: 0;
+  flex: none;
+  width: calc(100% + 44px) !important;
+  max-width: none !important;
+  margin: 0 -22px !important;
+  height: calc(548px * var(--hp-s, 0.45)) !important;
+  translate: 0 var(--hp-drop, 0px);
+  transition: translate 1.1s cubic-bezier(0.65, 0, 0.35, 1), height 1.1s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.hero-m .hero-pass .hero-pass-move {
+  transform: translate(var(--hp-tx, 0px), calc(54px * var(--hp-s, 0.45))) scale(var(--hp-s, 0.45)) !important;
+  transition: transform 1.1s cubic-bezier(0.65, 0, 0.35, 1) !important;
+}
+/* opened: only the pass card stays, grown to the text column's width and moved up above the intro */
+.hero-m .hero-grid.is-revealed .hero-pass {
+  translate: 0 0;
+  height: var(--hp-h2, 200px) !important;
+  transition-delay: 0.12s;
+}
+.hero-m .hero-grid.is-revealed .hero-pass .hero-pass-move {
+  transform: translate(var(--hp-tx2, 22px), 12px) scale(var(--hp-s2, 0.58)) !important;
+  transition-delay: 0.12s !important;
+}
+/* …while the objects slide off the sides: AirPods, laptop (and telemetry) left, books and file right */
+.hero-m .hero-pass-move > .hero-earbuds,
+.hero-m .hero-pass-move > .hero-laptop,
+.hero-m .hero-pass-move > .hero-books,
+.hero-m .hero-pass-move > .hero-dossier {
+  transition: translate 1.1s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.8s ease;
+}
+.hero-m .hero-pass-move .hero-gh > .ghc {
+  transition: transform 1.1s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.8s ease;
+}
+.hero-m .is-revealed .hero-pass-move > .hero-earbuds { translate: -980px 30px !important; }
+.hero-m .is-revealed .hero-pass-move > .hero-laptop { translate: -980px 60px !important; transition-delay: 0.06s; }
+.hero-m .is-revealed .hero-pass-move > .hero-books { translate: 980px 60px !important; transition-delay: 0.06s; }
+.hero-m .is-revealed .hero-pass-move > .hero-dossier { translate: 980px 30px !important; }
+.hero-m .is-revealed .hero-pass-move .hero-gh > .ghc { transform: translate(-1000px, -20px) rotate(-10deg) !important; }
+.hero-m .is-revealed .hero-pass-move > .hero-earbuds,
+.hero-m .is-revealed .hero-pass-move > .hero-laptop,
+.hero-m .is-revealed .hero-pass-move > .hero-books,
+.hero-m .is-revealed .hero-pass-move > .hero-dossier,
+.hero-m .is-revealed .hero-pass-move .hero-gh > .ghc {
+  opacity: 0 !important; /* beats the entry animations' fill */
+  pointer-events: none;
+}
+/* the card opens on its own (no neighbours to nudge) */
+.hero-m .is-revealed .hero-pass-move > .pass { translate: 0 0 !important; }
+.hero-m .hero-content {
+  order: 1;
+  flex: none;
+  opacity: 0;
+  transform: translateY(14px);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.hero-m .hero-grid.is-revealed .hero-content {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition: opacity 0.6s ease 0.45s, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.35s;
+}
+.hero-m .hero-content h1 {
+  font-size: clamp(1.85rem, 8.6vw, 2.5rem) !important;
+  line-height: 1.06 !important;
+  margin: 0 0 0.4rem !important;
+  letter-spacing: -0.04em !important;
+}
+.hero-m .hero-content .subtitle {
+  font-size: clamp(0.98rem, 4.3vw, 1.15rem) !important;
+  margin-bottom: 0.45rem !important;
+}
+.hero-m .hero-content .value-prop {
+  font-size: clamp(0.82rem, 3.6vw, 0.95rem) !important;
+  line-height: 1.45 !important;
+  margin: 0 !important;
+}
+.hero-m .hero-journey {
+  display: block;
+  width: fit-content;
+  margin-top: 1.25rem;
+  margin-bottom: 5px; /* the paper behind the slip peeks 5px lower */
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-m .hero-grid .hero-pass,
+  .hero-m .hero-content { transition: none !important; }
+}
+/* the picked object comes to the front */
+.hero-m .hero-pass-move > [data-tapw] { z-index: 6; }
+/* telemetry: lifts out over the pass card so it can be read */
+.hero-m .hero-pass-move .hero-gh[data-tapw] { z-index: 7; }
+.hero-m .hero-pass-move .hero-gh > .ghc[data-tap] {
+  transform: translate(126px, 40px) rotate(-1.5deg) scale(1.04);
+  transition: transform 0.65s cubic-bezier(0.34, 1.25, 0.5, 1);
+  box-shadow: 0 30px 60px -20px rgba(13, 42, 66, 0.55);
+}
+/* the neighbours make room, same as on hover */
+.hero-m .hero-pass-move:has(.pass-stage.is-armed) .hero-earbuds { translate: -16px 14px; }
+.hero-m .hero-pass-move:has(.pass-stage.is-armed) .hero-laptop { translate: 0 18px; }
+.hero-m .hero-pass-move:has(.pass-stage.is-armed) .hero-dossier { translate: 16px 14px; }
+.hero-m .hero-pass-move:has(.pass-stage.is-armed) .hero-books { translate: 4px 18px; }
+.hero-m .hero-pass-move:has(> .hero-earbuds[data-tapw]) > .pass { translate: 8px -8px; }
+.hero-m .hero-pass-move:has(> .hero-earbuds[data-tapw]) .hero-laptop { translate: 30px 6px; }
+.hero-m .hero-pass-move:has(> .hero-earbuds[data-tapw]) .hero-dossier { translate: 12px 0; }
+.hero-m .hero-pass-move:has(> .hero-earbuds[data-tapw]) .hero-books { translate: 14px 2px; }
+.hero-m .hero-pass-move:has(> .hero-laptop[data-tapw]) > .pass { translate: 0 -14px; }
+.hero-m .hero-pass-move:has(> .hero-laptop[data-tapw]) .hero-earbuds { translate: -30px 6px; }
+.hero-m .hero-pass-move:has(> .hero-laptop[data-tapw]) .hero-dossier { translate: 24px 6px; }
+.hero-m .hero-pass-move:has(> .hero-laptop[data-tapw]) .hero-books { translate: 28px 6px; }
+.hero-m .hero-pass-move:has(> .hero-dossier[data-tapw]) > .pass { translate: -10px -8px; }
+.hero-m .hero-pass-move:has(> .hero-dossier[data-tapw]) .hero-laptop { translate: -18px 6px; }
+.hero-m .hero-pass-move:has(> .hero-dossier[data-tapw]) .hero-earbuds { translate: -10px 4px; }
+.hero-m .hero-pass-move:has(> .hero-dossier[data-tapw]) .hero-books { translate: -26px 6px; }
+.hero-m .hero-pass-move:has(> .hero-books[data-tapw]) > .pass { translate: 0 -12px; }
+.hero-m .hero-pass-move:has(> .hero-books[data-tapw]) .hero-laptop { translate: -24px 6px; }
+.hero-m .hero-pass-move:has(> .hero-books[data-tapw]) .hero-earbuds { translate: -12px 4px; }
+.hero-m .hero-pass-move:has(> .hero-books[data-tapw]) .hero-dossier { translate: 28px 6px; }
+/* while the phone hero fills the screen, the floating social buttons step aside (the pass card has them) */
+.social-floating-group {
+  transition: opacity 0.35s ease, translate 0.35s ease;
+}
+html.hero-m-top .social-floating-group {
+  opacity: 0;
+  translate: 0 12px;
+}
+html.hero-m-top .social-floating-group .floating-btn {
+  pointer-events: none !important;
+}
+/* phones: a slimmer journey slip so the intro fits one screen */
+.hero-m .hj-slip {
+  padding-top: 0.6rem;
+  padding-bottom: 0.65rem;
+}
+.hero-m .hj-title {
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+/* phones: the Spotify ticket rises above the case onto the card instead of off the left edge */
+.hero-m .hero-earbuds .ap-ticket {
+  left: 34px;
+  bottom: 96%;
+  transform-origin: 15% 100%;
+}

@@ -116,7 +116,8 @@ export default function Dossier({ href, date }: { href: string; date?: string })
                     outline: none;
                 }
                 /* the site-wide link hover dims links; this one keeps its full ink */
-                .dossier:hover {
+                .dossier:hover,
+                .dossier[data-tap] {
                     opacity: 1;
                 }
                 .dossier:focus-visible .ds-cover-wrap {
@@ -327,27 +328,33 @@ export default function Dossier({ href, date }: { href: string; date?: string })
 
                 /* hover / focus: cover eases open, a sheet slides out */
                 .dossier:hover .ds-cover-wrap,
+                .dossier[data-tap] .ds-cover-wrap,
                 .dossier:focus-visible .ds-cover-wrap {
                     transform: rotateY(-16deg) translateX(-4px);
                 }
                 .dossier:hover .ds-cover::after,
+                .dossier[data-tap] .ds-cover::after,
                 .dossier:focus-visible .ds-cover::after {
                     transform: translateX(70%);
                 }
                 .dossier:hover .ds-page-1,
+                .dossier[data-tap] .ds-page-1,
                 .dossier:focus-visible .ds-page-1 {
                     transform: translateX(6px) rotate(1deg);
                 }
                 .dossier:hover .ds-page-2,
+                .dossier[data-tap] .ds-page-2,
                 .dossier:focus-visible .ds-page-2 {
                     transform: translateX(9px) rotate(2deg);
                 }
                 .dossier:hover .ds-sheet,
+                .dossier[data-tap] .ds-sheet,
                 .dossier:focus-visible .ds-sheet {
                     opacity: 1;
                     transform: translate(112px, -26px) rotate(5deg);
                 }
-                .dossier:hover .ds-shadow {
+                .dossier:hover .ds-shadow,
+                .dossier[data-tap] .ds-shadow {
                     transform: scaleX(1.12) translateX(10px);
                     opacity: 0.85;
                 }

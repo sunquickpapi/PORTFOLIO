@@ -76,7 +76,7 @@ function Paperclip() {
 }
 
 /** A page turn: mounted hidden first ("ready" false) until its prints are drawn, then it runs. */
-type Turn = { dir: 1 | -1; t0: number; ready: boolean } | null;
+type Turn = { dir: 1 | -1; t0: number; base: number; ready: boolean; settling?: boolean } | null;
 const FLIP_MS = 1100;
 const AUTO_MS = 5200;
 const BOOK_H = 470;
@@ -138,6 +138,8 @@ export default function Snippets() {
     const [spread, setSpread] = useState(0);
     const [turn, setTurn] = useState<Turn>(null);
     const [scale, setScale] = useState(1);
+    const [single, setSingle] = useState(false); // phones: one page at a time, spiral on the left
+    const singleRef = useRef(false);
     const wrapRef = useRef<HTMLDivElement>(null);
     const hoverRef = useRef(false);
 
@@ -157,17 +159,26 @@ export default function Snippets() {
             .catch(() => setLoading(false));
     }, []);
 
-    // fit the 760px-wide book to small screens
+    // fit the book to the screen: the open 760px spread, or on phones a single 390px page
     useEffect(() => {
         const el = wrapRef.current;
         if (!el) return;
-        const ro = new ResizeObserver(() => setScale(Math.min(1, (el.clientWidth - 8) / 760)));
+        const ro = new ResizeObserver(() => {
+            const w = el.clientWidth;
+            const one = w < 600;
+            if (singleRef.current !== one) {
+                singleRef.current = one;
+                setSingle(one);
+                setSpread(0); // spreads and single pages count differently
+            }
+            setScale(Math.min(1, (w - 8) / (one ? 404 : 760)));
+        });
         ro.observe(el);
         return () => ro.disconnect();
     }, [loading]);
 
     const n = snippets.length;
-    const spreads = Math.max(1, Math.ceil(n / 2));
+    const spreads = Math.max(1, single ? n : Math.ceil(n / 2));
     const at = (i: number) => (i >= 0 && i < n ? snippets[i] : undefined);
     const mod = (v: number) => ((v % spreads) + spreads) % spreads;
 
@@ -175,10 +186,10 @@ export default function Snippets() {
         (dir: 1 | -1) => {
             if (turn || spreads < 2) return;
             if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return setSpread((s) => mod(s + dir));
-            setTurn({ dir, t0: performance.now(), ready: false });
+            setTurn({ dir, t0: performance.now(), base: spread, ready: false });
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [turn, spreads]
+        [turn, spreads, spread]
     );
 
     // 1) the leaf mounts invisible; once its prints are decoded, start the turn on the next frame
@@ -195,17 +206,32 @@ export default function Snippets() {
         };
     }, [turn]);
 
-    // 2) when the turn has played, settle on the new spread
-    const turnDir = turn?.ready ? turn.dir : 0;
+    // 2) when the turn has played, move to the new spread but keep the landed leaf on top
+    const turnDir = turn?.ready && !turn.settling ? turn.dir : 0;
     useEffect(() => {
         if (!turnDir) return;
         const id = window.setTimeout(() => {
             setSpread((s) => mod(s + turnDir));
-            setTurn(null);
+            setTurn((t) => (t ? { ...t, settling: true } : t));
         }, FLIP_MS);
         return () => window.clearTimeout(id);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [turnDir]);
+
+    // 3) lift the leaf away only once the pages underneath have drawn their new prints
+    const bookRef = useRef<HTMLDivElement>(null);
+    const settling = !!turn?.settling;
+    useEffect(() => {
+        if (!settling) return;
+        let live = true;
+        const imgs = Array.from(bookRef.current?.querySelectorAll(".nb-side img") || []) as HTMLImageElement[];
+        const decoded = Promise.all(imgs.map((i) => (i.decode ? i.decode().catch(() => {}) : Promise.resolve())));
+        const cap = new Promise((r) => window.setTimeout(r, 250));
+        Promise.race([decoded, cap]).then(() => requestAnimationFrame(() => live && setTurn(null)));
+        return () => {
+            live = false;
+        };
+    }, [settling]);
 
     // turn a page every few seconds (not while the pointer rests on the book)
     useEffect(() => {
@@ -229,32 +255,46 @@ export default function Snippets() {
     const next = mod(spread + 1);
     const prev = mod(spread - 1);
     const L = (sp: number) => at(sp * 2);
-    const R = (sp: number) => at(sp * 2 + 1);
-    const blankR = (sp: number) => sp * 2 + 1 >= n; // odd count: last right page is the "end" page
+    const R = (sp: number) => (single ? at(sp) : at(sp * 2 + 1));
+    const blankR = (sp: number) => !single && sp * 2 + 1 >= n; // odd count: last right page is the "end" page
     // forward: the current right page turns over; its back is the next left page
     // back: the current left page turns back; its front is the previous right page
     // the pages under the leaf only change once the leaf is visible and covering them
-    const live = turn?.ready ? turn : null;
+    const live = turn?.ready && !turn.settling ? turn : null;
     const leftStatic = live?.dir === -1 ? prev : cur;
     const rightStatic = live?.dir === 1 ? next : cur;
-    const leafFront = turn?.dir === 1 ? cur : prev; // right-hand face
-    const leafBack = turn?.dir === 1 ? next : cur; // left-hand face
+    // the leaf's faces belong to the spread the turn started from (the book may already have moved on while it settles)
+    const base = turn ? turn.base : cur;
+    const leafFront = turn?.dir === 1 ? base : mod(base - 1); // right-hand face
+    const leafBack = turn?.dir === 1 ? mod(base + 1) : base; // left-hand face
 
     return (
         <section id="snippets" style={{ scrollMarginTop: 0 }}>
             <div className="snippets-main-container" ref={wrapRef}>
                 <div className="nb-fit" style={{ height: (BOOK_H + 12) * scale }}>
                     <div
-                        className="nb-book"
+                        className={`nb-book ${single ? "is-single" : ""}`}
+                        ref={bookRef}
                         style={{ transform: `translateX(-50%) scale(${scale})` }}
                         onPointerEnter={() => (hoverRef.current = true)}
                         onPointerLeave={() => (hoverRef.current = false)}
                     >
                         <div className="nb-cover" aria-hidden="true" />
-                        <div className="nb-side nb-left" onClick={() => flip(-1)} title="Previous page">
-                            <Page snippet={L(leftStatic)} side="left" />
-                        </div>
-                        <div className="nb-side nb-right" onClick={() => flip(1)} title="Next page">
+                        {!single && (
+                            <div className="nb-side nb-left" onClick={() => flip(-1)} title="Previous page">
+                                <Page snippet={L(leftStatic)} side="left" />
+                            </div>
+                        )}
+                        <div
+                            className="nb-side nb-right"
+                            onClick={(e) => {
+                                // one-page notebook: tap the left third to go back, anywhere else to go on
+                                const r = e.currentTarget.getBoundingClientRect();
+                                const tappedLeft = e.detail > 0 && e.clientX - r.left < r.width / 3; // keyboard "clicks" have no position
+                                flip(single && tappedLeft ? -1 : 1);
+                            }}
+                            title="Next page"
+                        >
                             <Page snippet={R(rightStatic)} side="right" blank={blankR(rightStatic)} />
                         </div>
 
@@ -266,7 +306,8 @@ export default function Snippets() {
                                     <span className="nb-shade" />
                                 </div>
                                 <div className="nb-face nb-face-back">
-                                    <Page snippet={L(leafBack)} side="left" />
+                                    {/* one-page notebook: the back of a turned page is blank paper */}
+                                    <Page snippet={single ? undefined : L(leafBack)} side="left" />
                                     <span className="nb-shade" />
                                 </div>
                             </div>
@@ -319,6 +360,41 @@ export default function Snippets() {
                     transform-origin: top center;
                     perspective: 2200px;
                 }
+                /* phones: a single page with the spiral down its left edge */
+                .nb-book.is-single {
+                    width: 390px;
+                }
+                .nb-book.is-single .nb-leaf {
+                    left: 20px;
+                }
+                .nb-book.is-single .nb-spiral {
+                    left: 10px;
+                }
+                /* the back of a page turned off the book fades away (forward) or in (back) */
+                .nb-book.is-single .nb-face-back {
+                    animation: nb-away ${FLIP_MS}ms linear both;
+                }
+                .nb-book.is-single .nb-leaf.is-back .nb-face-back {
+                    animation-name: nb-back-in;
+                }
+                @keyframes nb-away {
+                    0%,
+                    55% {
+                        opacity: 1;
+                    }
+                    100% {
+                        opacity: 0;
+                    }
+                }
+                @keyframes nb-back-in {
+                    0% {
+                        opacity: 0;
+                    }
+                    45%,
+                    100% {
+                        opacity: 1;
+                    }
+                }
                 /* hard cover peeking out around the pages, in the site's navy */
                 .nb-cover {
                     position: absolute;
@@ -355,7 +431,8 @@ export default function Snippets() {
                 }
                 /* waiting for its prints: hidden and not moving yet */
                 .nb-leaf.is-prep,
-                .nb-leaf.is-prep :global(.nb-shade) {
+                .nb-leaf.is-prep :global(.nb-shade),
+                .nb-book.is-single .nb-leaf.is-prep .nb-face-back {
                     animation: none;
                     opacity: 0;
                 }

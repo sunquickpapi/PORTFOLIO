@@ -168,7 +168,8 @@ export default function Earbuds() {
                     -webkit-tap-highlight-color: transparent;
                     transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
                 }
-                .ap-case:hover {
+                .ap-case:hover,
+                .ap-case[data-tap] {
                     transform: translateY(-4px) rotate(-2deg);
                 }
                 .ap-case:focus-visible {
@@ -198,7 +199,8 @@ export default function Earbuds() {
                     filter: blur(5px);
                     transition: transform 0.5s ease, opacity 0.5s ease;
                 }
-                .ap-case:hover .ap-shadow {
+                .ap-case:hover .ap-shadow,
+                .ap-case[data-tap] .ap-shadow {
                     transform: scale(0.94);
                     opacity: 0.8;
                 }
@@ -320,7 +322,8 @@ export default function Earbuds() {
                     transition: opacity 0.25s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
                     z-index: 4;
                 }
-                .ap-ticket:hover {
+                .ap-ticket:hover,
+                .ap-ticket[data-tap] {
                     opacity: 1;
                 }
                 .ap-ticket::before {
