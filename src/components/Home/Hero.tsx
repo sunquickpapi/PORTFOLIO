@@ -202,24 +202,37 @@ export default function Hero() {
             el.closest(".hero-pass-move > *")?.removeAttribute("data-tapw");
             tapRef.current = null;
         };
-        const onClick = (e: MouseEvent) => {
-            const item = (e.target as Element | null)?.closest?.<HTMLElement>(ITEMS);
-            if (!item || !root.contains(item)) return;
-            if (tapRef.current === item) return; // already picked: let it do its thing
-            e.preventDefault();
-            e.stopPropagation();
+        // Picked on pointerdown (iOS Safari may swallow the first tap's click); the click only
+        // goes through when the object had already been picked before this tap.
+        let was: HTMLElement | null = null;
+        const itemAt = (t: EventTarget | null) => {
+            const item = (t as Element | null)?.closest?.<HTMLElement>(ITEMS);
+            return item && root.contains(item) ? item : null;
+        };
+        const onPick = (e: PointerEvent) => {
+            const item = itemAt(e.target);
+            was = tapRef.current;
+            if (!item || item === tapRef.current) return;
             clear();
             item.setAttribute("data-tap", "");
             item.closest(".hero-pass-move > *")?.setAttribute("data-tapw", "");
             tapRef.current = item;
         };
+        const onClick = (e: MouseEvent) => {
+            const item = itemAt(e.target);
+            if (!item || was === item) return; // second tap: let it do its thing
+            e.preventDefault();
+            e.stopPropagation();
+        };
         const onDown = (e: PointerEvent) => {
             const el = tapRef.current;
             if (el && !el.contains(e.target as Node)) clear();
         };
+        root.addEventListener("pointerdown", onPick, true);
         root.addEventListener("click", onClick, true);
         document.addEventListener("pointerdown", onDown, true);
         return () => {
+            root.removeEventListener("pointerdown", onPick, true);
             root.removeEventListener("click", onClick, true);
             document.removeEventListener("pointerdown", onDown, true);
             clear();
