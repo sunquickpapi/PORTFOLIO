@@ -11319,12 +11319,12 @@ html.fvl-loading body {
   width: calc(100% + 44px) !important;
   max-width: none !important;
   margin: 0 -22px !important;
-  height: calc(548px * var(--hp-s, 0.45)) !important;
+  height: var(--hp-h1, 240px) !important;
   translate: 0 var(--hp-drop, 0px);
   transition: translate 1.1s cubic-bezier(0.65, 0, 0.35, 1), height 1.1s cubic-bezier(0.65, 0, 0.35, 1);
 }
 .hero-m .hero-pass .hero-pass-move {
-  transform: translate(var(--hp-tx, 0px), calc(54px * var(--hp-s, 0.45))) scale(var(--hp-s, 0.45)) !important;
+  transform: translate(var(--hp-tx, 0px), var(--hp-ty, 24px)) scale(var(--hp-s, 0.45)) !important;
   transition: transform 1.1s cubic-bezier(0.65, 0, 0.35, 1) !important;
 }
 /* opened: only the pass card stays, grown to the text column's width and moved up above the intro */
@@ -11362,19 +11362,31 @@ html.fvl-loading body {
 }
 /* the card opens on its own (no neighbours to nudge) */
 .hero-m .is-revealed .hero-pass-move > .pass { translate: 0 0 !important; }
+/* phones: the objects packed in close round the card so the scene can be drawn bigger
+   (bounds -49…618 × -48…468, kept in step with PHONE_SCENE in Hero.tsx) */
+.hero-m .hero-pass-move > .hero-earbuds { left: -33px; bottom: -133px; }
+.hero-m .hero-pass-move > .hero-laptop { left: 113px; bottom: -174px; }
+.hero-m .hero-pass-move > .hero-books { left: 306px; bottom: -180px; }
+.hero-m .hero-pass-move > .hero-dossier { right: -37px; bottom: -148px; }
 .hero-m .hero-content {
   order: 1;
   flex: none;
   opacity: 0;
+  visibility: hidden; /* fully gone once faded (Safari otherwise leaves the slip's shadow behind) */
   transform: translateY(14px);
   pointer-events: none;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0s linear 0.3s;
+}
+.hero-m .hero-grid:not(.is-typed) .hj-slip,
+.hero-m .hero-grid:not(.is-typed) .hj-page {
+  box-shadow: none;
 }
 .hero-m .hero-grid.is-revealed .hero-content {
   opacity: 1;
+  visibility: visible;
   transform: none;
   pointer-events: auto;
-  transition: opacity 0.6s ease 0.45s, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.35s;
+  transition: opacity 0.6s ease 0.45s, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.35s, visibility 0s linear 0s;
 }
 .hero-m .hero-content h1 {
   font-size: clamp(1.85rem, 8.6vw, 2.5rem) !important;
