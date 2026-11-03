@@ -173,70 +173,90 @@ export default function Navigation() {
                 {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
 
-            {/* Mobile Drawer Overlay */}
-            <div className={`mobile-menu-overlay ${isMenuOpen ? 'open' : ''}`} onClick={() => setIsMenuOpen(false)}>
-                <div className={`mobile-menu-drawer ${isMenuOpen ? 'open' : ''}`} onClick={(e) => e.stopPropagation()}>
-                    <div className="drawer-header">
-                        <span className="drawer-brand">Adhaghani</span>
+            {/* Mobile menu: a paper index card that slides up, everything on one sheet (no scrolling) */}
+            <div className={`mobile-menu-overlay ${isMenuOpen ? "open" : ""}`} onClick={() => setIsMenuOpen(false)}>
+                <div
+                    className={`mobile-menu-drawer mnav ${isMenuOpen ? "open" : ""}`}
+                    onClick={(e) => e.stopPropagation()}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Menu"
+                >
+                    <button type="button" className="mnav-grip" aria-label="Close menu" onClick={() => setIsMenuOpen(false)} />
+
+                    <div className="mnav-head">
+                        <span className="mnav-logo">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={profile?.logo_url || "/assets/NameLogo.png"} alt="FVL" />
+                        </span>
+                        <div className="mnav-id">
+                            <span className={`mnav-kicker ${courier.className}`}>FILE:: NAV</span>
+                            <span className="mnav-name">Naufal Nizam</span>
+                            <span className="mnav-role">{profile?.role || "Intelligent System Engineer"}</span>
+                        </div>
+                        {mounted && (
+                            <button
+                                type="button"
+                                className="mnav-theme"
+                                onClick={toggleTheme}
+                                aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                            >
+                                <span className="mnav-stamp">
+                                    {theme === "dark" ? <Sun size={17} strokeWidth={2.1} /> : <Moon size={17} strokeWidth={2.1} />}
+                                </span>
+                                <span className={`mnav-link-label ${courier.className}`}>{theme === "dark" ? "Light" : "Dark"}</span>
+                            </button>
+                        )}
                     </div>
 
-                    <div className="drawer-content">
-                        {/* Navigation Sections */}
-                        <div className="drawer-section">
-                            {navItems.map((item) => {
-                                const Icon = item.icon;
-                                return (
-                                    <a
-                                        key={item.id}
-                                        href={item.href || `#${item.id}`}
-                                        className={`drawer-link ${activeSection === item.id ? "active" : ""}`}
-                                        onClick={() => {
-                                            setActiveSection(item.id);
-                                            setIsMenuOpen(false);
-                                        }}
-                                    >
-                                        <div className="link-icon">
-                                            <Icon size={20} />
-                                        </div>
-                                        <span className="link-label">{item.label}</span>
-                                    </a>
-                                );
-                            })}
-                        </div>
-
-                        <div className="drawer-separator"></div>
-
-                        {/* Social & External */}
-                        <div className="drawer-section">
-                            <a href="https://github.com/sunquickpapi" target="_blank" className="drawer-link">
-                                <div className="link-icon"><Github size={20} /></div>
-                                <span className="link-label">GitHub</span>
-                            </a>
-                            <a href="https://www.linkedin.com/in/muhammad-naufal-bin-mohd-nizam-0603b2279" target="_blank" className="drawer-link">
-                                <div className="link-icon"><Linkedin size={20} /></div>
-                                <span className="link-label">LinkedIn</span>
-                            </a>
-                            <a href="#contact" className="drawer-link" onClick={() => setIsMenuOpen(false)}>
-                                <div className="link-icon"><Mail size={20} /></div>
-                                <span className="link-label">Send Email</span>
-                            </a>
-                            <a href="#" download className="drawer-link">
-                                <div className="link-icon"><FileText size={20} /></div>
-                                <span className="link-label">Resume</span>
-                            </a>
-                            {mounted && (
-                                <button
-                                    onClick={toggleTheme}
-                                    className="drawer-link w-full border-none bg-transparent"
+                    <nav className="mnav-grid" aria-label="Sections">
+                        {navItems.map((item, i) => {
+                            const Icon = item.icon;
+                            const active = activeSection === item.id;
+                            return (
+                                <a
+                                    key={item.id}
+                                    href={item.href || `#${item.id}`}
+                                    className={`mnav-tile ${active ? "is-active" : ""}`}
+                                    style={{ "--i": i } as React.CSSProperties}
+                                    aria-current={active ? "true" : undefined}
+                                    onClick={() => {
+                                        setActiveSection(item.id);
+                                        setIsMenuOpen(false);
+                                    }}
                                 >
-                                    <div className="link-icon">
-                                        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-                                    </div>
-                                    <span className="link-label">{theme === 'dark' ? "Light Mode" : "Dark Mode"}</span>
-                                </button>
-                            )}
-                        </div>
+                                    <span className={`mnav-no ${courier.className}`}>N°{String(i + 1).padStart(2, "0")}</span>
+                                    <span className="mnav-tile-row">
+                                        <Icon size={18} strokeWidth={2.1} />
+                                        <span className="mnav-label">{item.short || item.label}</span>
+                                    </span>
+                                </a>
+                            );
+                        })}
+                    </nav>
+
+                    <div className="mnav-rule" aria-hidden="true" />
+
+                    <div className="mnav-links">
+                        {hireLinks.map((link, i) => {
+                            const Icon = link.icon;
+                            return (
+                                <a
+                                    key={link.label}
+                                    href={link.href}
+                                    className="mnav-link"
+                                    style={{ "--i": i + 6 } as React.CSSProperties}
+                                    {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                                    {...(link.download ? { download: true } : {})}
+                                    onClick={() => setIsMenuOpen(false)}
+                                >
+                                    <span className="mnav-stamp"><Icon size={18} strokeWidth={2.1} /></span>
+                                    <span className={`mnav-link-label ${courier.className}`}>{link.label}</span>
+                                </a>
+                            );
+                        })}
                     </div>
+
                 </div>
             </div>
 
