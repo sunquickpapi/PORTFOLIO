@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Courier_Prime } from "next/font/google";
 import * as LucideIcons from "lucide-react";
@@ -39,6 +39,175 @@ const BANNER_TOP = [4, 5, 6, 7, 8];
 const BANNER_BOTTOM = [9, 10, 1, 2, 3];
 const GALLERY = [14, 11, 12, 13];
 
+/** Phones (≤640px) get a few touch-first versions of the sections below. */
+function usePhone() {
+    const [phone, setPhone] = useState(false);
+    useEffect(() => {
+        const mq = window.matchMedia("(max-width: 640px)");
+        const update = () => setPhone(mq.matches);
+        update();
+        mq.addEventListener("change", update);
+        return () => mq.removeEventListener("change", update);
+    }, []);
+    return phone;
+}
+
+/**
+ * Phones: the "Life in pictures" prints as a stack. A tap slides the top print out to the side,
+ * tucks it in at the back, and the others move up one place.
+ */
+function PhotoStack({ pics }: { pics: number[] }) {
+    const [order, setOrder] = useState(pics.map((_, k) => k));
+    const [out, setOut] = useState(-1);
+    const busy = useRef(false);
+    const tilt = [-2.5, 3, -4, 5];
+    const shuffle = () => {
+        if (busy.current) return;
+        busy.current = true;
+        const top = order[0];
+        setOut(top); // 1: the top print swings out to the right
+        window.setTimeout(() => {
+            setOrder((o) => [...o.slice(1), o[0]]); // 2: it drops to the back and slides in behind
+            setOut(-1);
+            window.setTimeout(() => (busy.current = false), 520);
+        }, 380);
+    };
+    return (
+        <button type="button" className="ab-stack" onClick={shuffle} aria-label="Show the next picture">
+            {pics.map((i, k) => {
+                const at = order.indexOf(k);
+                return (
+                    <span
+                        key={i}
+                        className={`ab-print ${out === k ? "is-out" : ""}`}
+                        style={{
+                            zIndex: out === k ? pics.length + 1 : pics.length - at,
+                            ["--at" as string]: at,
+                            ["--t" as string]: `${tilt[at % tilt.length]}deg`,
+                        }}
+                    >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={`/assets/ban${i}.jpg`} alt="" loading="lazy" draggable={false} />
+                    </span>
+                );
+            })}
+        </button>
+    );
+}
+
+/**
+ * Phones: coursework chips on one line, drifting left on a loop. It can be dragged (or flung)
+ * either way; on release it eases back into the slow drift.
+ */
+function CourseMarquee({ items }: { items: string[] }) {
+    const wrap = useRef<HTMLDivElement>(null);
+    const track = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        const w = wrap.current;
+        const t = track.current;
+        if (!w || !t) return;
+        const DRIFT = -28; // px per second, to the left
+        let x = 0;
+        let v = DRIFT;
+        let drag: { id: number; lastX: number; lastT: number } | null = null;
+        let last = performance.now();
+        let raf = 0;
+        // one loop = from the first chip to its copy (the track holds the list twice)
+        const half = () => {
+            const k = t.children;
+            const n = k.length / 2;
+            return n >= 1 ? (k[n] as HTMLElement).offsetLeft - (k[0] as HTMLElement).offsetLeft : 0;
+        };
+        const wrapX = () => {
+            const h = half();
+            if (h > 0) {
+                while (x <= -h) x += h;
+                while (x > 0) x -= h;
+            }
+        };
+        const frame = (now: number) => {
+            const dt = Math.min(0.05, (now - last) / 1000);
+            last = now;
+            if (!drag) {
+                v += (DRIFT - v) * Math.min(1, dt * 2.2); // a fling settles back into the drift
+                x += v * dt;
+            }
+            wrapX();
+            t.style.transform = `translate3d(${x.toFixed(2)}px, 0, 0)`;
+            raf = requestAnimationFrame(frame);
+        };
+        raf = requestAnimationFrame(frame);
+        const down = (e: PointerEvent) => {
+            drag = { id: e.pointerId, lastX: e.clientX, lastT: performance.now() };
+            v = 0;
+            w.setPointerCapture(e.pointerId);
+            w.classList.add("is-drag");
+        };
+        const move = (e: PointerEvent) => {
+            if (!drag || e.pointerId !== drag.id) return;
+            const now = performance.now();
+            const dx = e.clientX - drag.lastX;
+            x += dx;
+            const dt = Math.max(0.008, (now - drag.lastT) / 1000);
+            v = v * 0.6 + (dx / dt) * 0.4;
+            drag.lastX = e.clientX;
+            drag.lastT = now;
+        };
+        const up = (e: PointerEvent) => {
+            if (!drag || e.pointerId !== drag.id) return;
+            if (performance.now() - drag.lastT > 90) v = 0; // held still before letting go: no fling
+            v = Math.max(-1600, Math.min(1600, v));
+            drag = null;
+            w.classList.remove("is-drag");
+        };
+        w.addEventListener("pointerdown", down);
+        w.addEventListener("pointermove", move);
+        w.addEventListener("pointerup", up);
+        w.addEventListener("pointercancel", up);
+        return () => {
+            cancelAnimationFrame(raf);
+            w.removeEventListener("pointerdown", down);
+            w.removeEventListener("pointermove", move);
+            w.removeEventListener("pointerup", up);
+            w.removeEventListener("pointercancel", up);
+        };
+    }, [items]);
+    return (
+        <div className="ab-marquee" ref={wrap}>
+            <div className="ab-marquee-track" ref={track}>
+                {[0, 1].map((copy) =>
+                    items.map((c) => (
+                        <span className="ab-chip is-soft" key={`${copy}-${c}`} aria-hidden={copy === 1 || undefined}>
+                            {c}
+                        </span>
+                    ))
+                )}
+            </div>
+        </div>
+    );
+}
+
+/** Phones: when an education card is taller than the screen, its header (logo, school, course, dates) stays pinned while you read it. */
+function useTallCards(ready: boolean, phone: boolean) {
+    useEffect(() => {
+        if (!ready) return;
+        const cards = Array.from(document.querySelectorAll<HTMLElement>("#education .ab-org"));
+        const check = () => cards.forEach((c) => c.classList.toggle("is-tall", phone && c.offsetHeight > window.innerHeight));
+        check();
+        const ro = new ResizeObserver(check);
+        cards.forEach((c) => ro.observe(c));
+        window.addEventListener("resize", check);
+        return () => {
+            ro.disconnect();
+            window.removeEventListener("resize", check);
+            cards.forEach((c) => c.classList.remove("is-tall"));
+        };
+    }, [ready, phone]);
+}
+
+/** Phones show "Gym" in place of gaming. */
+const PHONE_HOBBY = { name: "Gym", icon_name: "Dumbbell", description: "Lifting for discipline, strength and a clear head" };
+
 function Head({ no, title, sub }: { no: string; title: string; sub?: string }) {
     return (
         <header className="ab-head">
@@ -65,6 +234,23 @@ export default function AboutPage() {
     const [loaded, setLoaded] = useState(false);
     const [preview, setPreview] = useState<{ src: string; x: number; y: number } | null>(null);
     const [active, setActive] = useState("profile");
+    const phone = usePhone();
+    useTallCards(loaded, phone);
+    // phones: certificates are a swipe carousel; this tracks which card is in front
+    const [certAt, setCertAt] = useState(0);
+    const certsRef = useRef<HTMLDivElement>(null);
+    const onCertScroll = () => {
+        const el = certsRef.current;
+        const first = el?.firstElementChild as HTMLElement | null;
+        if (!el || !first) return;
+        const step = first.offsetWidth + parseFloat(getComputedStyle(el).columnGap || "0");
+        setCertAt(Math.max(0, Math.min(certifications.length - 1, Math.round(el.scrollLeft / step))));
+    };
+    const goCert = (i: number) => {
+        const el = certsRef.current;
+        const card = el?.children[i] as HTMLElement | undefined;
+        if (el && card) el.scrollTo({ left: card.offsetLeft - (el.clientWidth - card.offsetWidth) / 2, behavior: "smooth" });
+    };
 
     useEffect(() => {
         const get = (url: string) =>
@@ -237,7 +423,9 @@ export default function AboutPage() {
                                               { id: "g", name: "Gaming", icon_name: "Gamepad2", description: "Gaming for creativity and strategic thinking" },
                                               { id: "m", name: "Music", icon_name: "Music", description: "Music lover exploring various genres and artists" },
                                           ]
-                                    ).map((h: any) => (
+                                    )
+                                        .map((h: any) => (phone && /gam(e|ing)/i.test(h.name || "") ? { ...h, ...PHONE_HOBBY } : h))
+                                        .map((h: any) => (
                                         <li key={h.id}>
                                             <span className="ab-hob-ico">
                                                 <HobbyIcon name={h.icon_name} />
@@ -269,14 +457,21 @@ export default function AboutPage() {
                             </div>
                             <div className="ab-gallery">
                                 <span className={`ab-kicker ${courier.className}`}>LIFE IN PICTURES</span>
-                                <div className="ab-gallery-grid">
-                                    {GALLERY.map((i, k) => (
-                                        <span className="ab-print" key={i} style={{ ["--t" as string]: `${[-2.5, 2, 1.5, -2][k]}deg` }}>
-                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                            <img src={`/assets/ban${i}.jpg`} alt="" loading="lazy" draggable={false} />
-                                        </span>
-                                    ))}
-                                </div>
+                                {phone ? (
+                                    <>
+                                        <PhotoStack pics={GALLERY} />
+                                        <span className={`ab-stack-hint ${courier.className}`}>TAP TO SHUFFLE</span>
+                                    </>
+                                ) : (
+                                    <div className="ab-gallery-grid">
+                                        {GALLERY.map((i, k) => (
+                                            <span className="ab-print" key={i} style={{ ["--t" as string]: `${[-2.5, 2, 1.5, -2][k]}deg` }}>
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={`/assets/ban${i}.jpg`} alt="" loading="lazy" draggable={false} />
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -304,17 +499,26 @@ export default function AboutPage() {
                                         {edu.coursework && (
                                             <div className="ab-block">
                                                 <span className={`ab-kicker ab-rule ${courier.className}`}>RELATED COURSEWORK</span>
-                                                <div className="ab-chips">
-                                                    {edu.coursework
-                                                        .split(",")
-                                                        .map((c: string) => c.trim())
-                                                        .filter(Boolean)
-                                                        .map((c: string) => (
-                                                            <span className="ab-chip is-soft" key={c}>
-                                                                {c}
-                                                            </span>
-                                                        ))}
-                                                </div>
+                                                {phone ? (
+                                                    <CourseMarquee
+                                                        items={edu.coursework
+                                                            .split(",")
+                                                            .map((c: string) => c.trim())
+                                                            .filter(Boolean)}
+                                                    />
+                                                ) : (
+                                                    <div className="ab-chips">
+                                                        {edu.coursework
+                                                            .split(",")
+                                                            .map((c: string) => c.trim())
+                                                            .filter(Boolean)
+                                                            .map((c: string) => (
+                                                                <span className="ab-chip is-soft" key={c}>
+                                                                    {c}
+                                                                </span>
+                                                            ))}
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                         {Object.keys(groups).length > 0 && (
@@ -356,12 +560,12 @@ export default function AboutPage() {
                             <Head
                                 no="04 · CERTIFICATIONS"
                                 title="Professional Certifications"
-                                sub={`${certifications.length} certificates and awards. Hover one to see it.`}
+                                sub={`${certifications.length} certificates and awards. ${phone ? "Swipe through them." : "Hover one to see it."}`}
                             />
-                            <div className="ab-certs">
+                            <div className="ab-certs" ref={certsRef} onScroll={phone ? onCertScroll : undefined}>
                                 {certifications.map((c: any, i: number) => (
                                     <div
-                                        className="ab-cert"
+                                        className={`ab-cert ${phone && i === certAt ? "is-on" : ""}`}
                                         key={c.id}
                                         onMouseMove={(e) => c.image_url && setPreview({ src: c.image_url.trim(), x: e.clientX, y: e.clientY })}
                                         onMouseLeave={() => setPreview(null)}
@@ -381,6 +585,26 @@ export default function AboutPage() {
                                     </div>
                                 ))}
                             </div>
+                            {phone && (
+                                <div className="ab-cert-nav">
+                                    <div className="ab-dots" role="tablist" aria-label="Certificates">
+                                        {certifications.map((c: any, i: number) => (
+                                            <button
+                                                key={c.id}
+                                                type="button"
+                                                role="tab"
+                                                aria-selected={i === certAt}
+                                                aria-label={`Certificate ${i + 1}`}
+                                                className={i === certAt ? "is-on" : ""}
+                                                onClick={() => goCert(i)}
+                                            />
+                                        ))}
+                                    </div>
+                                    <span className={`ab-cert-count ${courier.className}`}>
+                                        {String(certAt + 1).padStart(2, "0")} / {String(certifications.length).padStart(2, "0")}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -836,6 +1060,101 @@ const STYLES = `
     .ab-nav { display: none; }
     .ab-sec { padding-top: 70px; }
     .ab-cta { padding: 40px 22px; }
+
+    /* certificates: one swipeable row with snap, dots and a counter */
+    .ab-certs {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        overscroll-behavior-x: contain;
+        margin: 0 -12px;
+        padding: 6px 52px 14px; /* lets the first and last card rest in the middle too */
+        scrollbar-width: none;
+        /* the neighbours peeking in at the sides fade out to white */
+        -webkit-mask: linear-gradient(90deg, transparent 0, rgba(0, 0, 0, 0.4) 22px, #000 54px, #000 calc(100% - 54px), rgba(0, 0, 0, 0.4) calc(100% - 22px), transparent 100%);
+        mask: linear-gradient(90deg, transparent 0, rgba(0, 0, 0, 0.4) 22px, #000 54px, #000 calc(100% - 54px), rgba(0, 0, 0, 0.4) calc(100% - 22px), transparent 100%);
+    }
+    .ab-certs::-webkit-scrollbar { display: none; }
+    .ab-cert {
+        flex: 0 0 calc(100vw - 104px);
+        scroll-snap-align: center;
+        scroll-snap-stop: always;
+        min-height: 190px;
+        transition: opacity 0.35s ease, filter 0.35s ease, transform 0.35s ease, box-shadow 0.35s ease;
+    }
+    .ab-cert:hover { transform: none; }
+    /* only the card in the middle can be tapped; the ones at the sides are dimmed and soft */
+    .ab-cert:not(.is-on) { opacity: 0.45; filter: blur(1.5px); transform: scale(0.96); pointer-events: none; }
+    .ab-cert-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; }
+    .ab-dots { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ab-dots button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 999px; background: rgba(27, 79, 114, 0.22); transition: width 0.3s ease, background 0.3s ease; }
+    .ab-dots button.is-on { width: 20px; background: var(--ink); }
+    .ab-cert-count { flex: none; font-size: 12px; font-weight: 700; letter-spacing: 0.18em; color: var(--muted); }
+
+    /* stamp photo centred over the text */
+    .ab-photo-wrap { justify-self: center; }
+    /* stats: [icon] [number] on one line, the label under them */
+    .ab-stat { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 10px; row-gap: 6px; }
+    .ab-stat strong { margin-top: 0; }
+    .ab-stat span { grid-column: 1 / -1; }
+
+    /* life in pictures: a tap-to-shuffle stack */
+    .ab-stack {
+        position: relative;
+        display: block;
+        width: 100%;
+        margin-top: 18px;
+        padding: 0;
+        border: 0;
+        background: none;
+        aspect-ratio: 4 / 3.7;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .ab-stack .ab-print {
+        position: absolute;
+        left: 7%;
+        top: 2%;
+        width: 86%;
+        aspect-ratio: 4 / 3.4;
+        transform: translate(calc(var(--at) * 7px), calc(var(--at) * 9px)) rotate(var(--t)) scale(calc(1 - var(--at) * 0.035));
+        transition: transform 0.52s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+        will-change: transform;
+    }
+    .ab-stack .ab-print:hover { transform: translate(calc(var(--at) * 7px), calc(var(--at) * 9px)) rotate(var(--t)) scale(calc(1 - var(--at) * 0.035)); }
+    .ab-stack .ab-print.is-out {
+        transform: translate(62%, -10px) rotate(14deg) scale(0.96);
+        transition: transform 0.38s cubic-bezier(0.4, 0, 0.6, 1);
+    }
+    .ab-stack-hint { display: block; margin-top: 8px; text-align: center; font-size: 10.5px; font-weight: 700; letter-spacing: 0.24em; color: var(--muted); }
+
+    /* coursework: one line drifting left, draggable */
+    .ab-marquee {
+        overflow: hidden;
+        margin: 0 -22px;
+        padding: 4px 0;
+        touch-action: pan-y;
+        cursor: grab;
+        -webkit-mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+        mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    }
+    .ab-marquee.is-drag { cursor: grabbing; }
+    .ab-marquee-track { display: flex; gap: 8px; width: max-content; padding-left: 22px; will-change: transform; user-select: none; -webkit-user-select: none; }
+    .ab-marquee-track .ab-chip { flex: none; white-space: nowrap; }
+    .ab-marquee-track .ab-chip:hover { transform: none; }
+
+    /* a tall education card keeps its header pinned under the top bar while you read it */
+    .ab-org.is-tall .ab-org-head {
+        position: sticky;
+        top: 88px;
+        z-index: 5;
+        margin: -26px -22px 0;
+        padding: 18px 22px 16px;
+        border-radius: 20px 20px 14px 14px;
+        background: linear-gradient(160deg, #fbfcfd 0%, #f4f7fa 100%);
+        box-shadow: 0 1px 0 rgba(13, 42, 66, 0.08), 0 14px 22px -18px rgba(13, 42, 66, 0.55);
+    }
 }
 @media (prefers-reduced-motion: reduce) {
     .ab-banner-track { animation: none; }
