@@ -236,6 +236,21 @@ export default function AboutPage() {
     const [active, setActive] = useState("profile");
     const phone = usePhone();
     useTallCards(loaded, phone);
+    // phones: certificates are a swipe carousel; this tracks which card is in front
+    const [certAt, setCertAt] = useState(0);
+    const certsRef = useRef<HTMLDivElement>(null);
+    const onCertScroll = () => {
+        const el = certsRef.current;
+        const first = el?.firstElementChild as HTMLElement | null;
+        if (!el || !first) return;
+        const step = first.offsetWidth + parseFloat(getComputedStyle(el).columnGap || "0");
+        setCertAt(Math.max(0, Math.min(certifications.length - 1, Math.round(el.scrollLeft / step))));
+    };
+    const goCert = (i: number) => {
+        const el = certsRef.current;
+        const card = el?.children[i] as HTMLElement | undefined;
+        if (el && card) el.scrollTo({ left: card.offsetLeft - el.offsetLeft - parseFloat(getComputedStyle(el).paddingLeft || "0"), behavior: "smooth" });
+    };
 
     useEffect(() => {
         const get = (url: string) =>
@@ -545,9 +560,9 @@ export default function AboutPage() {
                             <Head
                                 no="04 · CERTIFICATIONS"
                                 title="Professional Certifications"
-                                sub={`${certifications.length} certificates and awards. Hover one to see it.`}
+                                sub={`${certifications.length} certificates and awards. ${phone ? "Swipe through them." : "Hover one to see it."}`}
                             />
-                            <div className="ab-certs">
+                            <div className="ab-certs" ref={certsRef} onScroll={phone ? onCertScroll : undefined}>
                                 {certifications.map((c: any, i: number) => (
                                     <div
                                         className="ab-cert"
@@ -570,6 +585,26 @@ export default function AboutPage() {
                                     </div>
                                 ))}
                             </div>
+                            {phone && (
+                                <div className="ab-cert-nav">
+                                    <div className="ab-dots" role="tablist" aria-label="Certificates">
+                                        {certifications.map((c: any, i: number) => (
+                                            <button
+                                                key={c.id}
+                                                type="button"
+                                                role="tab"
+                                                aria-selected={i === certAt}
+                                                aria-label={`Certificate ${i + 1}`}
+                                                className={i === certAt ? "is-on" : ""}
+                                                onClick={() => goCert(i)}
+                                            />
+                                        ))}
+                                    </div>
+                                    <span className={`ab-cert-count ${courier.className}`}>
+                                        {String(certAt + 1).padStart(2, "0")} / {String(certifications.length).padStart(2, "0")}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -1025,6 +1060,27 @@ const STYLES = `
     .ab-nav { display: none; }
     .ab-sec { padding-top: 70px; }
     .ab-cta { padding: 40px 22px; }
+
+    /* certificates: one swipeable row with snap, dots and a counter */
+    .ab-certs {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        overscroll-behavior-x: contain;
+        margin: 0 -12px;
+        padding: 6px 12px 14px;
+        scroll-padding: 0 12px;
+        scrollbar-width: none;
+    }
+    .ab-certs::-webkit-scrollbar { display: none; }
+    .ab-cert { flex: 0 0 82%; scroll-snap-align: start; min-height: 190px; }
+    .ab-cert:hover { transform: none; }
+    .ab-cert-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; }
+    .ab-dots { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ab-dots button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 999px; background: rgba(27, 79, 114, 0.22); transition: width 0.3s ease, background 0.3s ease; }
+    .ab-dots button.is-on { width: 20px; background: var(--ink); }
+    .ab-cert-count { flex: none; font-size: 12px; font-weight: 700; letter-spacing: 0.18em; color: var(--muted); }
 
     /* stamp photo centred over the text */
     .ab-photo-wrap { justify-self: center; }
