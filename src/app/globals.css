@@ -11445,6 +11445,8 @@ html.fvl-loading body {
   display: block;
   width: fit-content;
   margin-top: 1.25rem;
+  margin-left: auto; /* centred in the column under the text */
+  margin-right: auto;
   margin-bottom: 5px; /* the paper behind the slip peeks 5px lower */
 }
 @media (prefers-reduced-motion: reduce) {
