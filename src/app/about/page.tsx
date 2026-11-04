@@ -249,7 +249,7 @@ export default function AboutPage() {
     const goCert = (i: number) => {
         const el = certsRef.current;
         const card = el?.children[i] as HTMLElement | undefined;
-        if (el && card) el.scrollTo({ left: card.offsetLeft - el.offsetLeft - parseFloat(getComputedStyle(el).paddingLeft || "0"), behavior: "smooth" });
+        if (el && card) el.scrollTo({ left: card.offsetLeft - (el.clientWidth - card.offsetWidth) / 2, behavior: "smooth" });
     };
 
     useEffect(() => {
@@ -565,7 +565,7 @@ export default function AboutPage() {
                             <div className="ab-certs" ref={certsRef} onScroll={phone ? onCertScroll : undefined}>
                                 {certifications.map((c: any, i: number) => (
                                     <div
-                                        className="ab-cert"
+                                        className={`ab-cert ${phone && i === certAt ? "is-on" : ""}`}
                                         key={c.id}
                                         onMouseMove={(e) => c.image_url && setPreview({ src: c.image_url.trim(), x: e.clientX, y: e.clientY })}
                                         onMouseLeave={() => setPreview(null)}
@@ -1069,13 +1069,23 @@ const STYLES = `
         scroll-snap-type: x mandatory;
         overscroll-behavior-x: contain;
         margin: 0 -12px;
-        padding: 6px 12px 14px;
-        scroll-padding: 0 12px;
+        padding: 6px 52px 14px; /* lets the first and last card rest in the middle too */
         scrollbar-width: none;
+        /* the neighbours peeking in at the sides fade out to white */
+        -webkit-mask: linear-gradient(90deg, transparent 0, rgba(0, 0, 0, 0.4) 22px, #000 54px, #000 calc(100% - 54px), rgba(0, 0, 0, 0.4) calc(100% - 22px), transparent 100%);
+        mask: linear-gradient(90deg, transparent 0, rgba(0, 0, 0, 0.4) 22px, #000 54px, #000 calc(100% - 54px), rgba(0, 0, 0, 0.4) calc(100% - 22px), transparent 100%);
     }
     .ab-certs::-webkit-scrollbar { display: none; }
-    .ab-cert { flex: 0 0 82%; scroll-snap-align: start; min-height: 190px; }
+    .ab-cert {
+        flex: 0 0 calc(100vw - 104px);
+        scroll-snap-align: center;
+        scroll-snap-stop: always;
+        min-height: 190px;
+        transition: opacity 0.35s ease, filter 0.35s ease, transform 0.35s ease, box-shadow 0.35s ease;
+    }
     .ab-cert:hover { transform: none; }
+    /* only the card in the middle can be tapped; the ones at the sides are dimmed and soft */
+    .ab-cert:not(.is-on) { opacity: 0.45; filter: blur(1.5px); transform: scale(0.96); pointer-events: none; }
     .ab-cert-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; }
     .ab-dots { display: flex; flex-wrap: wrap; gap: 6px; }
     .ab-dots button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 999px; background: rgba(27, 79, 114, 0.22); transition: width 0.3s ease, background 0.3s ease; }
