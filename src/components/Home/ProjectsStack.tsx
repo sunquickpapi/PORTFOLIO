@@ -394,6 +394,9 @@ export default function ProjectsStack() {
     // ----- layout -----
     const { w: W, h: H } = size;
     const narrow = W < 900;
+    // phones: one column (image / text / logo + tech) that slides sideways — the image one way,
+    // the logo the other — instead of the tilted vertical deck
+    const phone = W <= 768;
     const wrapD = (i: number) => {
         let d = (((i - pos) % n) + n) % n;
         if (d > n / 2) d -= n;
@@ -405,22 +408,25 @@ export default function ProjectsStack() {
     const colGap = 40;
     const leftSpan = W / 2 - textW / 2 - colGap;
     const rightStart = W / 2 + textW / 2 + colGap;
-    const imgW = narrow ? Math.min(W - 40, 440) : clamp(leftSpan - 170, 300, 540);
+    const imgW = phone ? Math.min(W - 64, 360) : narrow ? Math.min(W - 40, 440) : clamp(leftSpan - 170, 300, 540);
     const imgH = imgW * 0.6;
     const leftX = narrow ? W / 2 : leftSpan / 2;
     const rightX = narrow ? W / 2 : (rightStart + W) / 2;
     // mosaic grid: logo = 4×4 cells in the middle of an 8×8 grid, cells `cell` px with `gap` gutters
     const gap = narrow ? 8 : 10;
     const room = narrow ? 999 : (W - rightStart) / 2 - 20; // half the right column
-    const cell = narrow ? 30 : clamp(Math.min((210 - 3 * gap) / 4, (room - 3.5 * gap) / 4), 26, 45);
+    const cell = phone ? clamp((W - 40 - 7 * 8) / 8, 24, 30) : narrow ? 30 : clamp(Math.min((210 - 3 * gap) / 4, (room - 3.5 * gap) / 4), 26, 45);
     const tile = 4 * cell + 3 * gap;
     const midX = W / 2;
     const cy = H / 2;
-    const imgY = narrow ? 150 : cy;
-    const textY = narrow ? 150 + imgH / 2 + 90 : cy;
-    // phones: the logo sits just under the project's text (≈170px block), not pinned to the bottom
-    const tileY = narrow ? textY + 85 + 50 + tile / 2 : cy;
-    const stageH = narrow ? Math.round(tileY + tile / 2 + 70) : 640;
+    // phones: image, then the text block (≈190px), then the logo with its tech mosaic (which reaches
+    // `ringOuter` above and below the logo), each with a clear gap
+    const ringOuterP = 4 * cell + 3.5 * gap;
+    const imgY = phone ? 24 + imgH / 2 : narrow ? 150 : cy;
+    const textY = phone ? 24 + imgH + 30 + 95 : narrow ? 150 + imgH / 2 + 90 : cy;
+    // tablets: the logo sits just under the project's text (≈170px block), not pinned to the bottom
+    const tileY = phone ? textY + 95 + 18 + ringOuterP : narrow ? textY + 85 + 50 + tile / 2 : cy;
+    const stageH = phone ? Math.round(tileY + ringOuterP + 16) : narrow ? Math.round(tileY + tile / 2 + 70) : 640;
     // neighbours sit fully above / below the current one with a clear gap, tilted toward the screen edge
     const NI = 0.5; // neighbour image scale
     const NT = 0.62; // neighbour logo scale
@@ -458,6 +464,36 @@ export default function ProjectsStack() {
                     const d = wrapD(i);
                     if (Math.abs(d) > 1.9) return null;
                     const a = Math.abs(d);
+                    if (phone) {
+                        // phones: images slide sideways (next comes in from the right, current leaves left)
+                        if (a > 1.2) return null;
+                        return (
+                            <div
+                                key={`img-${p.id}`}
+                                className="pst-img"
+                                style={{
+                                    width: imgW,
+                                    height: imgH,
+                                    left: midX - imgW / 2,
+                                    top: imgY - imgH / 2,
+                                    opacity: clamp(1 - a * 1.25, 0, 1),
+                                    zIndex: 50 - Math.round(a * 10),
+                                    transform: `translateX(${(d * (W * 0.5 + imgW * 0.5 + 24)).toFixed(1)}px) scale(${(1 - a * 0.12).toFixed(3)})`,
+                                }}
+                            >
+                                <span className="pst-bub">
+                                    <span className="pst-clip">
+                                        {p.image_url ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={p.image_url} alt={a < 0.5 ? p.title : ""} draggable={false} />
+                                        ) : (
+                                            <span className="pst-noimg" />
+                                        )}
+                                    </span>
+                                </span>
+                            </div>
+                        );
+                    }
                     const x = tri(d, leftX - imgOffX, leftX, leftX - imgOffX);
                     const y = tri(d, imgY - imgOffY, imgY, imgY + imgOffY) + (a > 1 ? Math.sign(d) * (a - 1) * 120 : 0);
                     const rot = tri(d, -34, -1.5, 34);
@@ -498,11 +534,12 @@ export default function ProjectsStack() {
                     const d = wrapD(i);
                     if (Math.abs(d) > 1.9) return null;
                     const a = Math.abs(d);
-                    if (narrow && a > 0.6) return null;
-                    const x = tri(d, rightX + tileOffX, rightX, rightX + tileOffX);
-                    const y = tri(d, tileY - tileOffY, tileY, tileY + tileOffY) + (a > 1 ? Math.sign(d) * (a - 1) * 120 : 0);
-                    const rot = tri(d, 32, 0, -32); // straight in the middle so it lines up with the mosaic
-                    const sc = tri(d, NT, 1, NT) * (a > 1 ? 1 - (a - 1) * 0.5 : 1);
+                    if (phone ? a > 1.2 : narrow && a > 0.6) return null;
+                    // phones: logos slide the opposite way to the images (next comes in from the left)
+                    const x = phone ? midX - d * (W * 0.5 + tile * 0.5 + 24) : tri(d, rightX + tileOffX, rightX, rightX + tileOffX);
+                    const y = phone ? tileY : tri(d, tileY - tileOffY, tileY, tileY + tileOffY) + (a > 1 ? Math.sign(d) * (a - 1) * 120 : 0);
+                    const rot = phone ? 0 : tri(d, 32, 0, -32); // straight in the middle so it lines up with the mosaic
+                    const sc = phone ? 1 - a * 0.12 : tri(d, NT, 1, NT) * (a > 1 ? 1 - (a - 1) * 0.5 : 1);
                     const op = a > 1 ? clamp(1 - (a - 1) / 0.8, 0, 1) : 1;
                     return (
                         <div
@@ -513,7 +550,7 @@ export default function ProjectsStack() {
                                 height: tile,
                                 left: x - tile / 2,
                                 top: y - tile / 2,
-                                opacity: narrow ? clamp(1 - a * 1.8, 0, 1) : op,
+                                opacity: phone ? clamp(1 - a * 1.25, 0, 1) : narrow ? clamp(1 - a * 1.8, 0, 1) : op,
                                 zIndex: 40 - Math.round(a * 10),
                                 transform: `rotate(${rot}deg) scale(${sc})`,
                             }}
@@ -577,7 +614,7 @@ export default function ProjectsStack() {
                                 left: midX,
                                 top: textY,
                                 opacity: clamp(1 - a * 1.4, 0, 1),
-                                transform: `translate(-50%, -50%) translateY(${d * 46}px)`,
+                                transform: phone ? `translate(-50%, -50%)` : `translate(-50%, -50%) translateY(${d * 46}px)`,
                                 pointerEvents: a < 0.2 ? "auto" : "none",
                             }}
                             aria-hidden={a >= 0.2}

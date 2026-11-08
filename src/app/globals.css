@@ -11813,3 +11813,11 @@ html.hero-m-top .social-floating-group .floating-btn {
     }
   }
 }
+
+/* phones: no floating social / back-to-top buttons — they sat over content and caught stray taps */
+@media (max-width: 768px) {
+  .social-floating-group,
+  .floating-btn.back-to-top {
+    display: none !important;
+  }
+}
