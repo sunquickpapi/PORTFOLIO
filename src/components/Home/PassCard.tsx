@@ -454,7 +454,7 @@ export default function PassCard({
                                         <div className="pf-stamp-shadow">
                                             <div className="pf-stamp">
                                                 <div className="pf-stamp-inner">
-                                                    <div ref={photoRef} className={`pf-photo ${hoverPhoto ? "has-alt" : ""} ${photoHover ? "is-alt" : ""}`}>
+                                                    <div ref={photoRef} className={`pf-photo ${hoverPhoto ? "has-alt" : ""} ${photoHover || (twoTap && aboutActive && hoverPhoto) ? "is-alt" : ""}`}>
                                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                                         <img className="pf-photo-img" src="/assets/passcard/pass-photo.webp" alt="" draggable={false} />
                                                         {hoverPhoto && (
@@ -893,6 +893,7 @@ export default function PassCard({
                     user-select: none;
                     pointer-events: none;
                 }
+/* phones: the uploaded photo fades in while the "Who is he ?" intro is open */
                 .pf-photo.is-alt .pf-photo-alt {
                     opacity: 1;
                     transform: none;
