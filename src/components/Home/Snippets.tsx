@@ -166,12 +166,15 @@ export default function Snippets() {
         const ro = new ResizeObserver(() => {
             const w = el.clientWidth;
             const one = w < 600;
+            // phones: the book (and its cover) stays inside the container's side padding
+            const cs = getComputedStyle(el);
+            const inner = w - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
             if (singleRef.current !== one) {
                 singleRef.current = one;
                 setSingle(one);
                 setSpread(0); // spreads and single pages count differently
             }
-            setScale(Math.min(1, (w - 8) / (one ? 404 : 760)));
+            setScale(Math.min(1, one ? inner / 412 : (w - 8) / 760));
         });
         ro.observe(el);
         return () => ro.disconnect();
