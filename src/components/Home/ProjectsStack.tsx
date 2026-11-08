@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import FileLink from "./FileLink";
+import ProjectModal from "./ProjectModal";
+import PreviewModal from "./PreviewModal";
 import { Courier_Prime } from "next/font/google";
 import { FolderKanban } from "lucide-react";
 import type { Project } from "@/types/project";
@@ -199,6 +200,9 @@ export default function ProjectsStack() {
     }, []);
     // phones: measured heights of the current project's text block and the View All slip
     const [pm, setPm] = useState({ text: 136, file: 68 });
+    // "View project" opens the same file popup as the Projects page (and its Close Up viewer)
+    const [opened, setOpened] = useState<Project | null>(null);
+    const [preview, setPreview] = useState<Project | null>(null);
     const fileRef = useRef<HTMLDivElement>(null);
     const stageRef = useRef<HTMLDivElement>(null);
     useLayoutEffect(() => {
@@ -695,14 +699,17 @@ export default function ProjectsStack() {
                                     </span>
                                 )}
                             </span>
-                            <Link href={`/projects/${p.slug}`} className="pst-view" tabIndex={a < 0.2 ? 0 : -1}>
+                            <button type="button" className="pst-view" tabIndex={a < 0.2 ? 0 : -1} onClick={() => setOpened(p)}>
                                 View project
-                            </Link>
+                            </button>
                         </div>
                     );
                 })}
 
             </div>
+
+            {opened && <ProjectModal project={opened} isOpen={!!opened} onClose={() => setOpened(null)} onPreview={(p) => setPreview(p)} />}
+            {preview && <PreviewModal project={preview} isOpen={!!preview} onClose={() => setPreview(null)} />}
 
             <div className="file-link-row" ref={fileRef} style={{ marginTop: fileGap }}>
 
@@ -1002,6 +1009,9 @@ export default function ProjectsStack() {
                     font-weight: 700;
                     color: #0d2a42;
                     text-decoration: none;
+                    border: 0;
+                    font-family: inherit;
+                    cursor: pointer;
                     opacity: 1 !important;
                     transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
                 }
