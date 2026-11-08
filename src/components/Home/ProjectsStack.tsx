@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import FileLink from "./FileLink";
+import ProjectModal from "./ProjectModal";
+import PreviewModal from "./PreviewModal";
 import { Courier_Prime } from "next/font/google";
 import { FolderKanban } from "lucide-react";
 import type { Project } from "@/types/project";
@@ -178,6 +179,9 @@ const tri = (d: number, prev: number, mid: number, next: number) => (d < 0 ? ler
  * away while you drag. Neighbouring
  * projects wait at the corners: their images on the left, their logos on the right.
  */
+// phones: section padding (the top clears the menu button)
+const PHONE_PAD = { top: 72, bottom: 14 };
+
 export default function ProjectsStack() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [skills, setSkills] = useState<Skill[]>([]);
@@ -186,7 +190,28 @@ export default function ProjectsStack() {
     const [dragging, setDragging] = useState(false);
     const [settledIdx, setSettledIdx] = useState<number | null>(null);
     const [size, setSize] = useState({ w: 1200, h: 620 });
+    // phones fit the whole section (image, text, logo + tech, View All) into one screen
+    const [vh, setVh] = useState(800);
+    useEffect(() => {
+        const read = () => setVh(document.documentElement.clientHeight); // steady while browser bars slide
+        read();
+        window.addEventListener("resize", read);
+        return () => window.removeEventListener("resize", read);
+    }, []);
+    // phones: measured heights of the current project's text block and the View All slip
+    const [pm, setPm] = useState({ text: 136, file: 68 });
+    // "View project" opens the same file popup as the Projects page (and its Close Up viewer)
+    const [opened, setOpened] = useState<Project | null>(null);
+    const [preview, setPreview] = useState<Project | null>(null);
+    const fileRef = useRef<HTMLDivElement>(null);
     const stageRef = useRef<HTMLDivElement>(null);
+    useLayoutEffect(() => {
+        const t = stageRef.current?.querySelector<HTMLElement>('.pst-text[aria-hidden="false"]');
+        const f = fileRef.current?.firstElementChild as HTMLElement | null;
+        const text = t?.offsetHeight ?? pm.text;
+        const file = f?.offsetHeight ?? pm.file;
+        if (Math.abs(text - pm.text) > 1 || Math.abs(file - pm.file) > 1) setPm({ text, file });
+    });
     const posRef = useRef(0);
     const targetRef = useRef(0);
     const rafRef = useRef(0);
@@ -394,6 +419,9 @@ export default function ProjectsStack() {
     // ----- layout -----
     const { w: W, h: H } = size;
     const narrow = W < 900;
+    // phones: one column (image / text / logo + tech) that slides sideways — the image one way,
+    // the logo the other — instead of the tilted vertical deck
+    const phone = W <= 768;
     const wrapD = (i: number) => {
         let d = (((i - pos) % n) + n) % n;
         if (d > n / 2) d -= n;
@@ -405,22 +433,39 @@ export default function ProjectsStack() {
     const colGap = 40;
     const leftSpan = W / 2 - textW / 2 - colGap;
     const rightStart = W / 2 + textW / 2 + colGap;
-    const imgW = narrow ? Math.min(W - 40, 440) : clamp(leftSpan - 170, 300, 540);
+    // phones: one screen holds [image] [text ≈ TEXT_H] [logo + tech mosaic] and the View All slip.
+    // Start from width-based sizes and shrink the image and mosaic together until the column fits.
+    const TEXT_H = pm.text;
+    const P_GAP_MIN = 16;
+    const phoneStageRoom = vh - PHONE_PAD.top - PHONE_PAD.bottom - pm.file - P_GAP_MIN;
+    let pImgW = Math.min(W - 64, 340);
+    let pCell = clamp((W - 40 - 7 * 6) / 8, 15, 30);
+    const pNeed = () => 12 + pImgW * 0.6 + 2 * P_GAP_MIN + TEXT_H + 2 * (4 * pCell + 3.5 * 6);
+    // shrink the image and the mosaic together so neither ends up tiny on its own
+    while (phone && pNeed() > phoneStageRoom && (pCell > 15 || pImgW > 150)) {
+        if (pCell > 15) pCell -= 0.25;
+        if (pImgW > 150) pImgW -= 2;
+    }
+    const pGap = phone ? Math.max(P_GAP_MIN, (phoneStageRoom - pNeed()) / 2 / 2 + P_GAP_MIN) : 0; // spare room → wider gaps
+    const imgW = phone ? pImgW : narrow ? Math.min(W - 40, 440) : clamp(leftSpan - 170, 300, 540);
     const imgH = imgW * 0.6;
     const leftX = narrow ? W / 2 : leftSpan / 2;
     const rightX = narrow ? W / 2 : (rightStart + W) / 2;
     // mosaic grid: logo = 4×4 cells in the middle of an 8×8 grid, cells `cell` px with `gap` gutters
-    const gap = narrow ? 8 : 10;
+    const gap = phone ? 6 : narrow ? 8 : 10;
     const room = narrow ? 999 : (W - rightStart) / 2 - 20; // half the right column
-    const cell = narrow ? 30 : clamp(Math.min((210 - 3 * gap) / 4, (room - 3.5 * gap) / 4), 26, 45);
+    const cell = phone ? pCell : narrow ? 30 : clamp(Math.min((210 - 3 * gap) / 4, (room - 3.5 * gap) / 4), 26, 45);
     const tile = 4 * cell + 3 * gap;
     const midX = W / 2;
     const cy = H / 2;
-    const imgY = narrow ? 150 : cy;
-    const textY = narrow ? 150 + imgH / 2 + 90 : cy;
-    // phones: the logo sits just under the project's text (≈170px block), not pinned to the bottom
-    const tileY = narrow ? textY + 85 + 50 + tile / 2 : cy;
-    const stageH = narrow ? Math.round(tileY + tile / 2 + 70) : 640;
+    // phones: image, then the text block (≈190px), then the logo with its tech mosaic (which reaches
+    // `ringOuter` above and below the logo), each with a clear gap
+    const ringOuterP = 4 * cell + 3.5 * gap;
+    let imgY = phone ? 6 + imgH / 2 : narrow ? 150 : cy;
+    let textY = phone ? 6 + imgH + pGap + TEXT_H / 2 : narrow ? 150 + imgH / 2 + 90 : cy;
+    // tablets: the logo sits just under the project's text (≈170px block), not pinned to the bottom
+    let tileY = phone ? textY + TEXT_H / 2 + pGap + ringOuterP : narrow ? textY + 85 + 50 + tile / 2 : cy;
+    let stageH = phone ? Math.round(tileY + ringOuterP + 6) : narrow ? Math.round(tileY + tile / 2 + 70) : 640;
     // neighbours sit fully above / below the current one with a clear gap, tilted toward the screen edge
     const NI = 0.5; // neighbour image scale
     const NT = 0.62; // neighbour logo scale
@@ -436,15 +481,38 @@ export default function ProjectsStack() {
     const orbitIdx = lastSettled.current;
     const orbitOut = settledIdx === null || dragging || orbitIdx !== idx;
     const techs = (projects[orbitIdx]?.tech_stack || []).filter(Boolean);
+    // phones: the same space between image, text, logo + tech, and the View All slip. The mosaic's
+    // real reach above / below the logo depends on the project's tech, so measure it from its slots.
+    let fileGap = 36;
+    if (phone) {
+        const step = cell + gap;
+        let up = tile / 2;
+        let down = tile / 2;
+        for (const sl of mosaic(techs.length, hash(projects[orbitIdx]?.id || String(orbitIdx)))) {
+            const px = sl.size * cell + (sl.size - 1) * gap;
+            up = Math.max(up, -sl.cy * step + px / 2);
+            down = Math.max(down, sl.cy * step + px / 2);
+        }
+        const free = vh - PHONE_PAD.top - PHONE_PAD.bottom - pm.file - imgH - TEXT_H - up - down;
+        const G = Math.max(P_GAP_MIN, Math.floor(free / 3));
+        imgY = imgH / 2;
+        textY = imgH + G + TEXT_H / 2;
+        tileY = imgH + G + TEXT_H + G + up;
+        stageH = Math.round(tileY + down);
+        fileGap = G;
+    }
 
     return (
-        <section id="projects" className="pst-section" style={{ scrollMarginTop: 0, padding: "96px 0 40px", boxSizing: "border-box" }} aria-roledescription="carousel" aria-label="Projects and tech stack">
+        <section
+            id="projects"
+            className="pst-section"
+            style={{ scrollMarginTop: 0, padding: phone ? `${PHONE_PAD.top}px 0 ${PHONE_PAD.bottom}px` : "96px 0 40px", boxSizing: "border-box" }} aria-roledescription="carousel" aria-label="Projects and tech stack">
             {/* old #tech-stack links land here; inline so the old section's global styles can't size it */}
             <span id="tech-stack" aria-hidden="true" style={{ position: "absolute", top: 0, left: 0, width: 0, height: 0, padding: 0, margin: 0, overflow: "hidden" }} />
 
             <div
                 ref={stageRef}
-                className={`pst-stage ${dragging ? "is-dragging" : ""} ${narrow ? "is-narrow" : ""}`}
+                className={`pst-stage ${dragging ? "is-dragging" : ""} ${narrow ? "is-narrow" : ""} ${phone ? "is-phone" : ""}`}
                 data-no-ripple=""
                 tabIndex={0}
                 onPointerDown={onDown}
@@ -458,6 +526,36 @@ export default function ProjectsStack() {
                     const d = wrapD(i);
                     if (Math.abs(d) > 1.9) return null;
                     const a = Math.abs(d);
+                    if (phone) {
+                        // phones: images slide sideways (next comes in from the right, current leaves left)
+                        if (a > 1.2) return null;
+                        return (
+                            <div
+                                key={`img-${p.id}`}
+                                className="pst-img"
+                                style={{
+                                    width: imgW,
+                                    height: imgH,
+                                    left: midX - imgW / 2,
+                                    top: imgY - imgH / 2,
+                                    opacity: clamp(1 - a * 1.25, 0, 1),
+                                    zIndex: 50 - Math.round(a * 10),
+                                    transform: `translateX(${(d * (W * 0.5 + imgW * 0.5 + 24)).toFixed(1)}px) scale(${(1 - a * 0.12).toFixed(3)})`,
+                                }}
+                            >
+                                <span className="pst-bub">
+                                    <span className="pst-clip">
+                                        {p.image_url ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={p.image_url} alt={a < 0.5 ? p.title : ""} draggable={false} />
+                                        ) : (
+                                            <span className="pst-noimg" />
+                                        )}
+                                    </span>
+                                </span>
+                            </div>
+                        );
+                    }
                     const x = tri(d, leftX - imgOffX, leftX, leftX - imgOffX);
                     const y = tri(d, imgY - imgOffY, imgY, imgY + imgOffY) + (a > 1 ? Math.sign(d) * (a - 1) * 120 : 0);
                     const rot = tri(d, -34, -1.5, 34);
@@ -498,11 +596,12 @@ export default function ProjectsStack() {
                     const d = wrapD(i);
                     if (Math.abs(d) > 1.9) return null;
                     const a = Math.abs(d);
-                    if (narrow && a > 0.6) return null;
-                    const x = tri(d, rightX + tileOffX, rightX, rightX + tileOffX);
-                    const y = tri(d, tileY - tileOffY, tileY, tileY + tileOffY) + (a > 1 ? Math.sign(d) * (a - 1) * 120 : 0);
-                    const rot = tri(d, 32, 0, -32); // straight in the middle so it lines up with the mosaic
-                    const sc = tri(d, NT, 1, NT) * (a > 1 ? 1 - (a - 1) * 0.5 : 1);
+                    if (phone ? a > 1.2 : narrow && a > 0.6) return null;
+                    // phones: logos slide the opposite way to the images (next comes in from the left)
+                    const x = phone ? midX - d * (W * 0.5 + tile * 0.5 + 24) : tri(d, rightX + tileOffX, rightX, rightX + tileOffX);
+                    const y = phone ? tileY : tri(d, tileY - tileOffY, tileY, tileY + tileOffY) + (a > 1 ? Math.sign(d) * (a - 1) * 120 : 0);
+                    const rot = phone ? 0 : tri(d, 32, 0, -32); // straight in the middle so it lines up with the mosaic
+                    const sc = phone ? 1 - a * 0.12 : tri(d, NT, 1, NT) * (a > 1 ? 1 - (a - 1) * 0.5 : 1);
                     const op = a > 1 ? clamp(1 - (a - 1) / 0.8, 0, 1) : 1;
                     return (
                         <div
@@ -513,7 +612,7 @@ export default function ProjectsStack() {
                                 height: tile,
                                 left: x - tile / 2,
                                 top: y - tile / 2,
-                                opacity: narrow ? clamp(1 - a * 1.8, 0, 1) : op,
+                                opacity: phone ? clamp(1 - a * 1.25, 0, 1) : narrow ? clamp(1 - a * 1.8, 0, 1) : op,
                                 zIndex: 40 - Math.round(a * 10),
                                 transform: `rotate(${rot}deg) scale(${sc})`,
                             }}
@@ -577,7 +676,7 @@ export default function ProjectsStack() {
                                 left: midX,
                                 top: textY,
                                 opacity: clamp(1 - a * 1.4, 0, 1),
-                                transform: `translate(-50%, -50%) translateY(${d * 46}px)`,
+                                transform: phone ? `translate(-50%, -50%)` : `translate(-50%, -50%) translateY(${d * 46}px)`,
                                 pointerEvents: a < 0.2 ? "auto" : "none",
                             }}
                             aria-hidden={a >= 0.2}
@@ -600,16 +699,19 @@ export default function ProjectsStack() {
                                     </span>
                                 )}
                             </span>
-                            <Link href={`/projects/${p.slug}`} className="pst-view" tabIndex={a < 0.2 ? 0 : -1}>
+                            <button type="button" className="pst-view" tabIndex={a < 0.2 ? 0 : -1} onClick={() => setOpened(p)}>
                                 View project
-                            </Link>
+                            </button>
                         </div>
                     );
                 })}
 
             </div>
 
-            <div className="file-link-row" style={{ marginTop: 36 }}>
+            {opened && <ProjectModal project={opened} isOpen={!!opened} onClose={() => setOpened(null)} onPreview={(p) => setPreview(p)} />}
+            {preview && <PreviewModal project={preview} isOpen={!!preview} onClose={() => setPreview(null)} />}
+
+            <div className="file-link-row" ref={fileRef} style={{ marginTop: fileGap }}>
 
                 <FileLink href="/projects" no="03" title="View All Projects" />
 
@@ -907,8 +1009,25 @@ export default function ProjectsStack() {
                     font-weight: 700;
                     color: #0d2a42;
                     text-decoration: none;
+                    border: 0;
+                    font-family: inherit;
+                    cursor: pointer;
                     opacity: 1 !important;
                     transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+                }
+                .is-phone .pst-text {
+                    gap: 7px;
+                }
+                /* the logo eases to its new height when the next project's tech mosaic is a different size */
+                .is-phone .pst-tile,
+                .is-phone .pst-orbit {
+                    transition: top 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+                }
+                .is-phone .pst-title {
+                    font-size: 27px;
+                }
+                .is-phone .pst-text :global(.pst-view) {
+                    margin-top: 2px;
                 }
                 .pst-text :global(.pst-view:hover) {
                     background: #1b4f72;
