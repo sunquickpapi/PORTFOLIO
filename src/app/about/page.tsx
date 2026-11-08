@@ -356,10 +356,12 @@ export default function AboutPage() {
                         </div>
                         <div className="ab-photo-wrap" aria-hidden="true">
                             <div className="ab-photo">
-                                <div className="ab-photo-in">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src="/assets/passcard/pass-photo.webp" alt="" draggable={false} />
-                                    <span className={courier.className}>{(profile.name || "Naufal Nizam").toUpperCase()}</span>
+                                <div className="ab-photo-paper">
+                                    <div className="ab-photo-in">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src="/assets/passcard/pass-photo.webp" alt="" draggable={false} />
+                                        <span className={courier.className}>{(profile.name || "Naufal Nizam").toUpperCase()}</span>
+                                    </div>
                                 </div>
                             </div>
                             <span className={`ab-photo-tag ${courier.className}`}>{(profile.location || "MALAYSIA").toUpperCase()}</span>
@@ -858,14 +860,19 @@ const STYLES = `
 .ab-photo-wrap { position: relative; align-self: center; justify-self: center; }
 .ab-photo {
     width: 250px;
-    padding: 9px;
-    /* perforated stamp edge: holes only show in the 9px border band */
-    background: radial-gradient(circle, transparent 4px, #fff 4.6px) -7px -7px / 14px 14px;
     filter: drop-shadow(0 18px 22px rgba(13, 42, 66, 0.3));
     transform: rotate(2.5deg);
     transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .ab-photo:hover { transform: rotate(0deg) scale(1.02); }
+/* perforated stamp edge: a mask punches half-holes along all four edges. "round" fits a whole
+   number of holes to each side, so the right and bottom edges match the top and left */
+.ab-photo-paper {
+    padding: 9px;
+    background: #fff;
+    -webkit-mask: linear-gradient(#000, #000) content-box, radial-gradient(circle at 50% 50%, transparent 4px, #000 4.6px) -7px -7px / 14px 14px round border-box;
+    mask: linear-gradient(#000, #000) content-box, radial-gradient(circle at 50% 50%, transparent 4px, #000 4.6px) -7px -7px / 14px 14px round border-box;
+}
 .ab-photo-in { padding: 10px 10px 0; background: #fff; }
 .ab-photo img { display: block; width: 100%; aspect-ratio: 368 / 420; object-fit: cover; object-position: 50% 0; image-rendering: pixelated; background: #c9d4da; }
 .ab-photo span { display: block; padding: 12px 2px 16px; font-size: 13px; font-weight: 700; letter-spacing: 0.18em; color: var(--ink); }
