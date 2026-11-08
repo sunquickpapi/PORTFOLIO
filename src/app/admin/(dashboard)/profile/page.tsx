@@ -344,15 +344,25 @@ export default function ProfilePage() {
                                         <input
                                             name="hover_photo_url"
                                             readOnly={!isEditing}
-                                            placeholder="Shown over the pixel portrait when hovered (desktop)"
+                                            placeholder="Saved as soon as it uploads · shown when the stamp is hovered (desktop)"
                                             value={formData.hover_photo_url || ""}
                                             onChange={handleChange}
                                         />
                                         <FileUploadButton
                                             previewUrl={formData.hover_photo_url || ""}
-                                            onUploaded={([url]) => {
+                                            onUploaded={async ([url]) => {
                                                 setFormData((prev) => ({ ...prev, hover_photo_url: url }));
-                                                setIsEditing(true);
+                                                // saved straight away, so the homepage shows it without a separate Save
+                                                const res = await fetch("/api/profile", {
+                                                    method: "PUT",
+                                                    headers: { "Content-Type": "application/json" },
+                                                    body: JSON.stringify({ hover_photo_url: url }),
+                                                });
+                                                if (!res.ok) {
+                                                    const err = await res.json().catch(() => ({}));
+                                                    alert(`Photo uploaded but not saved: ${err.error || res.status}. Press Save Changes to try again.`);
+                                                    setIsEditing(true);
+                                                }
                                             }}
                                         />
                                     </div>
