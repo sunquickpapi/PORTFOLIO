@@ -264,9 +264,13 @@ export default function Snippets() {
     const leftStatic = live?.dir === -1 ? prev : cur;
     const rightStatic = live?.dir === 1 ? next : cur;
     // the leaf's faces belong to the spread the turn started from (the book may already have moved on while it settles)
+    // between turns the leaf stays mounted, almost transparent, already showing the next forward
+    // turn's pages, so iOS Safari has its layer and prints drawn before the page starts to move
+    // (creating them mid-turn made the page blink)
     const base = turn ? turn.base : cur;
-    const leafFront = turn?.dir === 1 ? base : mod(base - 1); // right-hand face
-    const leafBack = turn?.dir === 1 ? mod(base + 1) : base; // left-hand face
+    const leafDir = turn ? turn.dir : 1;
+    const leafFront = leafDir === 1 ? base : mod(base - 1); // right-hand face
+    const leafBack = leafDir === 1 ? mod(base + 1) : base; // left-hand face
 
     return (
         <section id="snippets" style={{ scrollMarginTop: 0 }}>
@@ -299,8 +303,12 @@ export default function Snippets() {
                         </div>
 
                         {/* the turning page */}
-                        {turn && (
-                            <div ref={leafRef} className={`nb-leaf ${turn.dir === 1 ? "is-fwd" : "is-back"} ${turn.ready ? "" : "is-prep"}`} aria-hidden="true">
+                        {spreads > 1 && (
+                            <div
+                                ref={leafRef}
+                                className={`nb-leaf ${leafDir === 1 ? "is-fwd" : "is-back"} ${!turn ? "is-idle" : turn.ready ? "" : "is-prep"}`}
+                                aria-hidden="true"
+                            >
                                 <div className="nb-face nb-face-front">
                                     <Page snippet={R(leafFront)} side="right" blank={blankR(leafFront)} />
                                     <span className="nb-shade" />
@@ -422,6 +430,8 @@ export default function Snippets() {
                 .nb-leaf {
                     left: 390px;
                     z-index: 5;
+                    pointer-events: none; /* it lies over the right page between turns */
+                    will-change: transform;
                     transform-style: preserve-3d;
                     transform-origin: -10px 50%;
                     animation: nb-turn ${FLIP_MS}ms cubic-bezier(0.45, 0.05, 0.25, 1) both;
@@ -429,12 +439,19 @@ export default function Snippets() {
                 .nb-leaf.is-back {
                     animation-name: nb-turn-back;
                 }
-                /* waiting for its prints: hidden and not moving yet */
+                /* between turns, or waiting for its prints: not moving and practically invisible.
+                   (not opacity 0 / hidden: Safari would then skip drawing it until the turn starts) */
+                .nb-leaf.is-idle,
                 .nb-leaf.is-prep,
+                .nb-leaf.is-idle :global(.nb-shade),
                 .nb-leaf.is-prep :global(.nb-shade),
+                .nb-book.is-single .nb-leaf.is-idle .nb-face-back,
                 .nb-book.is-single .nb-leaf.is-prep .nb-face-back {
                     animation: none;
-                    opacity: 0;
+                }
+                .nb-leaf.is-idle,
+                .nb-leaf.is-prep {
+                    opacity: 0.001;
                 }
                 @keyframes nb-turn {
                     0% {
@@ -457,9 +474,11 @@ export default function Snippets() {
                     inset: 0;
                     backface-visibility: hidden;
                     -webkit-backface-visibility: hidden;
+                    /* the two faces a hair apart, so Safari never draws one through the other */
+                    transform: translateZ(0.5px);
                 }
                 .nb-face-back {
-                    transform: rotateY(180deg);
+                    transform: rotateY(180deg) translateZ(0.5px);
                 }
                 /* light and shadow sweeping across the page as it turns */
                 .nb-shade {
