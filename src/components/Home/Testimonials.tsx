@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { X } from "lucide-react";
 import { Courier_Prime } from "next/font/google";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
@@ -112,7 +114,7 @@ function PixelFrame({ w, h, v }: { w: number; h: number; v: Variant }) {
     );
 }
 
-function Bubble({ t, i }: { t: Testimonial; i: number }) {
+function Bubble({ t, i, mini, onOpen, style }: { t: Testimonial; i: number; mini?: boolean; onOpen?: () => void; style?: React.CSSProperties }) {
     const v = VARIANTS[i % VARIANTS.length];
     const ref = useRef<HTMLDivElement>(null);
     const [size, setSize] = useState({ w: 0, h: 0 });
@@ -124,7 +126,7 @@ function Bubble({ t, i }: { t: Testimonial; i: number }) {
         return () => ro.disconnect();
     }, []);
     const m = v.margin;
-    const pad = 3; // cells of padding inside the frame
+    const pad = mini ? 2 : 3; // cells of padding inside the frame
     const initials = t.author
         .split(/\s+/)
         .filter(Boolean)
@@ -135,13 +137,23 @@ function Bubble({ t, i }: { t: Testimonial; i: number }) {
     return (
         <article
             ref={ref}
-            className={`tm-b tm-${v.name}`}
+            className={`tm-b tm-${v.name} ${mini ? "is-mini" : ""}`}
             style={
                 {
                     "--rot": `${[-1.6, 1.2, -0.6, 1.8, -1.2, 0.8][i % 6]}deg`,
                     "--dy": `${[0, 34, 12, 46, 6, 28][i % 6]}px`,
+                    ...style,
                 } as React.CSSProperties
             }
+            {...(onOpen
+                ? {
+                      role: "button",
+                      tabIndex: 0,
+                      "aria-label": `Open message from ${t.author}`,
+                      onClick: onOpen,
+                      onKeyDown: (e: React.KeyboardEvent) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onOpen()),
+                  }
+                : {})}
         >
             <div
                 className="tm-float"
@@ -177,6 +189,61 @@ function Bubble({ t, i }: { t: Testimonial; i: number }) {
 export default function Testimonials() {
     const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
     const [loading, setLoading] = useState(true);
+    // phones (≤640px): every message shrunk onto one screen, a little overlapped; tap one to open it
+    const [phone, setPhone] = useState(false);
+    const [open, setOpen] = useState<number | null>(null);
+    const [spots, setSpots] = useState<{ x: number; y: number }[]>([]);
+    const stageRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        const mq = window.matchMedia("(max-width: 640px)");
+        const update = () => setPhone(mq.matches);
+        update();
+        mq.addEventListener("change", update);
+        return () => mq.removeEventListener("change", update);
+    }, []);
+    // lay the minis out down the stage, alternating sides, sharing the height (overlapping when tight)
+    const layout = useCallback(() => {
+        const st = stageRef.current;
+        if (!st) return;
+        const kids = Array.from(st.children) as HTMLElement[];
+        if (!kids.length) return;
+        const W = st.clientWidth;
+        const H = st.clientHeight;
+        const hs = kids.map((k) => k.offsetHeight);
+        const ws = kids.map((k) => k.offsetWidth);
+        const n = kids.length;
+        const total = hs.reduce((a, b) => a + b, 0);
+        // spacing between tops: spread evenly; negative gap = overlap
+        const gap = n > 1 ? Math.min(18, (H - total) / (n - 1)) : 0;
+        const used = total + gap * (n - 1);
+        let y = Math.max(0, (H - used) / 2);
+        const out = kids.map((_, k) => {
+            const side = k % 2 === 0 ? 0 : 1;
+            const jitter = [6, 14, 2, 10, 4, 12][k % 6];
+            const x = side === 0 ? jitter : W - ws[k] - jitter;
+            const spot = { x, y };
+            y += hs[k] + gap;
+            return spot;
+        });
+        setSpots(out);
+    }, []);
+    useLayoutEffect(() => {
+        if (!phone) return;
+        layout();
+        const st = stageRef.current;
+        if (!st) return;
+        const ro = new ResizeObserver(() => layout());
+        ro.observe(st);
+        Array.from(st.children).forEach((c) => ro.observe(c));
+        return () => ro.disconnect();
+    }, [phone, layout, testimonials.length]);
+    // the popup: Esc closes it
+    useEffect(() => {
+        if (open === null) return;
+        const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(null);
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [open]);
 
     useEffect(() => {
         const fetchTestimonials = async () => {
@@ -213,15 +280,55 @@ export default function Testimonials() {
             id="testimonials"
             className="section-high-fidelity relative overflow-hidden"
             /* one full screen like Projects and Snippets: the bubbles sit in the middle, clear of the nav bar */
-            style={{ minHeight: "100svh", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 0 60px", scrollMarginTop: 0 }}
+            style={
+                phone
+                    ? { height: "100svh", boxSizing: "border-box", display: "flex", flexDirection: "column", padding: "76px 0 18px", scrollMarginTop: 0 }
+                    : { minHeight: "100svh", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 0 60px", scrollMarginTop: 0 }
+            }
         >
-            <div className="container relative z-10" style={{ maxWidth: "1300px" }}>
-                <div className="tm-wall">
-                    {testimonials.map((t, i) => (
-                        <Bubble key={t.id} t={t} i={i} />
-                    ))}
+            {phone ? (
+                <div className="container relative z-10 tm-phone">
+                    <div className="tm-wall tm-stage" ref={stageRef}>
+                        {testimonials.map((t, i) => (
+                            <Bubble
+                                key={t.id}
+                                t={t}
+                                i={i}
+                                mini
+                                onOpen={() => setOpen(i)}
+                                style={{
+                                    left: spots[i]?.x ?? 0,
+                                    top: spots[i]?.y ?? 0,
+                                    zIndex: i + 1,
+                                    visibility: spots[i] ? "visible" : "hidden",
+                                }}
+                            />
+                        ))}
+                    </div>
+                    <span className={`tm-hint ${courier.className}`}>TAP A MESSAGE TO OPEN IT</span>
                 </div>
-            </div>
+            ) : (
+                <div className="container relative z-10" style={{ maxWidth: "1300px" }}>
+                    <div className="tm-wall">
+                        {testimonials.map((t, i) => (
+                            <Bubble key={t.id} t={t} i={i} />
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {open !== null &&
+                createPortal(
+                    <div className="tm-pop" onClick={() => setOpen(null)} role="dialog" aria-modal="true" aria-label={`Message from ${testimonials[open].author}`}>
+                        <div className="tm-wall tm-pop-card" onClick={(e) => e.stopPropagation()}>
+                            <Bubble t={testimonials[open]} i={open} />
+                            <button type="button" className="tm-pop-x" aria-label="Close" onClick={() => setOpen(null)}>
+                                <X size={18} strokeWidth={2.4} />
+                            </button>
+                        </div>
+                    </div>,
+                    document.body
+                )}
 
             <style jsx>{`
                 .tm-wall {
@@ -350,6 +457,129 @@ export default function Testimonials() {
                     font-weight: 700;
                     letter-spacing: 0.06em;
                     text-transform: uppercase;
+                    color: #3a7ca5;
+                }
+                /* the popup opened from a mini */
+                .tm-pop {
+                    position: fixed;
+                    inset: 0;
+                    z-index: 4000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 24px 18px;
+                    background: rgba(8, 20, 32, 0.42);
+                    backdrop-filter: blur(6px);
+                    -webkit-backdrop-filter: blur(6px);
+                    animation: tm-pop-bg 0.3s ease both;
+                }
+                .tm-pop-card {
+                    position: relative;
+                    display: block;
+                    width: min(100%, 420px);
+                    padding: 0;
+                    animation: tm-pop-in 0.42s cubic-bezier(0.34, 1.4, 0.5, 1) both;
+                }
+                .tm-pop-card :global(.tm-b) {
+                    transform: none !important;
+                }
+                .tm-pop-x {
+                    position: absolute;
+                    top: -14px;
+                    right: -6px;
+                    z-index: 3;
+                    width: 40px;
+                    height: 40px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 50%;
+                    border: 2px solid #0d2a42;
+                    background: #fbfcfd;
+                    color: #0d2a42;
+                    box-shadow: 3px 3px 0 #a9cbe1;
+                }
+                @keyframes tm-pop-bg {
+                    from {
+                        opacity: 0;
+                    }
+                }
+                @keyframes tm-pop-in {
+                    from {
+                        opacity: 0;
+                        transform: translateY(18px) scale(0.86);
+                    }
+                }
+                /* phones: the stage fills what is left of the screen; minis are placed by layout() */
+                .tm-phone {
+                    flex: 1;
+                    min-height: 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+                .tm-stage {
+                    position: relative;
+                    display: block;
+                    flex: 1;
+                    min-height: 0;
+                    padding: 0;
+                }
+                .tm-stage :global(.tm-b) {
+                    position: absolute;
+                    width: 80%;
+                    cursor: pointer;
+                    transform: rotate(var(--rot));
+                    -webkit-tap-highlight-color: transparent;
+                }
+                .tm-stage :global(.tm-b:hover),
+                .tm-stage :global(.tm-b:active) {
+                    transform: rotate(0deg) scale(1.03);
+                }
+                :global(.tm-stage:has(.tm-b:hover) .tm-b:not(:hover)) {
+                    transform: rotate(var(--rot));
+                    filter: none;
+                    opacity: 1;
+                }
+                /* a mini shows the headline, the start of the message and who wrote it */
+                .tm-wall :global(.tm-b.is-mini .tm-content) {
+                    gap: 6px;
+                }
+                .tm-wall :global(.tm-b.is-mini .tm-k) {
+                    font-size: 9.5px;
+                }
+                .tm-wall :global(.tm-b.is-mini .tm-quote) {
+                    font-size: 15px;
+                }
+                .tm-wall :global(.tm-b.is-mini .tm-text) {
+                    font-size: 12.5px;
+                    line-height: 1.5;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                }
+                .tm-wall :global(.tm-b.is-mini .tm-author) {
+                    margin-top: 2px;
+                    padding-top: 8px;
+                }
+                .tm-wall :global(.tm-b.is-mini .tm-av) {
+                    width: 28px;
+                    height: 28px;
+                    font-size: 10.5px;
+                }
+                .tm-wall :global(.tm-b.is-mini .tm-name) {
+                    font-size: 12.5px;
+                }
+                .tm-wall :global(.tm-b.is-mini .tm-role) {
+                    font-size: 9.5px;
+                }
+                .tm-hint {
+                    flex: none;
+                    text-align: center;
+                    font-size: 10.5px;
+                    font-weight: 700;
+                    letter-spacing: 0.24em;
                     color: #3a7ca5;
                 }
                 @media (prefers-reduced-motion: reduce) {

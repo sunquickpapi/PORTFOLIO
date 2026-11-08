@@ -408,6 +408,22 @@ export default function Blog() {
                         grid-auto-rows: 120px;
                     }
                 }
+                /* phones: more posts two by two */
+                @media (max-width: 640px) {
+                    .bl-thumbs {
+                        grid-template-columns: 1fr 1fr;
+                        grid-auto-rows: auto;
+                        gap: 10px;
+                    }
+                    .bl-thumb {
+                        min-height: 0;
+                        padding: 4px;
+                    }
+                    .bl-frame .bl-thumb :global(.bl-cover) {
+                        aspect-ratio: 4 / 3;
+                        height: auto;
+                    }
+                }
                 @media (prefers-reduced-motion: reduce) {
                     .bl-lead {
                         animation: none;

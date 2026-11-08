@@ -567,6 +567,7 @@ const STYLES = `
 .bp-main { position: relative; z-index: 1; max-width: 1240px; margin: 0 auto; padding: 34px 20px 80px; }
 .bp-frame {
     position: relative;
+    display: flow-root; /* keeps the browser bar's top margin inside the frame, clear of the inner rule */
     border-radius: 20px;
     background: linear-gradient(160deg, #fbfcfd 0%, #f1f5f8 100%);
     box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.1), 0 40px 60px -36px rgba(13, 42, 66, 0.5);
@@ -836,7 +837,17 @@ const STYLES = `
 @media (max-width: 680px) {
     .bp-main { padding: 22px 10px 60px; }
     .bp-mast { padding: 26px 20px 0; }
-    .bp-tabs { margin: 22px -20px 0; padding: 0 20px; justify-content: flex-start; }
+    /* topic tags: kept inside the frame's inner rule, fading out softly at both ends
+       (the two lines stay solid: they're separate mask layers) */
+    .bp-tabs {
+        margin: 22px -8px 0;
+        padding: 0 26px;
+        justify-content: flex-start;
+        -webkit-mask: linear-gradient(#000, #000) top / 100% 2px no-repeat, linear-gradient(#000, #000) bottom / 100% 2px no-repeat,
+            linear-gradient(90deg, transparent 0, #000 30px, #000 calc(100% - 30px), transparent 100%);
+        mask: linear-gradient(#000, #000) top / 100% 2px no-repeat, linear-gradient(#000, #000) bottom / 100% 2px no-repeat,
+            linear-gradient(90deg, transparent 0, #000 30px, #000 calc(100% - 30px), transparent 100%);
+    }
     .bp-feed { padding: 24px 20px 30px; }
     .bp-grid { grid-template-columns: minmax(0, 1fr); }
     .bp-side { grid-template-columns: minmax(0, 1fr); padding: 26px 20px 34px; }

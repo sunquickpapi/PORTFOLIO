@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Courier_Prime } from "next/font/google";
-import { ArrowLeft, Check, Eye, Heart, Link2, Share2 } from "lucide-react";
+import { ArrowLeft, Check, Eye, Heart, Share2 } from "lucide-react";
 import PixelField from "@/components/Home/PixelField";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
@@ -309,15 +309,6 @@ export default function BlogDetail({ blog }: BlogDetailProps) {
                                         </ol>
                                     </nav>
                                 )}
-                                <div className="bd-rail-actions">
-                                    <button type="button" className={`bd-round ${liked ? "is-liked" : ""}`} onClick={toggleLike} aria-pressed={liked} aria-label="Like this post">
-                                        <Heart size={17} strokeWidth={2.4} fill={liked ? "currentColor" : "none"} />
-                                    </button>
-                                    <span className={`bd-round-n ${courier.className}`}>{likes}</span>
-                                    <button type="button" className="bd-round" onClick={copyLink} aria-label="Copy link">
-                                        {copied ? <Check size={17} strokeWidth={2.6} /> : <Link2 size={17} strokeWidth={2.4} />}
-                                    </button>
-                                </div>
                             </div>
                         </aside>
 
@@ -506,6 +497,7 @@ const STYLES = `
 .bd-main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 34px 20px 80px; }
 .bd-frame {
     position: relative;
+    display: flow-root; /* keeps the browser bar's top margin inside the frame, clear of the inner rule */
     border-radius: 20px;
     background: linear-gradient(160deg, #fbfcfd 0%, #f1f5f8 100%);
     box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.1), 0 40px 60px -36px rgba(13, 42, 66, 0.5);
@@ -582,7 +574,6 @@ const STYLES = `
 .bd-toc a:hover { color: var(--ink); }
 .bd-toc a.is-on { color: var(--ink); font-weight: 800; border-left-color: var(--ink); }
 .bd-toc a.is-on span { color: var(--sky); }
-.bd-rail-actions { display: flex; align-items: center; gap: 10px; }
 .bd-round {
     display: inline-grid;
     place-items: center;
@@ -707,8 +698,7 @@ const STYLES = `
 /* ---- smaller screens ---- */
 @media (max-width: 980px) {
     .bd-body { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 40px 30px 10px; }
-    .bd-rail { order: 2; }
-    .bd-rail-in { position: static; margin-top: 30px; }
+    .bd-rail { display: none; } /* only the contents list lived here, and it is hidden at this size */
     .bd-toc { display: none; }
     .bd-next { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .bd-all { grid-column: 1 / -1; grid-row: 2; justify-self: center; }
@@ -720,7 +710,10 @@ const STYLES = `
     .bd-body { padding: 30px 20px 10px; }
     .bd-p, .bd-list { font-size: 16.5px; }
     .bd-stats { padding-left: 0; border-left: 0; }
-    .bd-byline { border-radius: 18px; }
+    /* photo, name and date on one row; the stats sit under them */
+    .bd-byline { display: grid; grid-template-columns: auto minmax(0, 1fr); justify-items: start; column-gap: 12px; row-gap: 12px; border-radius: 18px; padding: 10px 14px 12px 10px; }
+    .bd-by span { font-size: 10px; letter-spacing: 0.08em; }
+    .bd-stats { grid-column: 1 / -1; justify-self: center; }
     .bd-chrome .bd-min { display: none; }
     .bd-next { grid-template-columns: minmax(0, 1fr); padding: 20px 16px 24px; }
     .bd-next-card.is-right { text-align: left; }
