@@ -112,7 +112,7 @@ function PixelFrame({ w, h, v }: { w: number; h: number; v: Variant }) {
     );
 }
 
-function Bubble({ t, i }: { t: Testimonial; i: number }) {
+function Bubble({ t, i, on }: { t: Testimonial; i: number; on?: boolean }) {
     const v = VARIANTS[i % VARIANTS.length];
     const ref = useRef<HTMLDivElement>(null);
     const [size, setSize] = useState({ w: 0, h: 0 });
@@ -135,7 +135,7 @@ function Bubble({ t, i }: { t: Testimonial; i: number }) {
     return (
         <article
             ref={ref}
-            className={`tm-b tm-${v.name}`}
+            className={`tm-b tm-${v.name} ${on ? "is-on" : ""}`}
             style={
                 {
                     "--rot": `${[-1.6, 1.2, -0.6, 1.8, -1.2, 0.8][i % 6]}deg`,
@@ -177,6 +177,39 @@ function Bubble({ t, i }: { t: Testimonial; i: number }) {
 export default function Testimonials() {
     const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
     const [loading, setLoading] = useState(true);
+    // phones (≤640px): one bubble at a time in a swipe carousel instead of a long column
+    const [phone, setPhone] = useState(false);
+    const [at, setAt] = useState(0);
+    const wallRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        const mq = window.matchMedia("(max-width: 640px)");
+        const update = () => setPhone(mq.matches);
+        update();
+        mq.addEventListener("change", update);
+        return () => mq.removeEventListener("change", update);
+    }, []);
+    const onWallScroll = () => {
+        const el = wallRef.current;
+        if (!el || !el.children.length) return;
+        // the bubble whose centre is nearest the middle of the strip
+        const mid = el.scrollLeft + el.clientWidth / 2;
+        let best = 0;
+        let dist = Infinity;
+        Array.from(el.children).forEach((c, k) => {
+            const h = c as HTMLElement;
+            const d = Math.abs(h.offsetLeft + h.offsetWidth / 2 - mid);
+            if (d < dist) {
+                dist = d;
+                best = k;
+            }
+        });
+        setAt(best);
+    };
+    const goTo = (k: number) => {
+        const el = wallRef.current;
+        const c = el?.children[k] as HTMLElement | undefined;
+        if (el && c) el.scrollTo({ left: c.offsetLeft - (el.clientWidth - c.offsetWidth) / 2, behavior: "smooth" });
+    };
 
     useEffect(() => {
         const fetchTestimonials = async () => {
@@ -213,14 +246,34 @@ export default function Testimonials() {
             id="testimonials"
             className="section-high-fidelity relative overflow-hidden"
             /* one full screen like Projects and Snippets: the bubbles sit in the middle, clear of the nav bar */
-            style={{ minHeight: "100svh", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 0 60px", scrollMarginTop: 0 }}
+            style={{ minHeight: "100svh", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", padding: phone ? "76px 0 24px" : "120px 0 60px", scrollMarginTop: 0 }}
         >
             <div className="container relative z-10" style={{ maxWidth: "1300px" }}>
-                <div className="tm-wall">
+                <div className={`tm-wall ${phone ? "is-swipe" : ""}`} ref={wallRef} onScroll={phone ? onWallScroll : undefined}>
                     {testimonials.map((t, i) => (
-                        <Bubble key={t.id} t={t} i={i} />
+                        <Bubble key={t.id} t={t} i={i} on={phone && i === at} />
                     ))}
                 </div>
+                {phone && testimonials.length > 1 && (
+                    <div className="tm-nav">
+                        <div className="tm-dots" role="tablist" aria-label="Testimonials">
+                            {testimonials.map((t, i) => (
+                                <button
+                                    key={t.id}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={i === at}
+                                    aria-label={`Testimonial ${i + 1}`}
+                                    className={i === at ? "is-on" : ""}
+                                    onClick={() => goTo(i)}
+                                />
+                            ))}
+                        </div>
+                        <span className={`tm-count ${courier.className}`}>
+                            MSG {String(at + 1).padStart(2, "0")} / {String(testimonials.length).padStart(2, "0")}
+                        </span>
+                    </div>
+                )}
             </div>
 
             <style jsx>{`
@@ -350,6 +403,79 @@ export default function Testimonials() {
                     font-weight: 700;
                     letter-spacing: 0.06em;
                     text-transform: uppercase;
+                    color: #3a7ca5;
+                }
+                /* phones: a swipe strip. Each bubble rests in the middle; the ones peeking in at the
+                   sides are dimmed, soft and can't be tapped, and the edges fade to white */
+                .tm-wall.is-swipe {
+                    display: flex;
+                    align-items: center;
+                    gap: 14px;
+                    overflow-x: auto;
+                    scroll-snap-type: x mandatory;
+                    overscroll-behavior-x: contain;
+                    scrollbar-width: none;
+                    margin: 0 -16px;
+                    padding: 10px 52px 22px;
+                    -webkit-mask: linear-gradient(90deg, transparent 0, rgba(0, 0, 0, 0.4) 22px, #000 54px, #000 calc(100% - 54px), rgba(0, 0, 0, 0.4) calc(100% - 22px), transparent 100%);
+                    mask: linear-gradient(90deg, transparent 0, rgba(0, 0, 0, 0.4) 22px, #000 54px, #000 calc(100% - 54px), rgba(0, 0, 0, 0.4) calc(100% - 22px), transparent 100%);
+                }
+                .tm-wall.is-swipe::-webkit-scrollbar {
+                    display: none;
+                }
+                .tm-wall.is-swipe :global(.tm-b) {
+                    flex: 0 0 calc(100vw - 104px);
+                    scroll-snap-align: center;
+                    scroll-snap-stop: always;
+                    transform: rotate(var(--rot)) scale(0.94);
+                    opacity: 0.4;
+                    filter: blur(1.5px);
+                    pointer-events: none;
+                }
+                .tm-wall.is-swipe :global(.tm-b.is-on) {
+                    transform: rotate(0deg);
+                    opacity: 1;
+                    filter: none;
+                    pointer-events: auto;
+                }
+                .tm-wall.is-swipe :global(.tm-b:hover) {
+                    transform: rotate(0deg);
+                }
+                :global(.tm-wall.is-swipe:has(.tm-b:hover) .tm-b:not(:hover)) {
+                    transform: rotate(var(--rot)) scale(0.94);
+                }
+                .tm-wall.is-swipe :global(.tm-text) {
+                    font-size: 14px;
+                }
+                .tm-nav {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 12px;
+                }
+                .tm-dots {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 6px;
+                }
+                .tm-dots button {
+                    width: 7px;
+                    height: 7px;
+                    padding: 0;
+                    border: 0;
+                    border-radius: 999px;
+                    background: rgba(27, 79, 114, 0.22);
+                    transition: width 0.3s ease, background 0.3s ease;
+                }
+                .tm-dots button.is-on {
+                    width: 20px;
+                    background: #0d2a42;
+                }
+                .tm-count {
+                    flex: none;
+                    font-size: 12px;
+                    font-weight: 700;
+                    letter-spacing: 0.18em;
                     color: #3a7ca5;
                 }
                 @media (prefers-reduced-motion: reduce) {
