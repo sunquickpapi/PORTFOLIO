@@ -353,6 +353,7 @@ export default function Hero() {
                                 stats={{ projects: profile.projects_count, years: profile.experience_years, coffee: profile.coffee_consumed }}
                                 route={{ from: profile.route_from, to: profile.route_to }}
                                 hoverPhoto={profile.hover_photo_url}
+                                showPhoto={revealed}
                             />
                             <div className="hero-laptop">
                                 <Laptop />
