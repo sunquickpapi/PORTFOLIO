@@ -147,6 +147,15 @@ export default function PassCard({
         const r = el.getBoundingClientRect();
         return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
     };
+    // the photo stamp: the hover photo shows while the mouse is over it (position check, like the rest)
+    const photoRef = useRef<HTMLDivElement>(null);
+    const [photoHover, setPhotoHover] = useState(false);
+    const photoAt = (x: number, y: number) => {
+        const el = photoRef.current;
+        if (back || !el || !hoverPhoto) return false;
+        const r = el.getBoundingClientRect();
+        return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    };
     const goToAbout = () => {
         if (onAbout) return onAbout();
         window.location.assign("/about");
@@ -319,6 +328,8 @@ export default function PassCard({
         if (overClose !== closeHover) setCloseHover(overClose);
         const overView = viewAllAt(e.clientX, e.clientY);
         if (overView !== viewAllHover) setViewAllHover(overView);
+        const overPhoto = e.pointerType === "mouse" && photoAt(e.clientX, e.clientY);
+        if (overPhoto !== photoHover) setPhotoHover(overPhoto);
         if (e.pointerType === "touch" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
         const r = e.currentTarget.getBoundingClientRect();
         const px = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
@@ -332,6 +343,7 @@ export default function PassCard({
         setAboutHover(false);
         setCloseHover(false);
         setViewAllHover(false);
+        setPhotoHover(false);
         target.current = { rx: 0, ry: 0, gx: 50, gy: 30 };
         kick();
     };
@@ -442,7 +454,7 @@ export default function PassCard({
                                         <div className="pf-stamp-shadow">
                                             <div className="pf-stamp">
                                                 <div className="pf-stamp-inner">
-                                                    <div className={`pf-photo ${hoverPhoto ? "has-alt" : ""}`}>
+                                                    <div ref={photoRef} className={`pf-photo ${hoverPhoto ? "has-alt" : ""} ${photoHover ? "is-alt" : ""}`}>
                                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                                         <img className="pf-photo-img" src="/assets/passcard/pass-photo.webp" alt="" draggable={false} />
                                                         {hoverPhoto && (
@@ -881,11 +893,9 @@ export default function PassCard({
                     user-select: none;
                     pointer-events: none;
                 }
-                @media (hover: hover) and (pointer: fine) {
-                    .pf-stamp-shadow:hover .pf-photo-alt {
-                        opacity: 1;
-                        transform: none;
-                    }
+                .pf-photo.is-alt .pf-photo-alt {
+                    opacity: 1;
+                    transform: none;
                 }
                 .pf-name-row {
                     height: 46px;
