@@ -506,6 +506,7 @@ const STYLES = `
 .bd-main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 34px 20px 80px; }
 .bd-frame {
     position: relative;
+    display: flow-root; /* keeps the browser bar's top margin inside the frame, clear of the inner rule */
     border-radius: 20px;
     background: linear-gradient(160deg, #fbfcfd 0%, #f1f5f8 100%);
     box-shadow: 0 0 0 1px rgba(13, 42, 66, 0.1), 0 40px 60px -36px rgba(13, 42, 66, 0.5);
