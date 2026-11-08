@@ -66,6 +66,7 @@ export default function PassCard({
     socials = {},
     stats = {},
     route = {},
+    hoverPhoto,
     onAbout,
     twoTap = false,
     cue = false,
@@ -74,6 +75,8 @@ export default function PassCard({
     socials?: Socials;
     stats?: Stats;
     route?: Route;
+    /** desktop: a real photo that fades in over the pixel portrait while the stamp is hovered */
+    hoverPhoto?: string | null;
     onAbout?: () => void;
     /** phones: no hover, so the first tap shows the hover look and the second tap acts */
     twoTap?: boolean;
@@ -439,9 +442,13 @@ export default function PassCard({
                                         <div className="pf-stamp-shadow">
                                             <div className="pf-stamp">
                                                 <div className="pf-stamp-inner">
-                                                    <div className="pf-photo">
+                                                    <div className={`pf-photo ${hoverPhoto ? "has-alt" : ""}`}>
                                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                                         <img className="pf-photo-img" src="/assets/passcard/pass-photo.webp" alt="" draggable={false} />
+                                                        {hoverPhoto && (
+                                                            // eslint-disable-next-line @next/next/no-img-element
+                                                            <img className="pf-photo-alt" src={hoverPhoto} alt="" draggable={false} loading="eager" />
+                                                        )}
                                                     </div>
                                                     <div className="pf-name-row">
                                                         <div className={`pf-name ${jetbrains.className}`}>NAUFAL NIZAM</div>
@@ -859,6 +866,26 @@ export default function PassCard({
                     height: 100%;
                     image-rendering: pixelated;
                     user-select: none;
+                }
+                /* desktop (real hover only): the uploaded photo fades in over the pixel portrait */
+                .pf-photo-alt {
+                    position: absolute;
+                    inset: 0;
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    object-position: 50% 25%;
+                    opacity: 0;
+                    transform: scale(1.06);
+                    transition: opacity 0.45s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+                    user-select: none;
+                    pointer-events: none;
+                }
+                @media (hover: hover) and (pointer: fine) {
+                    .pf-stamp-shadow:hover .pf-photo-alt {
+                        opacity: 1;
+                        transform: none;
+                    }
                 }
                 .pf-name-row {
                     height: 46px;

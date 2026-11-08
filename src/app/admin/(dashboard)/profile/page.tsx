@@ -25,6 +25,7 @@ export default function ProfilePage() {
         experience_years: 0,
         coffee_consumed: 0,
         logo_url: "",
+        hover_photo_url: "",
         hero_bg_url: "",
         resume_url: "",
         hero_greeting: "Hello Everyone,",
@@ -334,6 +335,23 @@ export default function ProfilePage() {
                                             previewUrl={formData.logo_url || ""}
                                             onUploaded={([url]) => {
                                                 setFormData((prev) => ({ ...prev, logo_url: url }));
+                                                setIsEditing(true);
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="input-group">
+                                        <label>Pass Card Hover Photo</label>
+                                        <input
+                                            name="hover_photo_url"
+                                            readOnly={!isEditing}
+                                            placeholder="Shown over the pixel portrait when hovered (desktop)"
+                                            value={formData.hover_photo_url || ""}
+                                            onChange={handleChange}
+                                        />
+                                        <FileUploadButton
+                                            previewUrl={formData.hover_photo_url || ""}
+                                            onUploaded={([url]) => {
+                                                setFormData((prev) => ({ ...prev, hover_photo_url: url }));
                                                 setIsEditing(true);
                                             }}
                                         />
