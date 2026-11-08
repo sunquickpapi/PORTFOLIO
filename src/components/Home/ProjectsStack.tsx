@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import FileLink from "./FileLink";
 import { Courier_Prime } from "next/font/google";
@@ -178,9 +178,8 @@ const tri = (d: number, prev: number, mid: number, next: number) => (d < 0 ? ler
  * away while you drag. Neighbouring
  * projects wait at the corners: their images on the left, their logos on the right.
  */
-// phones: section padding (the top clears the menu button) and the View All slip's height incl. its gap
+// phones: section padding (the top clears the menu button)
 const PHONE_PAD = { top: 72, bottom: 14 };
-const PHONE_FILE_H = 80;
 
 export default function ProjectsStack() {
     const [projects, setProjects] = useState<Project[]>([]);
@@ -198,7 +197,17 @@ export default function ProjectsStack() {
         window.addEventListener("resize", read);
         return () => window.removeEventListener("resize", read);
     }, []);
+    // phones: measured heights of the current project's text block and the View All slip
+    const [pm, setPm] = useState({ text: 136, file: 68 });
+    const fileRef = useRef<HTMLDivElement>(null);
     const stageRef = useRef<HTMLDivElement>(null);
+    useLayoutEffect(() => {
+        const t = stageRef.current?.querySelector<HTMLElement>('.pst-text[aria-hidden="false"]');
+        const f = fileRef.current?.firstElementChild as HTMLElement | null;
+        const text = t?.offsetHeight ?? pm.text;
+        const file = f?.offsetHeight ?? pm.file;
+        if (Math.abs(text - pm.text) > 1 || Math.abs(file - pm.file) > 1) setPm({ text, file });
+    });
     const posRef = useRef(0);
     const targetRef = useRef(0);
     const rafRef = useRef(0);
@@ -422,9 +431,9 @@ export default function ProjectsStack() {
     const rightStart = W / 2 + textW / 2 + colGap;
     // phones: one screen holds [image] [text ≈ TEXT_H] [logo + tech mosaic] and the View All slip.
     // Start from width-based sizes and shrink the image and mosaic together until the column fits.
-    const TEXT_H = 136;
+    const TEXT_H = pm.text;
     const P_GAP_MIN = 16;
-    const phoneStageRoom = vh - PHONE_PAD.top - PHONE_PAD.bottom - PHONE_FILE_H;
+    const phoneStageRoom = vh - PHONE_PAD.top - PHONE_PAD.bottom - pm.file - P_GAP_MIN;
     let pImgW = Math.min(W - 64, 340);
     let pCell = clamp((W - 40 - 7 * 6) / 8, 15, 30);
     const pNeed = () => 12 + pImgW * 0.6 + 2 * P_GAP_MIN + TEXT_H + 2 * (4 * pCell + 3.5 * 6);
@@ -448,11 +457,11 @@ export default function ProjectsStack() {
     // phones: image, then the text block (≈190px), then the logo with its tech mosaic (which reaches
     // `ringOuter` above and below the logo), each with a clear gap
     const ringOuterP = 4 * cell + 3.5 * gap;
-    const imgY = phone ? 6 + imgH / 2 : narrow ? 150 : cy;
-    const textY = phone ? 6 + imgH + pGap + TEXT_H / 2 : narrow ? 150 + imgH / 2 + 90 : cy;
+    let imgY = phone ? 6 + imgH / 2 : narrow ? 150 : cy;
+    let textY = phone ? 6 + imgH + pGap + TEXT_H / 2 : narrow ? 150 + imgH / 2 + 90 : cy;
     // tablets: the logo sits just under the project's text (≈170px block), not pinned to the bottom
-    const tileY = phone ? textY + TEXT_H / 2 + pGap + ringOuterP : narrow ? textY + 85 + 50 + tile / 2 : cy;
-    const stageH = phone ? Math.round(tileY + ringOuterP + 6) : narrow ? Math.round(tileY + tile / 2 + 70) : 640;
+    let tileY = phone ? textY + TEXT_H / 2 + pGap + ringOuterP : narrow ? textY + 85 + 50 + tile / 2 : cy;
+    let stageH = phone ? Math.round(tileY + ringOuterP + 6) : narrow ? Math.round(tileY + tile / 2 + 70) : 640;
     // neighbours sit fully above / below the current one with a clear gap, tilted toward the screen edge
     const NI = 0.5; // neighbour image scale
     const NT = 0.62; // neighbour logo scale
@@ -468,6 +477,26 @@ export default function ProjectsStack() {
     const orbitIdx = lastSettled.current;
     const orbitOut = settledIdx === null || dragging || orbitIdx !== idx;
     const techs = (projects[orbitIdx]?.tech_stack || []).filter(Boolean);
+    // phones: the same space between image, text, logo + tech, and the View All slip. The mosaic's
+    // real reach above / below the logo depends on the project's tech, so measure it from its slots.
+    let fileGap = 36;
+    if (phone) {
+        const step = cell + gap;
+        let up = tile / 2;
+        let down = tile / 2;
+        for (const sl of mosaic(techs.length, hash(projects[orbitIdx]?.id || String(orbitIdx)))) {
+            const px = sl.size * cell + (sl.size - 1) * gap;
+            up = Math.max(up, -sl.cy * step + px / 2);
+            down = Math.max(down, sl.cy * step + px / 2);
+        }
+        const free = vh - PHONE_PAD.top - PHONE_PAD.bottom - pm.file - imgH - TEXT_H - up - down;
+        const G = Math.max(P_GAP_MIN, Math.floor(free / 3));
+        imgY = imgH / 2;
+        textY = imgH + G + TEXT_H / 2;
+        tileY = imgH + G + TEXT_H + G + up;
+        stageH = Math.round(tileY + down);
+        fileGap = G;
+    }
 
     return (
         <section
@@ -675,7 +704,7 @@ export default function ProjectsStack() {
 
             </div>
 
-            <div className="file-link-row" style={{ marginTop: phone ? 10 : 36 }}>
+            <div className="file-link-row" ref={fileRef} style={{ marginTop: fileGap }}>
 
                 <FileLink href="/projects" no="03" title="View All Projects" />
 
@@ -978,6 +1007,11 @@ export default function ProjectsStack() {
                 }
                 .is-phone .pst-text {
                     gap: 7px;
+                }
+                /* the logo eases to its new height when the next project's tech mosaic is a different size */
+                .is-phone .pst-tile,
+                .is-phone .pst-orbit {
+                    transition: top 0.4s cubic-bezier(0.22, 1, 0.36, 1);
                 }
                 .is-phone .pst-title {
                     font-size: 27px;
