@@ -347,10 +347,12 @@ export default function AboutPage() {
                             </p>
                             <div className="ab-ctas">
                                 <Link href="/blog" className="ab-btn is-dark">
-                                    <BookOpen size={16} strokeWidth={2.4} /> Read my blogs
+                                    <BookOpen size={16} strokeWidth={2.4} /> <span className="ab-long">Read my blogs</span>
+                                    <span className="ab-short">Blogs</span>
                                 </Link>
                                 <Link href="/projects" className="ab-btn">
-                                    View my projects <ArrowUpRight size={16} strokeWidth={2.4} />
+                                    <span className="ab-long">View my projects</span>
+                                    <span className="ab-short">Projects</span> <ArrowUpRight size={16} strokeWidth={2.4} />
                                 </Link>
                             </div>
                         </div>
@@ -881,6 +883,7 @@ const STYLES = `
 }
 .ab-photo-in { padding: 10px 10px 0; background: #fff; }
 .ab-photo img { display: block; width: 100%; aspect-ratio: 368 / 420; object-fit: cover; object-position: 50% 0; image-rendering: pixelated; background: #c9d4da; }
+.ab-short { display: none; }
 .ab-photo img.is-real { image-rendering: auto; object-position: 50% 25%; }
 .ab-photo span { display: block; padding: 12px 2px 16px; font-size: 13px; font-weight: 700; letter-spacing: 0.18em; color: var(--ink); }
 .ab-photo-tag {
@@ -1105,6 +1108,10 @@ const STYLES = `
     .ab-dots button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 999px; background: rgba(27, 79, 114, 0.22); transition: width 0.3s ease, background 0.3s ease; }
     .ab-dots button.is-on { width: 20px; background: var(--ink); }
     .ab-cert-count { flex: none; font-size: 12px; font-weight: 700; letter-spacing: 0.18em; color: var(--muted); }
+
+    /* hero buttons: short labels so they sit side by side */
+    .ab-long { display: none; }
+    .ab-short { display: inline; }
 
     /* stamp photo centred over the text */
     .ab-photo-wrap { justify-self: center; }
