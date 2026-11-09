@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Courier_Prime } from "next/font/google";
 import * as LucideIcons from "lucide-react";
-import { ArrowLeft, ArrowUpRight, Award, Coffee, Download, Dumbbell, ExternalLink, Globe, Heart, Trophy, Zap } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Award, BookOpen, Coffee, Download, Dumbbell, ExternalLink, Globe, Heart, Trophy, Zap } from "lucide-react";
 import PixelField from "@/components/Home/PixelField";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
@@ -346,11 +346,13 @@ export default function AboutPage() {
                                     "Passionate developer, lifelong learner, and creative problem solver. Here's my journey, skills, and what drives me every day."}
                             </p>
                             <div className="ab-ctas">
-                                <a href={cv} target="_blank" rel="noreferrer" className="ab-btn is-dark">
-                                    <Download size={16} strokeWidth={2.4} /> Download CV
-                                </a>
+                                <Link href="/blog" className="ab-btn is-dark">
+                                    <BookOpen size={16} strokeWidth={2.4} /> <span className="ab-long">Read my blogs</span>
+                                    <span className="ab-short">Blogs</span>
+                                </Link>
                                 <Link href="/projects" className="ab-btn">
-                                    View my projects <ArrowUpRight size={16} strokeWidth={2.4} />
+                                    <span className="ab-long">View my projects</span>
+                                    <span className="ab-short">Projects</span> <ArrowUpRight size={16} strokeWidth={2.4} />
                                 </Link>
                             </div>
                         </div>
@@ -358,8 +360,14 @@ export default function AboutPage() {
                             <div className="ab-photo">
                                 <div className="ab-photo-paper">
                                     <div className="ab-photo-in">
+                                        {/* the photo uploaded in Admin > Profile (Pass Card Hover Photo); the pixel portrait until there is one */}
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img src="/assets/passcard/pass-photo.webp" alt="" draggable={false} />
+                                        <img
+                                            className={profile.hover_photo_url ? "is-real" : ""}
+                                            src={profile.hover_photo_url || "/assets/passcard/pass-photo.webp"}
+                                            alt=""
+                                            draggable={false}
+                                        />
                                         <span className={courier.className}>{(profile.name || "Naufal Nizam").toUpperCase()}</span>
                                     </div>
                                 </div>
@@ -875,6 +883,8 @@ const STYLES = `
 }
 .ab-photo-in { padding: 10px 10px 0; background: #fff; }
 .ab-photo img { display: block; width: 100%; aspect-ratio: 368 / 420; object-fit: cover; object-position: 50% 0; image-rendering: pixelated; background: #c9d4da; }
+.ab-short { display: none; }
+.ab-photo img.is-real { image-rendering: auto; object-position: 50% 25%; }
 .ab-photo span { display: block; padding: 12px 2px 16px; font-size: 13px; font-weight: 700; letter-spacing: 0.18em; color: var(--ink); }
 .ab-photo-tag {
     position: absolute;
@@ -1098,6 +1108,10 @@ const STYLES = `
     .ab-dots button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 999px; background: rgba(27, 79, 114, 0.22); transition: width 0.3s ease, background 0.3s ease; }
     .ab-dots button.is-on { width: 20px; background: var(--ink); }
     .ab-cert-count { flex: none; font-size: 12px; font-weight: 700; letter-spacing: 0.18em; color: var(--muted); }
+
+    /* hero buttons: short labels so they sit side by side */
+    .ab-long { display: none; }
+    .ab-short { display: inline; }
 
     /* stamp photo centred over the text */
     .ab-photo-wrap { justify-self: center; }
