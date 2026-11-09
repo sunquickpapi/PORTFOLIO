@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Courier_Prime } from "next/font/google";
 import * as LucideIcons from "lucide-react";
-import { ArrowLeft, ArrowUpRight, Award, Coffee, Download, Dumbbell, ExternalLink, Globe, Heart, Trophy, Zap } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Award, BookOpen, Coffee, Download, Dumbbell, ExternalLink, Globe, Heart, Trophy, Zap } from "lucide-react";
 import PixelField from "@/components/Home/PixelField";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
@@ -346,9 +346,9 @@ export default function AboutPage() {
                                     "Passionate developer, lifelong learner, and creative problem solver. Here's my journey, skills, and what drives me every day."}
                             </p>
                             <div className="ab-ctas">
-                                <a href={cv} target="_blank" rel="noreferrer" className="ab-btn is-dark">
-                                    <Download size={16} strokeWidth={2.4} /> Download CV
-                                </a>
+                                <Link href="/blog" className="ab-btn is-dark">
+                                    <BookOpen size={16} strokeWidth={2.4} /> Read my blogs
+                                </Link>
                                 <Link href="/projects" className="ab-btn">
                                     View my projects <ArrowUpRight size={16} strokeWidth={2.4} />
                                 </Link>
@@ -358,8 +358,8 @@ export default function AboutPage() {
                             <div className="ab-photo">
                                 <div className="ab-photo-paper">
                                     <div className="ab-photo-in">
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
                                         {/* the photo uploaded in Admin > Profile (Pass Card Hover Photo); the pixel portrait until there is one */}
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
                                             className={profile.hover_photo_url ? "is-real" : ""}
                                             src={profile.hover_photo_url || "/assets/passcard/pass-photo.webp"}
