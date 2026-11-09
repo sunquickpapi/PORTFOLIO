@@ -205,7 +205,7 @@ function useTallCards(ready: boolean, phone: boolean) {
     }, [ready, phone]);
 }
 
-/** Phones show "Gym" in place of gaming. */
+/** "Gym" is shown in place of gaming (all sizes). */
 const PHONE_HOBBY = { name: "Gym", icon_name: "Dumbbell", description: "Lifting for discipline, strength and a clear head" };
 
 function Head({ no, title, sub }: { no: string; title: string; sub?: string }) {
@@ -434,7 +434,7 @@ export default function AboutPage() {
                                               { id: "m", name: "Music", icon_name: "Music", description: "Music lover exploring various genres and artists" },
                                           ]
                                     )
-                                        .map((h: any) => (phone && /gam(e|ing)/i.test(h.name || "") ? { ...h, ...PHONE_HOBBY } : h))
+                                        .map((h: any) => (/gam(e|ing)/i.test(h.name || "") ? { ...h, ...PHONE_HOBBY } : h))
                                         .map((h: any) => (
                                         <li key={h.id}>
                                             <span className="ab-hob-ico">
