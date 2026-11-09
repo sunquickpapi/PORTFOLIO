@@ -359,7 +359,13 @@ export default function AboutPage() {
                                 <div className="ab-photo-paper">
                                     <div className="ab-photo-in">
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img src="/assets/passcard/pass-photo.webp" alt="" draggable={false} />
+                                        {/* the photo uploaded in Admin > Profile (Pass Card Hover Photo); the pixel portrait until there is one */}
+                                        <img
+                                            className={profile.hover_photo_url ? "is-real" : ""}
+                                            src={profile.hover_photo_url || "/assets/passcard/pass-photo.webp"}
+                                            alt=""
+                                            draggable={false}
+                                        />
                                         <span className={courier.className}>{(profile.name || "Naufal Nizam").toUpperCase()}</span>
                                     </div>
                                 </div>
@@ -875,6 +881,7 @@ const STYLES = `
 }
 .ab-photo-in { padding: 10px 10px 0; background: #fff; }
 .ab-photo img { display: block; width: 100%; aspect-ratio: 368 / 420; object-fit: cover; object-position: 50% 0; image-rendering: pixelated; background: #c9d4da; }
+.ab-photo img.is-real { image-rendering: auto; object-position: 50% 25%; }
 .ab-photo span { display: block; padding: 12px 2px 16px; font-size: 13px; font-weight: 700; letter-spacing: 0.18em; color: var(--ink); }
 .ab-photo-tag {
     position: absolute;
