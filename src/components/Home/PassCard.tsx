@@ -664,6 +664,11 @@ export default function PassCard({
                                             </div>
                                             <div className="pb-stamps">
                                                 <div className={`pb-stamp-label ${blackOps.className}`}>STAMPS</div>
+                                                {/* places I've studied and built for, franked like old postmarks */}
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img className="pb-postmark pb-postmark-1" src="/assets/passcard/pass-postmark-uitm.webp" alt="Universiti Teknologi MARA, Sungai Petani" draggable={false} />
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img className="pb-postmark pb-postmark-2" src="/assets/passcard/pass-postmark-prtu.webp" alt="Pustaka Raja Tun Uda, Shah Alam" draggable={false} />
                                             </div>
                                         </div>
                                     </div>
@@ -1430,12 +1435,33 @@ export default function PassCard({
                     margin-top: 2px;
                 }
                 .pb-stamps {
+                    position: relative;
+                    overflow: hidden;
                     flex: 1;
                     border: 2px dashed #46c1e6;
                     display: flex;
                     align-items: flex-start;
                     justify-content: center;
                     padding-top: 14px;
+                }
+                .pb-postmark {
+                    position: absolute;
+                    height: auto;
+                    opacity: 0.9;
+                    user-select: none;
+                    pointer-events: none;
+                }
+                .pb-postmark-1 {
+                    width: 58px;
+                    left: 14px;
+                    top: 70px;
+                    transform: rotate(-8deg);
+                }
+                .pb-postmark-2 {
+                    width: 80px;
+                    right: 22px;
+                    top: 82px;
+                    transform: rotate(7deg);
                 }
                 .pb-stamp-label {
                     font-size: 22px;
