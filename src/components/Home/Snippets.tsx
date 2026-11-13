@@ -221,7 +221,7 @@ export default function Snippets() {
                 if (!en.isIntersecting) return;
                 io.disconnect();
                 setIntro("opening");
-                window.setTimeout(() => setIntro("open"), 2300);
+                window.setTimeout(() => setIntro("open"), 2650);
             },
             { threshold: 0.45 }
         );
@@ -350,7 +350,13 @@ export default function Snippets() {
                                     <span className={`nb-front-s ${courier.className}`}>CODE · NOTES · EXPERIMENTS</span>
                                     <span className="nb-front-logo">FVL</span>
                                 </div>
-                                <div className="nb-front-back" />
+                                {/* its inside: the navy rim around a blank left-hand page, so when it lands
+                                    it already looks like the open book's left half */}
+                                <div className="nb-front-back">
+                                    <div className="nb-front-page">
+                                        <Page side="left" />
+                                    </div>
+                                </div>
                             </div>
                         )}
                         {!single && (
@@ -471,9 +477,12 @@ export default function Snippets() {
                 }
                 /* (fading the faces, not .nb-front: opacity on a 3D parent would flatten it and show
                    the front's text mirrored through the back) */
-                .nb-intro.is-opening .nb-front-back {
-                    opacity: 0;
-                    transition: opacity 0.3s ease 1.9s;
+                .nb-front-page {
+                    position: absolute;
+                    left: 10px;
+                    top: 9px;
+                    width: 370px;
+                    height: ${BOOK_H}px;
                 }
                 .nb-front-face,
                 .nb-front-back {
@@ -533,10 +542,16 @@ export default function Snippets() {
                     border-radius: 10px 4px 4px 10px;
                     background: linear-gradient(200deg, #1b3d57 0%, #0d2a42 70%);
                 }
+                /* once it has landed, the real left half takes over underneath and the snippet
+                   on the left page fades in through it */
+                .nb-intro.is-opening .nb-front-back {
+                    opacity: 0;
+                    transition: opacity 0.45s ease 2.1s;
+                }
                 /* while closed only the right half of the book exists: the back cover's left half and
                    the left-hand page appear as the front cover swings across */
                 .nb-intro .nb-cover {
-                    transition: clip-path 1.15s cubic-bezier(0.55, 0.05, 0.3, 1) 0.9s;
+                    transition: clip-path 0s linear 2.05s;
                 }
                 .nb-intro.is-closed .nb-cover {
                     clip-path: inset(-40px -40px -40px 50%);
@@ -545,7 +560,7 @@ export default function Snippets() {
                     clip-path: inset(-40px -40px -40px 0);
                 }
                 .nb-intro .nb-left {
-                    transition: opacity 0.5s ease 1.45s;
+                    transition: opacity 0s linear 2.05s;
                 }
                 .nb-intro.is-closed .nb-left {
                     opacity: 0;
