@@ -1452,15 +1452,15 @@ export default function PassCard({
                     pointer-events: none;
                 }
                 .pb-postmark-1 {
-                    width: 58px;
-                    left: 14px;
-                    top: 70px;
+                    width: 84px;
+                    left: 12px;
+                    top: 62px;
                     transform: rotate(-8deg);
                 }
                 .pb-postmark-2 {
-                    width: 80px;
-                    right: 22px;
-                    top: 82px;
+                    width: 114px;
+                    right: 14px;
+                    top: 84px;
                     transform: rotate(7deg);
                 }
                 .pb-stamp-label {
