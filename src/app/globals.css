@@ -10944,10 +10944,22 @@ html.fvl-loading body {
   justify-content: flex-end;
 }
 @media (min-width: 1100px) {
-  .dock-wrapper.is-expanded .dock > .dock-group:first-child,
+  /* both ends the same width so Home…Contact sits dead centre; the logo sits at the outer
+     edge, the same distance from the bar's edge as Hire Me on the right */
+  .dock-wrapper.is-expanded .dock > .dock-group:has(.dock-item-logo),
   .dock-wrapper.is-expanded .dock > .dock-group-actions {
     min-width: 168px;
   }
+  .dock-wrapper.is-expanded .dock-item-logo {
+    margin-left: -3px;
+  }
+}
+.dock > .dock-group:has(.dock-item-logo) {
+  min-width: 0;
+  transition: min-width var(--dock-dur) var(--dock-ease);
+}
+.dock-item-logo {
+  transition: margin var(--dock-dur) var(--dock-ease);
 }
 
 /* Nav bar loading: liquid fills the dock left → right with a count, then drains away */
