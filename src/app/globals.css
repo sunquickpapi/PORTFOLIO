@@ -10944,10 +10944,16 @@ html.fvl-loading body {
   justify-content: flex-end;
 }
 @media (min-width: 1100px) {
-  .dock-wrapper.is-expanded .dock > .dock-group:first-child,
   .dock-wrapper.is-expanded .dock > .dock-group-actions {
     min-width: 168px;
   }
+  /* logo → Home matches Contact → theme icon (the icon sits inside its button's padding) */
+  .dock-wrapper.is-expanded .dock-group:has(.dock-item-logo) + .dock-separator {
+    margin-right: calc(1rem + 7px);
+  }
+}
+.dock-group:has(.dock-item-logo) + .dock-separator {
+  transition: margin var(--dock-dur) var(--dock-ease);
 }
 
 /* Nav bar loading: liquid fills the dock left → right with a count, then drains away */
