@@ -10944,17 +10944,14 @@ html.fvl-loading body {
   justify-content: flex-end;
 }
 @media (min-width: 1100px) {
-  /* both ends the same width so Home…Contact sits dead centre; the logo sits at the inner
-     edge of its slot so logo → Home matches Contact → theme icon */
+  /* both ends the same width so Home…Contact sits dead centre; the logo sits at the outer
+     edge, the same distance from the bar's edge as Hire Me on the right */
   .dock-wrapper.is-expanded .dock > .dock-group:has(.dock-item-logo),
   .dock-wrapper.is-expanded .dock > .dock-group-actions {
     min-width: 168px;
   }
-  .dock-wrapper.is-expanded .dock > .dock-group:has(.dock-item-logo) {
-    justify-content: flex-end;
-  }
   .dock-wrapper.is-expanded .dock-item-logo {
-    margin-right: 7px;
+    margin-left: -3px;
   }
 }
 .dock > .dock-group:has(.dock-item-logo) {
