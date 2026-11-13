@@ -37,14 +37,47 @@ export function getPrintUrl(snippet: Snippet): string {
     return `/snippet-playground/prints/${base}.webp`;
 }
 
+/* prints fetched once and kept in memory as blob: URLs. A blob never goes back to the server,
+   so a fresh <img> of it (a turning page, the next entry) paints at once instead of waiting on
+   the network the way a plain static file can. */
+const printBlobs = new Map<string, string>();
+const printLoads = new Map<string, Promise<void>>();
+
+/** The in-memory copy of a print once it has loaded, otherwise the print's own URL. */
+export function printSrc(url: string): string {
+    return printBlobs.get(url) || url;
+}
+
+/** Load one print into memory (once) and decode it; resolves when it is ready to paint. */
+export function loadPrint(url: string): Promise<void> {
+    if (typeof window === "undefined") return Promise.resolve();
+    let p = printLoads.get(url);
+    if (!p) {
+        p = fetch(url)
+            .then((r) => (r.ok ? r.blob() : Promise.reject()))
+            .then((b) => {
+                const blobUrl = URL.createObjectURL(b);
+                const img = new Image();
+                img.src = blobUrl;
+                return (img.decode ? img.decode() : Promise.resolve()).then(() => {
+                    printBlobs.set(url, blobUrl);
+                });
+            })
+            .catch(() => {
+                // fall back to a normal preload of the URL itself
+                const img = new Image();
+                img.src = url;
+                return img.decode?.().catch(() => {});
+            });
+        printLoads.set(url, p);
+    }
+    return p;
+}
+
 /** Fetch and decode every print up front so a turning page never shows an empty frame. */
 export function preloadPrints(snippets: Snippet[]) {
     if (typeof window === "undefined") return;
-    snippets.forEach((s) => {
-        const img = new Image();
-        img.src = getPrintUrl(s);
-        img.decode?.().catch(() => {});
-    });
+    snippets.forEach((s) => void loadPrint(getPrintUrl(s)));
 }
 
 /** Tiny single-pass tokenizer: returns escaped HTML with token spans (tok-keyword, tok-string, ...). */

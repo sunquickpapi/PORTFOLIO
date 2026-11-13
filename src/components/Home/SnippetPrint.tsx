@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useState } from "react";
-import { Snippet, getPrintUrl } from "@/app/snippets/snippetCode";
+import { Snippet, getPrintUrl, printSrc } from "@/app/snippets/snippetCode";
 
 /**
  * The snippet's demo as a still print (see getPrintUrl). If no print exists yet, e.g. a
@@ -15,7 +15,7 @@ export default function SnippetPrint({ snippet, fallback }: { snippet: Snippet; 
     return (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-            src={src}
+            src={printSrc(src)}
             alt=""
             draggable={false}
             decoding="sync"
