@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Courier_Prime, JetBrains_Mono } from "next/font/google";
 import { ArrowLeft, Check, ChevronDown, Copy, Maximize2, Search, X } from "lucide-react";
 import PixelField from "@/components/Home/PixelField";
-import { Snippet, getIntegrationCode, getPlaygroundUrl, highlight, preloadPrints } from "./snippetCode";
+import { Snippet, getIntegrationCode, getPlaygroundUrl, getPrintUrl, highlight, loadPrint, preloadPrints } from "./snippetCode";
 import SnippetPrint from "@/components/Home/SnippetPrint";
 
 const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
@@ -387,13 +387,26 @@ export default function SnippetsGalleryDetails() {
 
     // start the turn once the hidden leaf's prints are decoded (capped so it never stalls)
     const leafRef = useRef<HTMLDivElement>(null);
+    const underRef = useRef<HTMLDivElement>(null);
+    const turnRef = useRef(turn);
+    turnRef.current = turn;
     const turnId = turn && !turn.ready ? turn.id : 0;
     useEffect(() => {
         if (!turnId) return;
         let live = true;
-        const imgs = Array.from(leafRef.current?.querySelectorAll("img") || []);
-        const decoded = Promise.all(imgs.map((i) => (i.decode ? i.decode().catch(() => {}) : Promise.resolve())));
-        const cap = new Promise((r) => window.setTimeout(r, 250));
+        const t = turnRef.current;
+        const prints = t && t.view === "preview" ? [loadPrint(getPrintUrl(t.from)), loadPrint(getPrintUrl(t.to))] : [];
+        const imgs = [leafRef.current, underRef.current].flatMap((el) => Array.from(el?.querySelectorAll("img") || []));
+        const painted = imgs.map((i) =>
+            i.complete && i.naturalWidth
+                ? (i.decode ? i.decode().catch(() => {}) : Promise.resolve())
+                : new Promise<void>((r) => {
+                      i.addEventListener("load", () => r(), { once: true });
+                      i.addEventListener("error", () => r(), { once: true });
+                  })
+        );
+        const decoded = Promise.all([...prints, ...painted]);
+        const cap = new Promise((r) => window.setTimeout(r, 700));
         Promise.race([decoded, cap]).then(() => requestAnimationFrame(() => live && setTurn((t) => (t && t.id === turnId ? { ...t, ready: true } : t))));
         return () => {
             live = false;
@@ -406,8 +419,8 @@ export default function SnippetsGalleryDetails() {
         turnTimer.current = window.setTimeout(() => setTurn((t) => (t && t.id === playingId ? null : t)), FLIP_MS);
         return () => window.clearTimeout(turnTimer.current);
     }, [playingId]);
-    // until a forward turn is visible, the right page keeps showing the entry it is about to lift off
-    const rightShown = turn && !turn.ready && turn.dir === 1 ? turn.from : active;
+    // until the turn is visible, the right page keeps showing the entry it is leaving
+    const rightShown = turn && !turn.ready ? turn.from : active;
     const rightShownNo = rightShown ? snippets.indexOf(rightShown) + 1 : 0;
 
     // keep the open entry inside the filtered list
@@ -518,7 +531,7 @@ export default function SnippetsGalleryDetails() {
 
                             {/* turning back: the old entry stays on the right until the leaf lands on it */}
                             {turn?.dir === -1 && (
-                                <div className="snb-side snb-side-r snb-under" key={`u${turn.id}`} aria-hidden="true">
+                                <div ref={underRef} className={`snb-side snb-side-r snb-under ${turn.ready ? "" : "is-prep"}`} key={`u${turn.id}`} aria-hidden="true">
                                     <EntryPage snippet={turn.from} no={turn.fromNo} view={turn.view} codeTab={turn.codeTab} still />
                                 </div>
                             )}
@@ -534,10 +547,10 @@ export default function SnippetsGalleryDetails() {
                                         )}
                                         <span className="snb-shade" />
                                     </div>
-                                    <div className="snb-face snb-face-back">
-                                        <div className="snb-sheet snb-left">
-                                            <span className="snb-holes" />
-                                        </div>
+                                    {/* its back is the index page itself, so it lands on (or lifts off) the
+                                        index without a blank sheet flashing over it */}
+                                    <div className="snb-face snb-face-back" inert>
+                                        <IndexPage list={shown} all={snippets} activeId={activeId} onPick={() => {}} notes={notes} onNote={() => {}} />
                                         <span className="snb-shade" />
                                     </div>
                                 </div>
@@ -867,14 +880,12 @@ const STYLES = `
 .snb-leaf.is-back { animation-name: snb-turn-back; }
 @keyframes snb-turn-back { from { transform: rotateY(-180deg); } to { transform: rotateY(0deg); } }
 .snb-under { z-index: 5; pointer-events: none; }
+.snb-under.is-prep { opacity: 0; }
 /* waiting for its prints: hidden, nothing animating yet */
 .snb-leaf.is-prep { opacity: 0; animation: none; }
 .snb-leaf.is-prep * { animation: none !important; }
-.snb-leaf.is-back .snb-face-back { animation-name: snb-rise; }
-@keyframes snb-rise { 0% { opacity: 0; } 20%, 100% { opacity: 1; } }
 .snb-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-.snb-face-back { transform: rotateY(180deg); animation: snb-settle ${FLIP_MS}ms linear both; }
-@keyframes snb-settle { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
+.snb-face-back { transform: rotateY(180deg); }
 .snb-shade { position: absolute; inset: 0; pointer-events: none; animation: snb-shade ${FLIP_MS}ms ease-in-out both; }
 .snb-face-front .snb-shade { background: linear-gradient(90deg, rgba(13, 42, 66, 0.3), rgba(13, 42, 66, 0) 60%); }
 .snb-face-back .snb-shade { background: linear-gradient(270deg, rgba(13, 42, 66, 0.3), rgba(13, 42, 66, 0) 60%); }
@@ -1361,6 +1372,6 @@ const STYLES = `
 @keyframes snb-stamp { 0% { transform: scale(1.35); opacity: 0.2; } 100% { transform: scale(1); opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
-    .snb-leaf, .snb-shade, .snb-face-back { animation-duration: 0.01ms !important; }
+    .snb-leaf, .snb-shade { animation-duration: 0.01ms !important; }
 }
 `;
