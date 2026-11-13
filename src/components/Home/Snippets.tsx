@@ -2,9 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Courier_Prime } from "next/font/google";
 import FileLink from "./FileLink";
 import SnippetPrint from "./SnippetPrint";
 import { preloadPrints } from "@/app/snippets/snippetCode";
+
+const courier = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
 
 interface Snippet {
     id: string;
@@ -142,6 +145,11 @@ export default function Snippets() {
     const singleRef = useRef(false);
     const wrapRef = useRef<HTMLDivElement>(null);
     const hoverRef = useRef(false);
+    // desktop: the book waits closed at the left, then slides to the middle and opens when the
+    // section scrolls into view (once). "closed" → "opening" → "open"
+    const [intro, setIntro] = useState<"closed" | "opening" | "open">("closed");
+    const [shift, setShift] = useState(0);
+    const fileRowRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         fetch("/api/snippets")
@@ -159,11 +167,12 @@ export default function Snippets() {
             .catch(() => setLoading(false));
     }, []);
 
-    // fit the book to the screen: the open 760px spread, or on phones a single 390px page
+    // fit the book to the screen: the open 760px spread (as big as the screen allows, with the
+    // View All slip under it on the same screen), or on phones a single 390px page
     useEffect(() => {
         const el = wrapRef.current;
         if (!el) return;
-        const ro = new ResizeObserver(() => {
+        const fit = () => {
             const w = el.clientWidth;
             const one = w < 600;
             // phones: the book (and its cover) stays inside the container's side padding
@@ -174,11 +183,51 @@ export default function Snippets() {
                 setSingle(one);
                 setSpread(0); // spreads and single pages count differently
             }
-            setScale(Math.min(1, one ? inner / 412 : (w - 8) / 760));
-        });
+            if (one) {
+                setScale(Math.min(1, inner / 412));
+                return;
+            }
+            const fileH = fileRowRef.current?.offsetHeight ?? 70;
+            // the section's padding (124 top, clear of the nav bar; 40 bottom) and the 36px gap above the slip
+            const room = window.innerHeight - 124 - 40 - 36 - fileH - 24;
+            const s = Math.max(0.5, Math.min(1.6, (w - 8) / 780, room / (BOOK_H + 12)));
+            setScale(s);
+            // closed, only the right half (the front cover) shows; it waits towards the left side
+            const closedCentre = w / 2 + 205 * s;
+            const target = Math.max(w * 0.22, 205 * s + 16);
+            setShift(Math.round(target - closedCentre));
+        };
+        fit();
+        const ro = new ResizeObserver(fit);
         ro.observe(el);
-        return () => ro.disconnect();
+        window.addEventListener("resize", fit);
+        return () => {
+            ro.disconnect();
+            window.removeEventListener("resize", fit);
+        };
     }, [loading]);
+
+    // play the opening once, when most of the section is on screen
+    useEffect(() => {
+        if (loading || intro !== "closed") return;
+        const el = wrapRef.current;
+        if (!el) return;
+        if (single || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            setIntro("open");
+            return;
+        }
+        const io = new IntersectionObserver(
+            ([en]) => {
+                if (!en.isIntersecting) return;
+                io.disconnect();
+                setIntro("opening");
+                window.setTimeout(() => setIntro("open"), 2650);
+            },
+            { threshold: 0.45 }
+        );
+        io.observe(el);
+        return () => io.disconnect();
+    }, [loading, single, intro]);
 
     const n = snippets.length;
     const spreads = Math.max(1, single ? n : Math.ceil(n / 2));
@@ -236,11 +285,13 @@ export default function Snippets() {
         };
     }, [settling]);
 
+    const introRef = useRef(intro);
+    introRef.current = intro;
     // turn a page every few seconds (not while the pointer rests on the book)
     useEffect(() => {
         if (spreads < 2) return;
         const id = window.setInterval(() => {
-            if (!hoverRef.current && document.visibilityState === "visible") flip(1);
+            if (!hoverRef.current && introRef.current === "open" && document.visibilityState === "visible") flip(1);
         }, AUTO_MS);
         return () => window.clearInterval(id);
     }, [flip, spreads]);
@@ -278,7 +329,10 @@ export default function Snippets() {
     return (
         <section id="snippets" style={{ scrollMarginTop: 0 }}>
             <div className="snippets-main-container" ref={wrapRef}>
-                <div className="nb-fit" style={{ height: (BOOK_H + 12) * scale }}>
+                <div
+                    className={`nb-fit ${!single && intro !== "open" ? `nb-intro is-${intro}` : ""}`}
+                    style={{ height: (BOOK_H + 12) * scale, ["--nb-shift" as string]: `${shift}px`, ["--nb-mid" as string]: `${Math.round(-205 * scale)}px` }}
+                >
                     <div
                         className={`nb-book ${single ? "is-single" : ""}`}
                         ref={bookRef}
@@ -287,6 +341,24 @@ export default function Snippets() {
                         onPointerLeave={() => (hoverRef.current = false)}
                     >
                         <div className="nb-cover" aria-hidden="true" />
+                        {!single && intro !== "open" && (
+                            // the front cover: shut over the right-hand page, it swings open over the spine
+                            <div className="nb-front" aria-hidden="true">
+                                <div className="nb-front-face">
+                                    <span className={`nb-front-k ${courier.className}`}>FILE:: N°04</span>
+                                    <span className="nb-front-t">Snippets</span>
+                                    <span className={`nb-front-s ${courier.className}`}>CODE · NOTES · EXPERIMENTS</span>
+                                    <span className="nb-front-logo">FVL</span>
+                                </div>
+                                {/* its inside: the navy rim around a blank left-hand page, so when it lands
+                                    it already looks like the open book's left half */}
+                                <div className="nb-front-back">
+                                    <div className="nb-front-page">
+                                        <Page side="left" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         {!single && (
                             <div className="nb-side nb-left" onClick={() => flip(-1)} title="Previous page">
                                 <Page snippet={L(leftStatic)} side="left" />
@@ -333,7 +405,7 @@ export default function Snippets() {
                     </div>
                 </div>
 
-                <div className="file-link-row" style={{ marginTop: 36 }}>
+                <div className="file-link-row" ref={fileRowRef} style={{ marginTop: 36 }}>
 
                     <FileLink href="/snippets" no="04" title="View All Snippets" />
 
@@ -353,6 +425,11 @@ export default function Snippets() {
                     padding: 96px 0 40px;
                     overflow: hidden;
                 }
+                @media (min-width: 600px) {
+                    #snippets {
+                        padding-top: 124px;
+                    }
+                }
                 .snippets-main-container {
                     width: 100%;
                     max-width: 1200px;
@@ -361,6 +438,132 @@ export default function Snippets() {
                 }
                 .nb-fit {
                     position: relative;
+                }
+                /* ---- desktop opening: closed at the left → slides to the middle → cover swings open ---- */
+                .nb-intro.is-closed .nb-book {
+                    translate: var(--nb-shift) 0;
+                }
+                /* the closed book slides to the middle of the page, then eases left as it opens so the
+                   open spread ends up centred */
+                .nb-intro.is-opening .nb-book {
+                    animation: nb-arrive 2.05s both;
+                }
+                @keyframes nb-arrive {
+                    0% {
+                        translate: var(--nb-shift) 0;
+                        animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+                    }
+                    44% {
+                        translate: var(--nb-mid) 0;
+                        animation-timing-function: cubic-bezier(0.55, 0.05, 0.3, 1);
+                    }
+                    100% {
+                        translate: 0 0;
+                    }
+                }
+                .nb-front {
+                    position: absolute;
+                    top: -9px;
+                    bottom: -11px;
+                    left: 380px;
+                    width: 390px;
+                    z-index: 20;
+                    transform-origin: 0 50%;
+                    transform-style: preserve-3d;
+                    transition: transform 1.15s cubic-bezier(0.55, 0.05, 0.3, 1) 0.9s;
+                }
+                .nb-intro.is-opening .nb-front {
+                    transform: rotateY(-180deg);
+                }
+                /* (fading the faces, not .nb-front: opacity on a 3D parent would flatten it and show
+                   the front's text mirrored through the back) */
+                .nb-front-page {
+                    position: absolute;
+                    left: 10px;
+                    top: 9px;
+                    width: 370px;
+                    height: ${BOOK_H}px;
+                }
+                .nb-front-face,
+                .nb-front-back {
+                    position: absolute;
+                    inset: 0;
+                    border-radius: 4px 10px 10px 4px;
+                    backface-visibility: hidden;
+                    -webkit-backface-visibility: hidden;
+                }
+                .nb-front-face {
+                    display: flex;
+                    flex-direction: column;
+                    padding: 44px 40px 36px 48px;
+                    color: #e9f4fa;
+                    background: radial-gradient(120% 70% at 85% 10%, rgba(70, 193, 230, 0.18), transparent 60%),
+                        linear-gradient(160deg, #1f4663 0%, #0d2a42 60%, #0a2135 100%);
+                    box-shadow: inset 6px 0 10px -6px rgba(0, 0, 0, 0.5), 0 30px 50px -26px rgba(13, 42, 66, 0.6);
+                }
+                .nb-front-face::before {
+                    content: "";
+                    position: absolute;
+                    inset: 16px 16px 16px 22px;
+                    border: 1.5px dashed rgba(233, 244, 250, 0.28);
+                    border-radius: 8px;
+                    pointer-events: none;
+                }
+                .nb-front-k {
+                    font-size: 12px;
+                    font-weight: 700;
+                    letter-spacing: 0.24em;
+                    color: #8fc3dc;
+                }
+                .nb-front-t {
+                    margin-top: 14px;
+                    font-size: 46px;
+                    font-weight: 800;
+                    letter-spacing: -0.03em;
+                    line-height: 1;
+                }
+                .nb-front-s {
+                    margin-top: 12px;
+                    font-size: 11px;
+                    letter-spacing: 0.2em;
+                    color: rgba(233, 244, 250, 0.65);
+                }
+                .nb-front-logo {
+                    margin-top: auto;
+                    align-self: flex-end;
+                    font-size: 30px;
+                    font-weight: 900;
+                    letter-spacing: 0.06em;
+                    color: rgba(233, 244, 250, 0.22);
+                    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.08), 0 -1px 0 rgba(0, 0, 0, 0.35);
+                }
+                .nb-front-back {
+                    transform: rotateY(180deg);
+                    border-radius: 10px 4px 4px 10px;
+                    background: linear-gradient(200deg, #1b3d57 0%, #0d2a42 70%);
+                }
+                /* once it has landed, the real left half takes over underneath and the snippet
+                   on the left page fades in through it */
+                .nb-intro.is-opening .nb-front-back {
+                    opacity: 0;
+                    transition: opacity 0.45s ease 2.1s;
+                }
+                /* while closed only the right half of the book exists: the back cover's left half and
+                   the left-hand page appear as the front cover swings across */
+                .nb-intro .nb-cover {
+                    transition: clip-path 0s linear 2.05s;
+                }
+                .nb-intro.is-closed .nb-cover {
+                    clip-path: inset(-40px -40px -40px 50%);
+                }
+                .nb-intro.is-opening .nb-cover {
+                    clip-path: inset(-40px -40px -40px 0);
+                }
+                .nb-intro .nb-left {
+                    transition: opacity 0s linear 2.05s;
+                }
+                .nb-intro.is-closed .nb-left {
+                    opacity: 0;
                 }
                 .nb-book {
                     position: absolute;
