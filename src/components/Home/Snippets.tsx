@@ -82,6 +82,8 @@ function Paperclip() {
 type Turn = { dir: 1 | -1; t0: number; base: number; ready: boolean; settling?: boolean } | null;
 const FLIP_MS = 1100;
 const AUTO_MS = 5200;
+// how big the closed book is before it slides in and grows to full size
+const CLOSED_K = 0.8;
 const BOOK_H = 470;
 
 const formatDate = (dateStr?: string) => {
@@ -331,7 +333,11 @@ export default function Snippets() {
             <div className="snippets-main-container" ref={wrapRef}>
                 <div
                     className={`nb-fit ${!single && intro !== "open" ? `nb-intro is-${intro}` : ""}`}
-                    style={{ height: (BOOK_H + 12) * scale, ["--nb-shift" as string]: `${shift}px`, ["--nb-mid" as string]: `${Math.round(-205 * scale)}px` }}
+                    style={{ height: (BOOK_H + 12) * scale, ["--nb-shift" as string]: `${shift}px`, ["--nb-mid" as string]: `${Math.round(-205 * scale)}px`,
+                        // while closed the book is drawn a bit smaller; these keep the small cover centred
+                        // where the full-size one would sit (it shrinks around the spine's top otherwise)
+                        ["--nb-dx" as string]: `${Math.round((1 - CLOSED_K) * 205 * scale)}px`,
+                        ["--nb-dy" as string]: `${Math.round(((1 - CLOSED_K) * (BOOK_H + 20) * scale) / 2)}px` }}
                 >
                     <div
                         className={`nb-book ${single ? "is-single" : ""}`}
@@ -441,7 +447,8 @@ export default function Snippets() {
                 }
                 /* ---- desktop opening: closed at the left → slides to the middle → cover swings open ---- */
                 .nb-intro.is-closed .nb-book {
-                    translate: var(--nb-shift) 0;
+                    translate: calc(var(--nb-shift) + var(--nb-dx)) var(--nb-dy);
+                    scale: ${CLOSED_K};
                 }
                 /* the closed book slides to the middle of the page, then eases left as it opens so the
                    open spread ends up centred */
@@ -450,15 +457,19 @@ export default function Snippets() {
                 }
                 @keyframes nb-arrive {
                     0% {
-                        translate: var(--nb-shift) 0;
+                        translate: calc(var(--nb-shift) + var(--nb-dx)) var(--nb-dy);
+                        scale: ${CLOSED_K};
                         animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
                     }
+                    /* grows back to full size as it reaches the middle */
                     44% {
                         translate: var(--nb-mid) 0;
+                        scale: 1;
                         animation-timing-function: cubic-bezier(0.55, 0.05, 0.3, 1);
                     }
                     100% {
                         translate: 0 0;
+                        scale: 1;
                     }
                 }
                 .nb-front {
