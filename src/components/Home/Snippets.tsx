@@ -82,6 +82,8 @@ function Paperclip() {
 type Turn = { dir: 1 | -1; t0: number; base: number; ready: boolean; settling?: boolean } | null;
 const FLIP_MS = 1100;
 const AUTO_MS = 5200;
+// how big the closed book is before it slides in and grows to full size
+const CLOSED_K = 0.8;
 const BOOK_H = 470;
 
 const formatDate = (dateStr?: string) => {
@@ -221,7 +223,7 @@ export default function Snippets() {
                 if (!en.isIntersecting) return;
                 io.disconnect();
                 setIntro("opening");
-                window.setTimeout(() => setIntro("open"), 2650);
+                window.setTimeout(() => setIntro("open"), 3300);
             },
             { threshold: 0.45 }
         );
@@ -331,7 +333,11 @@ export default function Snippets() {
             <div className="snippets-main-container" ref={wrapRef}>
                 <div
                     className={`nb-fit ${!single && intro !== "open" ? `nb-intro is-${intro}` : ""}`}
-                    style={{ height: (BOOK_H + 12) * scale, ["--nb-shift" as string]: `${shift}px`, ["--nb-mid" as string]: `${Math.round(-205 * scale)}px` }}
+                    style={{ height: (BOOK_H + 12) * scale, ["--nb-shift" as string]: `${shift}px`, ["--nb-mid" as string]: `${Math.round(-205 * scale)}px`,
+                        // while closed the book is drawn a bit smaller; these keep the small cover centred
+                        // where the full-size one would sit (it shrinks around the spine's top otherwise)
+                        ["--nb-dx" as string]: `${Math.round((1 - CLOSED_K) * 205 * scale)}px`,
+                        ["--nb-dy" as string]: `${Math.round(((1 - CLOSED_K) * (BOOK_H + 20) * scale) / 2)}px` }}
                 >
                     <div
                         className={`nb-book ${single ? "is-single" : ""}`}
@@ -441,24 +447,32 @@ export default function Snippets() {
                 }
                 /* ---- desktop opening: closed at the left → slides to the middle → cover swings open ---- */
                 .nb-intro.is-closed .nb-book {
-                    translate: var(--nb-shift) 0;
+                    translate: calc(var(--nb-shift) + var(--nb-dx)) var(--nb-dy);
+                    scale: ${CLOSED_K};
                 }
                 /* the closed book slides to the middle of the page, then eases left as it opens so the
                    open spread ends up centred */
                 .nb-intro.is-opening .nb-book {
-                    animation: nb-arrive 2.05s both;
+                    animation: nb-arrive 2.7s both;
                 }
                 @keyframes nb-arrive {
-                    0% {
-                        translate: var(--nb-shift) 0;
+                    /* rests small for a beat, slides in growing to full size, rests again in the
+                       middle, then eases left while the cover swings open */
+                    0%,
+                    11% {
+                        translate: calc(var(--nb-shift) + var(--nb-dx)) var(--nb-dy);
+                        scale: ${CLOSED_K};
                         animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
                     }
-                    44% {
+                    44%,
+                    57% {
                         translate: var(--nb-mid) 0;
+                        scale: 1;
                         animation-timing-function: cubic-bezier(0.55, 0.05, 0.3, 1);
                     }
                     100% {
                         translate: 0 0;
+                        scale: 1;
                     }
                 }
                 .nb-front {
@@ -470,7 +484,7 @@ export default function Snippets() {
                     z-index: 20;
                     transform-origin: 0 50%;
                     transform-style: preserve-3d;
-                    transition: transform 1.15s cubic-bezier(0.55, 0.05, 0.3, 1) 0.9s;
+                    transition: transform 1.15s cubic-bezier(0.55, 0.05, 0.3, 1) 1.55s;
                 }
                 .nb-intro.is-opening .nb-front {
                     transform: rotateY(-180deg);
@@ -546,12 +560,12 @@ export default function Snippets() {
                    on the left page fades in through it */
                 .nb-intro.is-opening .nb-front-back {
                     opacity: 0;
-                    transition: opacity 0.45s ease 2.1s;
+                    transition: opacity 0.45s ease 2.75s;
                 }
                 /* while closed only the right half of the book exists: the back cover's left half and
                    the left-hand page appear as the front cover swings across */
                 .nb-intro .nb-cover {
-                    transition: clip-path 0s linear 2.05s;
+                    transition: clip-path 0s linear 2.7s;
                 }
                 .nb-intro.is-closed .nb-cover {
                     clip-path: inset(-40px -40px -40px 50%);
@@ -560,7 +574,7 @@ export default function Snippets() {
                     clip-path: inset(-40px -40px -40px 0);
                 }
                 .nb-intro .nb-left {
-                    transition: opacity 0s linear 2.05s;
+                    transition: opacity 0s linear 2.7s;
                 }
                 .nb-intro.is-closed .nb-left {
                     opacity: 0;
