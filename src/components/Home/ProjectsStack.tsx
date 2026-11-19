@@ -310,6 +310,7 @@ export default function ProjectsStack() {
         start: number;
         want: number;
         moved: boolean;
+        flip: boolean; // grabbed on the logo side (desktop): an up/down drag follows the logos instead
         samples: { v: number; t: number }[];
     } | null>(null);
     const PX = clamp(size.w * 0.3, 240, 420); // sideways px per project (lower = more sensitive)
@@ -328,7 +329,11 @@ export default function ProjectsStack() {
         if ((e.target as HTMLElement).closest("a,button")) return;
         cancelAnimationFrame(rafRef.current);
         const now = performance.now();
-        drag.current = { x: e.clientX, y: e.clientY, axis: null, start: posRef.current, want: posRef.current, moved: false, samples: [{ v: 0, t: now }] };
+        // the logos travel the opposite way to the images, so whichever side is grabbed should move
+        // with the pointer: a drag on the right-hand half runs the carousel the other way
+        const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const flip = r.width > 768 && e.clientX > r.left + r.width / 2;
+        drag.current = { x: e.clientX, y: e.clientY, axis: null, start: posRef.current, want: posRef.current, moved: false, flip, samples: [{ v: 0, t: now }] };
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     };
     const onMove = (e: React.PointerEvent) => {
@@ -347,7 +352,7 @@ export default function ProjectsStack() {
         }
         if (!g.moved) return;
         const now = performance.now();
-        const along = g.axis === "y" ? (e.clientY - g.y) / PY : (e.clientX - g.x) / PX; // in projects
+        const along = g.axis === "y" ? ((e.clientY - g.y) / PY) * (g.flip ? -1 : 1) : (e.clientX - g.x) / PX; // in projects
         g.samples.push({ v: along, t: now });
         while (g.samples.length > 2 && now - g.samples[0].t > 90) g.samples.shift();
         g.want = g.start - along;
@@ -591,7 +596,7 @@ export default function ProjectsStack() {
                     );
                 })}
 
-                {/* logos: current on the right, neighbours in the right corners */}
+                {/* logos: current on the right, neighbours in the right corners (mirrored vs the images) */}
                 {projects.map((p, i) => {
                     const d = wrapD(i);
                     if (Math.abs(d) > 1.9) return null;
@@ -599,8 +604,11 @@ export default function ProjectsStack() {
                     if (phone ? a > 1.2 : narrow && a > 0.6) return null;
                     // phones: logos slide the opposite way to the images (next comes in from the left)
                     const x = phone ? midX - d * (W * 0.5 + tile * 0.5 + 24) : tri(d, rightX + tileOffX, rightX, rightX + tileOffX);
-                    const y = phone ? tileY : tri(d, tileY - tileOffY, tileY, tileY + tileOffY) + (a > 1 ? Math.sign(d) * (a - 1) * 120 : 0);
-                    const rot = phone ? 0 : tri(d, 32, 0, -32); // straight in the middle so it lines up with the mosaic
+                    // desktop: logos travel the opposite way to the images (next comes in from the top
+                    // while its image comes up from the bottom), meeting on the matching pair
+                    const ld = -d;
+                    const y = phone ? tileY : tri(ld, tileY - tileOffY, tileY, tileY + tileOffY) + (a > 1 ? Math.sign(ld) * (a - 1) * 120 : 0);
+                    const rot = phone ? 0 : tri(ld, 32, 0, -32); // straight in the middle so it lines up with the mosaic
                     const sc = phone ? 1 - a * 0.12 : tri(d, NT, 1, NT) * (a > 1 ? 1 - (a - 1) * 0.5 : 1);
                     const op = a > 1 ? clamp(1 - (a - 1) / 0.8, 0, 1) : 1;
                     return (
