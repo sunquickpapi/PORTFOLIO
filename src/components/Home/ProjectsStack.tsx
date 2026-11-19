@@ -591,7 +591,7 @@ export default function ProjectsStack() {
                     );
                 })}
 
-                {/* logos: current on the right, neighbours in the right corners */}
+                {/* logos: current on the right, neighbours in the right corners (mirrored vs the images) */}
                 {projects.map((p, i) => {
                     const d = wrapD(i);
                     if (Math.abs(d) > 1.9) return null;
@@ -599,8 +599,11 @@ export default function ProjectsStack() {
                     if (phone ? a > 1.2 : narrow && a > 0.6) return null;
                     // phones: logos slide the opposite way to the images (next comes in from the left)
                     const x = phone ? midX - d * (W * 0.5 + tile * 0.5 + 24) : tri(d, rightX + tileOffX, rightX, rightX + tileOffX);
-                    const y = phone ? tileY : tri(d, tileY - tileOffY, tileY, tileY + tileOffY) + (a > 1 ? Math.sign(d) * (a - 1) * 120 : 0);
-                    const rot = phone ? 0 : tri(d, 32, 0, -32); // straight in the middle so it lines up with the mosaic
+                    // desktop: logos travel the opposite way to the images (next comes in from the top
+                    // while its image comes up from the bottom), meeting on the matching pair
+                    const ld = -d;
+                    const y = phone ? tileY : tri(ld, tileY - tileOffY, tileY, tileY + tileOffY) + (a > 1 ? Math.sign(ld) * (a - 1) * 120 : 0);
+                    const rot = phone ? 0 : tri(ld, 32, 0, -32); // straight in the middle so it lines up with the mosaic
                     const sc = phone ? 1 - a * 0.12 : tri(d, NT, 1, NT) * (a > 1 ? 1 - (a - 1) * 0.5 : 1);
                     const op = a > 1 ? clamp(1 - (a - 1) / 0.8, 0, 1) : 1;
                     return (
