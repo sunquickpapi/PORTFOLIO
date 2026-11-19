@@ -310,6 +310,7 @@ export default function ProjectsStack() {
         start: number;
         want: number;
         moved: boolean;
+        flip: boolean; // grabbed on the logo side (desktop): an up/down drag follows the logos instead
         samples: { v: number; t: number }[];
     } | null>(null);
     const PX = clamp(size.w * 0.3, 240, 420); // sideways px per project (lower = more sensitive)
@@ -328,7 +329,11 @@ export default function ProjectsStack() {
         if ((e.target as HTMLElement).closest("a,button")) return;
         cancelAnimationFrame(rafRef.current);
         const now = performance.now();
-        drag.current = { x: e.clientX, y: e.clientY, axis: null, start: posRef.current, want: posRef.current, moved: false, samples: [{ v: 0, t: now }] };
+        // the logos travel the opposite way to the images, so whichever side is grabbed should move
+        // with the pointer: a drag on the right-hand half runs the carousel the other way
+        const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const flip = r.width > 768 && e.clientX > r.left + r.width / 2;
+        drag.current = { x: e.clientX, y: e.clientY, axis: null, start: posRef.current, want: posRef.current, moved: false, flip, samples: [{ v: 0, t: now }] };
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     };
     const onMove = (e: React.PointerEvent) => {
@@ -347,7 +352,7 @@ export default function ProjectsStack() {
         }
         if (!g.moved) return;
         const now = performance.now();
-        const along = g.axis === "y" ? (e.clientY - g.y) / PY : (e.clientX - g.x) / PX; // in projects
+        const along = g.axis === "y" ? ((e.clientY - g.y) / PY) * (g.flip ? -1 : 1) : (e.clientX - g.x) / PX; // in projects
         g.samples.push({ v: along, t: now });
         while (g.samples.length > 2 && now - g.samples[0].t > 90) g.samples.shift();
         g.want = g.start - along;
